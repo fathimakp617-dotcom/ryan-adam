@@ -691,7 +691,7 @@ const handler = async (req: Request): Promise<Response> => {
         
         console.log("Sending admin notification email to:", adminEmail);
         const adminEmailResponse = await resend.emails.send({
-          from: "Rayn Adam Orders <orders@raynadamperfume.com>",
+          from: "Rayn Adam Shipping <shipping@raynadamperfume.com>",
           to: [adminEmail],
           subject: `🚚 NEW ORDER - ${orderData.order_number} - ${orderData.customer_name}`,
           html: adminEmailHTML,
