@@ -56,8 +56,9 @@ const handler = async (req: Request): Promise<Response> => {
     const resetLink = data.properties.action_link;
 
     // Send branded email via Resend
+    // Note: Using resend.dev domain until raynadam.com is verified in Resend
     const emailResponse = await resend.emails.send({
-      from: "Rayn Adam <noreply@raynadam.com>",
+      from: "Rayn Adam <onboarding@resend.dev>",
       to: [email],
       subject: "Reset Your Password - Rayn Adam",
       html: `
