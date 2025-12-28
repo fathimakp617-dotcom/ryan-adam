@@ -75,6 +75,22 @@ const ProductDetail = () => {
       <Helmet>
         <title>{product.name} | Rayn Adam Luxury Perfumes</title>
         <meta name="description" content={product.description} />
+        
+        {/* Open Graph / Social Sharing - uses relative paths that work on any domain */}
+        <meta property="og:title" content={`${product.name} | Rayn Adam Luxury Perfumes`} />
+        <meta property="og:description" content={product.description} />
+        <meta property="og:type" content="product" />
+        <meta property="og:image" content={product.image} />
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${product.name} | Rayn Adam Luxury Perfumes`} />
+        <meta name="twitter:description" content={product.description} />
+        <meta name="twitter:image" content={product.image} />
+        
+        {/* Product structured data */}
+        <meta property="product:price:amount" content={product.price.toString()} />
+        <meta property="product:price:currency" content="INR" />
       </Helmet>
 
       <FloatingParticles />
