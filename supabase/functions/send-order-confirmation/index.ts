@@ -269,7 +269,15 @@ For questions: support@raynadamperfume.com
   `;
 };
 
-const generateInvoiceAttachment = (order: OrderConfirmationRequest): string => {
+const generateInvoicePDF = async (order: OrderConfirmationRequest): Promise<Uint8Array> => {
+  const pdfDoc = await PDFDocument.create();
+  const page = pdfDoc.addPage([595, 842]); // A4 size
+  
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  
+  const { width, height } = page.getSize();
+  
   const formattedDate = new Date().toLocaleDateString('en-IN', { 
     day: 'numeric', 
     month: 'long', 
@@ -278,55 +286,337 @@ const generateInvoiceAttachment = (order: OrderConfirmationRequest): string => {
   
   const paymentMethodLabel = order.payment_method === 'cod' ? 'Cash on Delivery' : 'Online Payment';
   
-  const itemsText = order.items.map(item => 
-    `${item.name.padEnd(30)} x${item.quantity.toString().padStart(2)}    ${formatCurrency(item.price * item.quantity).padStart(12)}`
-  ).join('\n');
-
-  const invoiceText = `
-================================================================================
-                              RAYN ADAM
-                           LUXURY PERFUMES
-================================================================================
-
-                                INVOICE
-
---------------------------------------------------------------------------------
-Order Number: ${order.order_number}
-Date: ${formattedDate}
---------------------------------------------------------------------------------
-
-BILL TO:
-${order.customer_name}
-${order.customer_email}
-
-SHIP TO:
-${order.shipping_address.address}
-${order.shipping_address.city}, ${order.shipping_address.state} ${order.shipping_address.zipCode}
-${order.shipping_address.country}
-
-================================================================================
-                             ORDER DETAILS
-================================================================================
-
-${itemsText}
-
---------------------------------------------------------------------------------
-                                          Subtotal:    ${formatCurrency(order.subtotal).padStart(12)}
-${order.discount > 0 ? `                                          Discount:   -${formatCurrency(order.discount).padStart(11)}` : ''}
-                                          Shipping:    ${order.shipping === 0 ? 'FREE'.padStart(12) : formatCurrency(order.shipping).padStart(12)}
---------------------------------------------------------------------------------
-                                          TOTAL:       ${formatCurrency(order.total).padStart(12)}
-================================================================================
-
-Payment Method: ${paymentMethodLabel}
-
-================================================================================
-                     Thank you for shopping with Rayn Adam!
-              For questions, contact: support@raynadamperfume.com
-================================================================================
-  `.trim();
-
-  return invoiceText;
+  let yPos = height - 50;
+  
+  // Header
+  page.drawText('RAYN ADAM', {
+    x: width / 2 - 50,
+    y: yPos,
+    size: 24,
+    font: boldFont,
+    color: rgb(0.79, 0.66, 0.38), // Gold color
+  });
+  
+  yPos -= 20;
+  page.drawText('LUXURY PERFUMES', {
+    x: width / 2 - 55,
+    y: yPos,
+    size: 12,
+    font: font,
+    color: rgb(0.4, 0.4, 0.4),
+  });
+  
+  yPos -= 15;
+  page.drawText('Kozhikode, Kerala, India | Ph: XXXXXXXXXXXX', {
+    x: width / 2 - 100,
+    y: yPos,
+    size: 9,
+    font: font,
+    color: rgb(0.5, 0.5, 0.5),
+  });
+  
+  yPos -= 40;
+  page.drawText('INVOICE', {
+    x: width / 2 - 30,
+    y: yPos,
+    size: 18,
+    font: boldFont,
+    color: rgb(0.1, 0.1, 0.1),
+  });
+  
+  // Order info
+  yPos -= 40;
+  page.drawText(`Order Number: ${order.order_number}`, {
+    x: 50,
+    y: yPos,
+    size: 11,
+    font: boldFont,
+    color: rgb(0.1, 0.1, 0.1),
+  });
+  
+  page.drawText(`Date: ${formattedDate}`, {
+    x: width - 200,
+    y: yPos,
+    size: 11,
+    font: font,
+    color: rgb(0.3, 0.3, 0.3),
+  });
+  
+  // Divider
+  yPos -= 20;
+  page.drawLine({
+    start: { x: 50, y: yPos },
+    end: { x: width - 50, y: yPos },
+    thickness: 1,
+    color: rgb(0.8, 0.8, 0.8),
+  });
+  
+  // Bill To / Ship To
+  yPos -= 30;
+  page.drawText('BILL TO:', {
+    x: 50,
+    y: yPos,
+    size: 10,
+    font: boldFont,
+    color: rgb(0.4, 0.4, 0.4),
+  });
+  
+  page.drawText('SHIP TO:', {
+    x: width / 2 + 20,
+    y: yPos,
+    size: 10,
+    font: boldFont,
+    color: rgb(0.4, 0.4, 0.4),
+  });
+  
+  yPos -= 18;
+  page.drawText(order.customer_name, {
+    x: 50,
+    y: yPos,
+    size: 11,
+    font: boldFont,
+    color: rgb(0.1, 0.1, 0.1),
+  });
+  
+  page.drawText(order.customer_name, {
+    x: width / 2 + 20,
+    y: yPos,
+    size: 11,
+    font: boldFont,
+    color: rgb(0.1, 0.1, 0.1),
+  });
+  
+  yPos -= 15;
+  page.drawText(order.customer_email, {
+    x: 50,
+    y: yPos,
+    size: 10,
+    font: font,
+    color: rgb(0.3, 0.3, 0.3),
+  });
+  
+  page.drawText(order.shipping_address.address, {
+    x: width / 2 + 20,
+    y: yPos,
+    size: 10,
+    font: font,
+    color: rgb(0.3, 0.3, 0.3),
+  });
+  
+  yPos -= 15;
+  const customerPhone = order.customer_phone || 'N/A';
+  page.drawText(`Ph: ${customerPhone}`, {
+    x: 50,
+    y: yPos,
+    size: 10,
+    font: font,
+    color: rgb(0.3, 0.3, 0.3),
+  });
+  
+  page.drawText(`${order.shipping_address.city}, ${order.shipping_address.state} ${order.shipping_address.zipCode}`, {
+    x: width / 2 + 20,
+    y: yPos,
+    size: 10,
+    font: font,
+    color: rgb(0.3, 0.3, 0.3),
+  });
+  
+  yPos -= 15;
+  page.drawText(order.shipping_address.country, {
+    x: width / 2 + 20,
+    y: yPos,
+    size: 10,
+    font: font,
+    color: rgb(0.3, 0.3, 0.3),
+  });
+  
+  // Order Items Header
+  yPos -= 40;
+  page.drawRectangle({
+    x: 50,
+    y: yPos - 5,
+    width: width - 100,
+    height: 25,
+    color: rgb(0.1, 0.1, 0.1),
+  });
+  
+  page.drawText('Product', {
+    x: 60,
+    y: yPos + 3,
+    size: 10,
+    font: boldFont,
+    color: rgb(1, 1, 1),
+  });
+  
+  page.drawText('Qty', {
+    x: 350,
+    y: yPos + 3,
+    size: 10,
+    font: boldFont,
+    color: rgb(1, 1, 1),
+  });
+  
+  page.drawText('Price', {
+    x: 450,
+    y: yPos + 3,
+    size: 10,
+    font: boldFont,
+    color: rgb(1, 1, 1),
+  });
+  
+  // Order Items
+  yPos -= 25;
+  for (const item of order.items) {
+    yPos -= 20;
+    page.drawText(item.name.substring(0, 40), {
+      x: 60,
+      y: yPos,
+      size: 10,
+      font: font,
+      color: rgb(0.2, 0.2, 0.2),
+    });
+    
+    page.drawText(item.quantity.toString(), {
+      x: 360,
+      y: yPos,
+      size: 10,
+      font: font,
+      color: rgb(0.2, 0.2, 0.2),
+    });
+    
+    page.drawText(`INR ${(item.price * item.quantity).toLocaleString('en-IN')}`, {
+      x: 440,
+      y: yPos,
+      size: 10,
+      font: font,
+      color: rgb(0.2, 0.2, 0.2),
+    });
+    
+    // Item divider
+    yPos -= 8;
+    page.drawLine({
+      start: { x: 50, y: yPos },
+      end: { x: width - 50, y: yPos },
+      thickness: 0.5,
+      color: rgb(0.9, 0.9, 0.9),
+    });
+  }
+  
+  // Totals section
+  yPos -= 30;
+  page.drawText('Subtotal:', {
+    x: 350,
+    y: yPos,
+    size: 10,
+    font: font,
+    color: rgb(0.3, 0.3, 0.3),
+  });
+  page.drawText(`INR ${order.subtotal.toLocaleString('en-IN')}`, {
+    x: 440,
+    y: yPos,
+    size: 10,
+    font: font,
+    color: rgb(0.2, 0.2, 0.2),
+  });
+  
+  if (order.discount > 0) {
+    yPos -= 18;
+    page.drawText('Discount:', {
+      x: 350,
+      y: yPos,
+      size: 10,
+      font: font,
+      color: rgb(0.16, 0.65, 0.27),
+    });
+    page.drawText(`-INR ${order.discount.toLocaleString('en-IN')}`, {
+      x: 440,
+      y: yPos,
+      size: 10,
+      font: font,
+      color: rgb(0.16, 0.65, 0.27),
+    });
+  }
+  
+  yPos -= 18;
+  page.drawText('Shipping:', {
+    x: 350,
+    y: yPos,
+    size: 10,
+    font: font,
+    color: rgb(0.3, 0.3, 0.3),
+  });
+  page.drawText(order.shipping === 0 ? 'FREE' : `INR ${order.shipping.toLocaleString('en-IN')}`, {
+    x: 440,
+    y: yPos,
+    size: 10,
+    font: font,
+    color: rgb(0.2, 0.2, 0.2),
+  });
+  
+  // Total
+  yPos -= 25;
+  page.drawRectangle({
+    x: 340,
+    y: yPos - 5,
+    width: 200,
+    height: 25,
+    color: rgb(0.95, 0.95, 0.95),
+  });
+  
+  page.drawText('TOTAL:', {
+    x: 350,
+    y: yPos + 3,
+    size: 12,
+    font: boldFont,
+    color: rgb(0.1, 0.1, 0.1),
+  });
+  page.drawText(`INR ${order.total.toLocaleString('en-IN')}`, {
+    x: 440,
+    y: yPos + 3,
+    size: 12,
+    font: boldFont,
+    color: rgb(0.79, 0.66, 0.38),
+  });
+  
+  // Payment method
+  yPos -= 40;
+  page.drawText(`Payment Method: ${paymentMethodLabel}`, {
+    x: 50,
+    y: yPos,
+    size: 10,
+    font: font,
+    color: rgb(0.3, 0.3, 0.3),
+  });
+  
+  // Footer
+  yPos = 80;
+  page.drawLine({
+    start: { x: 50, y: yPos },
+    end: { x: width - 50, y: yPos },
+    thickness: 1,
+    color: rgb(0.8, 0.8, 0.8),
+  });
+  
+  yPos -= 20;
+  page.drawText('Thank you for shopping with Rayn Adam!', {
+    x: width / 2 - 100,
+    y: yPos,
+    size: 11,
+    font: boldFont,
+    color: rgb(0.3, 0.3, 0.3),
+  });
+  
+  yPos -= 18;
+  page.drawText('For questions, contact: support@raynadamperfume.com', {
+    x: width / 2 - 120,
+    y: yPos,
+    size: 9,
+    font: font,
+    color: rgb(0.5, 0.5, 0.5),
+  });
+  
+  const pdfBytes = await pdfDoc.save();
+  return pdfBytes;
 };
 
 const generateAdminOrderEmailHTML = (order: OrderConfirmationRequest): string => {
@@ -538,7 +828,7 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   });
 
   // Company phone number
-  page.drawText('Ph: +91 8606502813', {
+  page.drawText('Ph: XXXXXXXXXXXX', {
     x: 20,
     y: height - 76,
     size: 9,
@@ -672,14 +962,14 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Order number:", orderData.order_number);
 
     const emailHTML = generateOrderEmailHTML(orderData);
-    const invoiceContent = generateInvoiceAttachment(orderData);
+    
+    // Generate PDF invoice for customer
+    console.log("Generating PDF invoice...");
+    const invoicePdf = await generateInvoicePDF(orderData);
+    const invoicePdfBase64 = btoa(String.fromCharCode(...invoicePdf));
+    console.log("PDF invoice generated, size:", invoicePdf.length);
 
-    // Convert invoice text to base64 for attachment
-    const encoder = new TextEncoder();
-    const invoiceBytes = encoder.encode(invoiceContent);
-    const invoiceBase64 = btoa(String.fromCharCode(...invoiceBytes));
-
-    // Send customer confirmation email
+    // Send customer confirmation email with PDF invoice
     const emailResponse = await resend.emails.send({
       from: "Rayn Adam <orders@raynadamperfume.com>",
       to: [orderData.customer_email],
@@ -687,8 +977,8 @@ const handler = async (req: Request): Promise<Response> => {
       html: emailHTML,
       attachments: [
         {
-          filename: `invoice-${orderData.order_number}.txt`,
-          content: invoiceBase64,
+          filename: `invoice-${orderData.order_number}.pdf`,
+          content: invoicePdfBase64,
         },
       ],
     });
@@ -718,8 +1008,8 @@ const handler = async (req: Request): Promise<Response> => {
           html: adminEmailHTML,
           attachments: [
             {
-              filename: `invoice-${orderData.order_number}.txt`,
-              content: invoiceBase64,
+              filename: `invoice-${orderData.order_number}.pdf`,
+              content: invoicePdfBase64,
             },
             {
               filename: `shipping-label-${orderData.order_number}.pdf`,
