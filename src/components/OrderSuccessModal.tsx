@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle, X, Download, Mail } from "lucide-react";
+import { CheckCircle, X, Download, Mail, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import OrderReceipt from "./OrderReceipt";
 
 interface OrderData {
@@ -29,10 +30,12 @@ interface OrderData {
 const OrderSuccessModal = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const orderNumber = searchParams.get("order");
   const [orderData, setOrderData] = useState<OrderData | null>(null);
   const [showReceipt, setShowReceipt] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isResending, setIsResending] = useState(false);
 
   useEffect(() => {
     if (orderNumber) {
@@ -71,6 +74,33 @@ const OrderSuccessModal = () => {
       console.error("Error fetching order:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendEmail = async () => {
+    if (!orderNumber) return;
+    
+    setIsResending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('resend-order-email', {
+        body: { order_number: orderNumber },
+      });
+
+      if (error) throw error;
+      
+      toast({
+        title: "Email Sent!",
+        description: "Order confirmation email has been resent to your email address.",
+      });
+    } catch (error) {
+      console.error("Error resending email:", error);
+      toast({
+        title: "Failed to resend email",
+        description: "Please try again or contact support.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -151,9 +181,18 @@ const OrderSuccessModal = () => {
                       Download Receipt
                     </Button>
                     <Button
-                      onClick={handleClose}
+                      onClick={handleResendEmail}
                       variant="outline"
                       className="w-full border-border hover:border-primary"
+                      disabled={isResending}
+                    >
+                      <RefreshCw className={`w-4 h-4 mr-2 ${isResending ? 'animate-spin' : ''}`} />
+                      {isResending ? 'Sending...' : 'Resend Email'}
+                    </Button>
+                    <Button
+                      onClick={handleClose}
+                      variant="ghost"
+                      className="w-full"
                     >
                       Continue Shopping
                     </Button>

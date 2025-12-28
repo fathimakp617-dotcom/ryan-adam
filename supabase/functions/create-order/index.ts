@@ -319,6 +319,7 @@ serve(async (req) => {
         order_number: order.order_number,
         customer_name: customerName,
         customer_email: customerEmail,
+        customer_phone: customerPhone,
         items: validatedItems,
         subtotal: subtotal,
         discount: discount,
