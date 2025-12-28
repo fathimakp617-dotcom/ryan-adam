@@ -6,11 +6,26 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Product prices - server-side source of truth (must match create-order)
+const PRODUCT_PRICES: Record<string, number> = {
+  "noir-intense": 499,
+  "blanc-elegance": 499,
+  "rouge-passion": 499,
+  "oud-royal": 599,
+  "velvet-night": 549,
+  "divine-rose": 529,
+  "amber-elixir": 499,
+  "citrus-aura": 449,
+};
+
+const VALID_PRODUCT_IDS = Object.keys(PRODUCT_PRICES);
+
 interface VerifyPaymentRequest {
   razorpay_order_id: string;
   razorpay_payment_id: string;
   razorpay_signature: string;
   order_data: {
+    user_id?: string;
     customer_name: string;
     customer_email: string;
     customer_phone: string;
@@ -75,11 +90,32 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Calculate order totals
-    const subtotal = order_data.items.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
+    // Validate items and calculate totals using SERVER-SIDE prices
+    let subtotal = 0;
+    for (const item of order_data.items) {
+      // Validate product exists
+      if (!VALID_PRODUCT_IDS.includes(item.productId)) {
+        console.error("Invalid product ID:", item.productId);
+        return new Response(
+          JSON.stringify({ error: `Invalid product: ${item.productId}` }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      // Validate quantity
+      const quantity = Math.floor(Number(item.quantity));
+      if (quantity < 1 || quantity > 10) {
+        console.error("Invalid quantity for product:", item.productId, quantity);
+        return new Response(
+          JSON.stringify({ error: `Invalid quantity for ${item.productId}` }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      // Use SERVER-SIDE price, not client-provided price
+      const serverPrice = PRODUCT_PRICES[item.productId];
+      subtotal += serverPrice * quantity;
+    }
     
     let discount = 0;
     const shipping = subtotal >= 999 ? 0 : 99;
@@ -122,6 +158,7 @@ const handler = async (req: Request): Promise<Response> => {
       .from('orders')
       .insert({
         order_number: orderNumber,
+        user_id: order_data.user_id || null,
         customer_name: order_data.customer_name,
         customer_email: order_data.customer_email,
         customer_phone: order_data.customer_phone,
@@ -154,6 +191,7 @@ const handler = async (req: Request): Promise<Response> => {
           order_number: orderNumber,
           customer_name: order_data.customer_name,
           customer_email: order_data.customer_email,
+          customer_phone: order_data.customer_phone,
           items: order_data.items,
           subtotal,
           discount,

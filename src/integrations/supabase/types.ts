@@ -116,6 +116,7 @@ export type Database = {
           tax: number | null
           total: number
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           affiliate_code?: string | null
@@ -137,6 +138,7 @@ export type Database = {
           tax?: number | null
           total: number
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           affiliate_code?: string | null
@@ -158,6 +160,7 @@ export type Database = {
           tax?: number | null
           total?: number
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }

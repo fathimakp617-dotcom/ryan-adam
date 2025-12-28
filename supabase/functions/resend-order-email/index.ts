@@ -6,6 +6,27 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Rate limiting storage (in-memory, resets on function restart)
+const resendAttempts: Map<string, { count: number; lastAttempt: number }> = new Map();
+
+const isRateLimited = (orderNumber: string): boolean => {
+  const now = Date.now();
+  const hourAgo = now - 3600000; // 1 hour in milliseconds
+  const attempts = resendAttempts.get(orderNumber);
+  
+  if (!attempts || attempts.lastAttempt < hourAgo) {
+    resendAttempts.set(orderNumber, { count: 1, lastAttempt: now });
+    return false;
+  }
+  
+  if (attempts.count >= 3) {
+    return true;
+  }
+  
+  resendAttempts.set(orderNumber, { count: attempts.count + 1, lastAttempt: now });
+  return false;
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -13,6 +34,15 @@ serve(async (req) => {
   }
 
   try {
+    // Get authorization header
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { order_number } = await req.json();
     
     if (!order_number) {
@@ -22,12 +52,40 @@ serve(async (req) => {
       );
     }
 
+    // Check rate limiting
+    if (isRateLimited(order_number)) {
+      console.log("Rate limited resend attempt for:", order_number);
+      return new Response(
+        JSON.stringify({ error: "Too many resend attempts. Please try again in an hour." }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.log("Resending order confirmation for:", order_number);
 
-    // Initialize Supabase client
+    // Initialize Supabase clients
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    // Create client with user's token to verify authentication
+    const supabaseUser = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    // Get current user
+    const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
+    if (userError || !user) {
+      console.error("Authentication failed:", userError);
+      return new Response(
+        JSON.stringify({ error: "Invalid authentication" }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log("Authenticated user:", user.email);
+
+    // Use service role for database query
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Fetch order from database
@@ -42,6 +100,15 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Order not found" }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verify the user owns this order
+    if (order.customer_email !== user.email && order.user_id !== user.id) {
+      console.error("User does not own this order:", user.email, "vs", order.customer_email);
+      return new Response(
+        JSON.stringify({ error: "You don't have permission to resend this order's email" }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

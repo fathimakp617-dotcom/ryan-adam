@@ -52,6 +52,7 @@ interface ShippingAddress {
 }
 
 interface OrderRequest {
+  user_id?: string;
   customer_name: string;
   customer_email: string;
   customer_phone: string;
@@ -276,6 +277,7 @@ serve(async (req) => {
     // Create order
     const orderData = {
       order_number: orderNumber,
+      user_id: orderRequest.user_id || null,
       customer_name: customerName,
       customer_email: customerEmail,
       customer_phone: customerPhone,
