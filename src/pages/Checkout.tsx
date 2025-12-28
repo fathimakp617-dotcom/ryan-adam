@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, CreditCard, Truck, Check, Lock } from "lucide-react";
+import { ArrowLeft, CreditCard, Truck, Check, Lock, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/contexts/CartContext";
 import { useAffiliate } from "@/contexts/AffiliateContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { formatPrice } from "@/data/products";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +26,7 @@ declare global {
 const Checkout = () => {
   const { items, totalPrice, clearCart } = useCart();
   const { affiliateCode, appliedCoupon, calculateDiscount } = useAffiliate();
+  const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -40,6 +42,19 @@ const Checkout = () => {
     zipCode: "",
     country: "India",
   });
+
+  // Auto-fill user data when logged in
+  useEffect(() => {
+    if (user) {
+      const metadata = user.user_metadata || {};
+      setFormData(prev => ({
+        ...prev,
+        email: user.email || prev.email,
+        firstName: metadata.first_name || prev.firstName,
+        lastName: metadata.last_name || prev.lastName,
+      }));
+    }
+  }, [user]);
 
   const shipping = totalPrice >= 999 ? 0 : 99;
   const discount = calculateDiscount(totalPrice);
@@ -250,6 +265,52 @@ const Checkout = () => {
       setIsProcessing(false);
     }
   };
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-32 flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Require login to checkout
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container mx-auto px-4 py-32">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-md mx-auto text-center"
+          >
+            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <LogIn className="w-10 h-10 text-primary" />
+            </div>
+            <h1 className="text-3xl font-heading text-foreground mb-4">Login Required</h1>
+            <p className="text-muted-foreground mb-8">
+              Please sign in to your account to complete your purchase. This helps us track your orders and provide better support.
+            </p>
+            <div className="space-y-3">
+              <Button asChild className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                <Link to="/auth">Sign In to Continue</Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full border-border hover:border-primary">
+                <Link to="/shop">Continue Shopping</Link>
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (
