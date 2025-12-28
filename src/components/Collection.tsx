@@ -1,0 +1,110 @@
+import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import { products, formatPrice } from "@/data/products";
+import { fadeInUp, staggerContainer, staggerItem, lineReveal } from "@/lib/animations";
+
+const Collection = () => {
+  const featuredProducts = products.slice(0, 3);
+
+  return (
+    <section id="collection" className="py-24 sm:py-32 bg-background relative overflow-hidden">
+      {/* Subtle background accent */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_hsl(35_49%_44%_/_0.02)_0%,_transparent_50%)]" />
+
+      <div className="container mx-auto px-4 sm:px-6 lg:px-12 relative">
+        {/* Section Header */}
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={staggerContainer}
+          className="text-center mb-16 sm:mb-20"
+        >
+          <motion.p 
+            variants={fadeInUp}
+            className="text-sm tracking-[0.4em] text-primary mb-4"
+          >
+            DISCOVER
+          </motion.p>
+          <motion.h2 
+            variants={fadeInUp}
+            className="text-3xl sm:text-4xl md:text-6xl font-heading tracking-tight"
+          >
+            Our Collection
+          </motion.h2>
+          <motion.div 
+            variants={lineReveal}
+            className="w-20 h-0.5 bg-primary mx-auto mt-6 origin-left"
+          />
+        </motion.div>
+
+        {/* Products Grid */}
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-50px" }}
+          variants={staggerContainer}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-12"
+        >
+          {featuredProducts.map((product) => (
+            <motion.div
+              key={product.id}
+              variants={staggerItem}
+              className="group"
+            >
+              <Link to={`/product/${product.id}`}>
+                <div className="relative overflow-hidden border border-border/50 bg-card/50 p-6 sm:p-8 transition-all duration-500 hover:border-primary/50 hover:bg-card">
+                  {/* Gold corner accents */}
+                  <div className="absolute top-0 left-0 w-6 sm:w-8 h-6 sm:h-8 border-t-2 border-l-2 border-primary/60" />
+                  <div className="absolute top-0 right-0 w-6 sm:w-8 h-6 sm:h-8 border-t-2 border-r-2 border-primary/60" />
+                  <div className="absolute bottom-0 left-0 w-6 sm:w-8 h-6 sm:h-8 border-b-2 border-l-2 border-primary/60" />
+                  <div className="absolute bottom-0 right-0 w-6 sm:w-8 h-6 sm:h-8 border-b-2 border-r-2 border-primary/60" />
+
+                  {/* Product Image */}
+                  <div className="relative aspect-square mb-6 overflow-hidden">
+                    <motion.img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                      whileHover={{ scale: 1.08 }}
+                      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                    />
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  </div>
+
+                  {/* Product Info */}
+                  <div className="text-center">
+                    <h3 className="text-xl sm:text-2xl font-heading tracking-[0.2em] mb-2 text-foreground">
+                      {product.name}
+                    </h3>
+                    <p className="text-sm text-muted-foreground tracking-wider mb-4">
+                      {product.tagline}
+                    </p>
+                    <p className="text-lg sm:text-xl text-primary font-medium">{formatPrice(product.price)}</p>
+                  </div>
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {/* View All Button */}
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={fadeInUp}
+          className="text-center mt-12 sm:mt-16"
+        >
+          <Link to="/shop" className="relative inline-block px-10 sm:px-12 py-4 border border-primary text-primary text-sm tracking-widest transition-all duration-300 hover:bg-primary hover:text-primary-foreground group overflow-hidden">
+            <span className="relative z-10">VIEW ALL FRAGRANCES</span>
+            <div className="absolute inset-0 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
+          </Link>
+        </motion.div>
+      </div>
+    </section>
+  );
+};
+
+export default Collection;

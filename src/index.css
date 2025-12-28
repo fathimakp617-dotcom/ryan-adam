@@ -1,0 +1,198 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Rayn Adam Brand Colors */
+    --background: 0 0% 11%; /* #1c1c1c */
+    --foreground: 45 10% 95%; /* #f5f5f0 */
+
+    --card: 0 0% 14%;
+    --card-foreground: 45 10% 95%;
+
+    --popover: 0 0% 14%;
+    --popover-foreground: 45 10% 95%;
+
+    /* Gold/Bronze primary */
+    --primary: 35 49% 44%; /* #a87c39 */
+    --primary-foreground: 0 0% 11%;
+
+    /* Lighter gold */
+    --secondary: 30 40% 57%; /* #c7915e */
+    --secondary-foreground: 0 0% 11%;
+
+    --muted: 0 0% 24%; /* #3d3d3d */
+    --muted-foreground: 0 0% 92%; /* #ebebeb */
+
+    --accent: 35 49% 44%;
+    --accent-foreground: 0 0% 11%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 35 30% 25%;
+    --input: 0 0% 20%;
+    --ring: 35 49% 44%;
+
+    --radius: 0.25rem;
+
+    /* Custom luxury tokens */
+    --gold: 35 49% 44%;
+    --gold-light: 30 40% 57%;
+    --gold-glow: 35 60% 50%;
+    --charcoal: 0 0% 11%;
+    --charcoal-light: 0 0% 24%;
+    --cream: 45 10% 95%;
+    --burgundy: 350 60% 25%;
+
+    /* Gradients */
+    --gradient-gold: linear-gradient(135deg, hsl(35 49% 44%) 0%, hsl(30 40% 57%) 100%);
+    --gradient-dark: linear-gradient(180deg, hsl(0 0% 8%) 0%, hsl(0 0% 14%) 100%);
+    --gradient-radial: radial-gradient(ellipse at center, hsl(0 0% 16%) 0%, hsl(0 0% 11%) 70%);
+
+    /* Shadows */
+    --shadow-gold: 0 4px 30px hsl(35 49% 44% / 0.2);
+    --shadow-luxury: 0 25px 50px -12px hsl(0 0% 0% / 0.5);
+
+    --sidebar-background: 0 0% 11%;
+    --sidebar-foreground: 45 10% 95%;
+    --sidebar-primary: 35 49% 44%;
+    --sidebar-primary-foreground: 0 0% 11%;
+    --sidebar-accent: 0 0% 20%;
+    --sidebar-accent-foreground: 45 10% 95%;
+    --sidebar-border: 35 30% 25%;
+    --sidebar-ring: 35 49% 44%;
+  }
+
+  .dark {
+    --background: 0 0% 8%;
+    --foreground: 45 10% 95%;
+    --card: 0 0% 11%;
+    --card-foreground: 45 10% 95%;
+    --popover: 0 0% 11%;
+    --popover-foreground: 45 10% 95%;
+    --primary: 35 49% 44%;
+    --primary-foreground: 0 0% 11%;
+    --secondary: 30 40% 57%;
+    --secondary-foreground: 0 0% 11%;
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 85%;
+    --accent: 35 49% 44%;
+    --accent-foreground: 0 0% 11%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 35 20% 20%;
+    --input: 0 0% 18%;
+    --ring: 35 49% 44%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+
+  /* Custom Scrollbar Styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted));
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary));
+  }
+
+  /* Firefox scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted)) hsl(var(--background));
+  }
+}
+
+@layer components {
+  .text-gold-gradient {
+    background: linear-gradient(135deg, hsl(35 49% 44%) 0%, hsl(30 40% 57%) 50%, hsl(35 49% 44%) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .border-gold-gradient {
+    border-image: linear-gradient(135deg, hsl(35 49% 44%), hsl(30 40% 57%)) 1;
+  }
+
+  .bg-luxury-gradient {
+    background: radial-gradient(ellipse at top, hsl(0 0% 14%) 0%, hsl(0 0% 11%) 50%, hsl(0 0% 8%) 100%);
+  }
+
+  .glow-gold {
+    box-shadow: 0 0 40px hsl(35 49% 44% / 0.3);
+  }
+}
+
+@layer utilities {
+  .animate-fade-up {
+    animation: fadeUp 0.8s ease-out forwards;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 1s ease-out forwards;
+  }
+
+  .animate-shimmer {
+    animation: shimmer 3s ease-in-out infinite;
+  }
+
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes shimmer {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+}

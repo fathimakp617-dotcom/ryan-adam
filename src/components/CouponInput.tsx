@@ -1,0 +1,97 @@
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Tag, X, Check, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useAffiliate } from "@/contexts/AffiliateContext";
+import { toast } from "sonner";
+
+const CouponInput = () => {
+  const {
+    couponCode,
+    setCouponCode,
+    applyCoupon,
+    removeCoupon,
+    appliedCoupon,
+    isLoading,
+  } = useAffiliate();
+  const [inputValue, setInputValue] = useState(couponCode);
+
+  const handleApply = async () => {
+    const result = await applyCoupon(inputValue);
+    if (result.success) {
+      toast.success(result.message);
+    } else {
+      toast.error(result.message);
+    }
+  };
+
+  const handleRemove = () => {
+    removeCoupon();
+    setInputValue("");
+    toast.info("Coupon removed");
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <Tag className="w-4 h-4 text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">Coupon / Affiliate Code</span>
+      </div>
+
+      <AnimatePresence mode="wait">
+        {appliedCoupon ? (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="flex items-center justify-between bg-primary/10 border border-primary/30 rounded-lg p-3"
+          >
+            <div className="flex items-center gap-2">
+              <Check className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium text-primary">
+                {appliedCoupon.code} - {appliedCoupon.discountPercent}% OFF
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRemove}
+              className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="flex gap-2"
+          >
+            <Input
+              placeholder="Enter code"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value.toUpperCase())}
+              className="bg-input border-border uppercase"
+            />
+            <Button
+              onClick={handleApply}
+              disabled={isLoading || !inputValue.trim()}
+              variant="outline"
+              className="border-border hover:border-primary"
+            >
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "Apply"
+              )}
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+export default CouponInput;
