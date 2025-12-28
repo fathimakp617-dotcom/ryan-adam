@@ -607,8 +607,17 @@ const generateInvoicePDF = async (order: OrderConfirmationRequest): Promise<Uint
   });
   
   yPos -= 18;
-  page.drawText('For questions, contact: support@raynadamperfume.com', {
-    x: width / 2 - 120,
+  page.drawText('For questions, contact us:', {
+    x: width / 2 - 55,
+    y: yPos,
+    size: 9,
+    font: font,
+    color: rgb(0.5, 0.5, 0.5),
+  });
+  
+  yPos -= 14;
+  page.drawText('Email: support@raynadamperfume.com | Phone: XXXXXXXXXXXX', {
+    x: width / 2 - 145,
     y: yPos,
     size: 9,
     font: font,
@@ -785,7 +794,7 @@ const generateAdminOrderEmailHTML = (order: OrderConfirmationRequest): string =>
 
 const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promise<Uint8Array> => {
   const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([400, 350]); // 4x3.5 inch label size (increased height for phone numbers)
+  const page = pdfDoc.addPage([400, 380]); // Increased height to accommodate contact info
   
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -835,11 +844,20 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
     font: font,
     color: rgb(0.2, 0.2, 0.2),
   });
+
+  // Company email
+  page.drawText('Email: support@raynadamperfume.com', {
+    x: 20,
+    y: height - 90,
+    size: 9,
+    font: font,
+    color: rgb(0.2, 0.2, 0.2),
+  });
   
   // Divider line
   page.drawLine({
-    start: { x: 20, y: height - 90 },
-    end: { x: width - 20, y: height - 90 },
+    start: { x: 20, y: height - 105 },
+    end: { x: width - 20, y: height - 105 },
     thickness: 1,
     color: rgb(0.7, 0.7, 0.7),
   });
@@ -847,7 +865,7 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   // TO section
   page.drawText('SHIP TO:', {
     x: 20,
-    y: height - 110,
+    y: height - 125,
     size: 10,
     font: boldFont,
     color: rgb(0, 0, 0),
@@ -856,7 +874,7 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   // Customer name
   page.drawText(order.customer_name.toUpperCase(), {
     x: 20,
-    y: height - 135,
+    y: height - 150,
     size: 14,
     font: boldFont,
     color: rgb(0, 0, 0),
@@ -866,7 +884,7 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   const customerPhone = order.customer_phone || 'N/A';
   page.drawText(`Ph: ${customerPhone}`, {
     x: 20,
-    y: height - 152,
+    y: height - 167,
     size: 10,
     font: font,
     color: rgb(0, 0, 0),
@@ -875,7 +893,7 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   // Address
   page.drawText(order.shipping_address.address, {
     x: 20,
-    y: height - 170,
+    y: height - 185,
     size: 11,
     font: font,
     color: rgb(0, 0, 0),
@@ -884,7 +902,7 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   // City, State, ZIP
   page.drawText(`${order.shipping_address.city}, ${order.shipping_address.state} ${order.shipping_address.zipCode}`, {
     x: 20,
-    y: height - 187,
+    y: height - 202,
     size: 11,
     font: font,
     color: rgb(0, 0, 0),
@@ -893,7 +911,7 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   // Country
   page.drawText(order.shipping_address.country.toUpperCase(), {
     x: 20,
-    y: height - 204,
+    y: height - 219,
     size: 11,
     font: boldFont,
     color: rgb(0, 0, 0),
