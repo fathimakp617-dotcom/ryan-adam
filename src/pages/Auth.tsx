@@ -453,10 +453,17 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/3 rounded-full blur-3xl" />
+      </div>
+      
       <Navbar />
 
-      <main className="container mx-auto px-4 py-24">
+      <main className="container mx-auto px-4 py-16 md:py-24 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -465,41 +472,59 @@ const Auth = () => {
         >
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-8"
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-6 md:mb-8 text-sm"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Home
           </Link>
 
-          <div className="bg-card border border-border rounded-lg p-8">
-            {mode === "email-otp-verify" && (
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Mail className="w-8 h-8 text-primary" />
+          <motion.div 
+            className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-6 md:p-8 shadow-2xl shadow-primary/5"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+          >
+            {/* Icon header for verification modes */}
+            {(mode === "email-otp-verify" || mode === "signup-verify") && (
+              <motion.div 
+                className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-primary/20"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 200 }}
+              >
+                <Mail className="w-8 h-8 md:w-10 md:h-10 text-primary" />
+              </motion.div>
+            )}
+
+            {/* Logo for non-verification modes */}
+            {mode !== "email-otp-verify" && mode !== "signup-verify" && (
+              <div className="text-center mb-4">
+                <span className="text-primary font-heading text-lg tracking-[0.3em]">RAYN ADAM</span>
               </div>
             )}
             
-            <h1 className="text-2xl font-heading text-foreground mb-2 text-center">
+            <h1 className="text-xl md:text-2xl font-heading text-foreground mb-2 text-center">
               {getTitle()}
             </h1>
-            <p className="text-muted-foreground text-center mb-6">
+            <p className="text-muted-foreground text-center mb-6 text-sm md:text-base">
               {getSubtitle()}
             </p>
 
             {/* Login Form */}
             {mode === "login" && (
               <>
-                <form onSubmit={handleLogin} className="space-y-6">
-                  <div>
-                    <Label htmlFor="email">Email Address</Label>
-                    <div className="relative mt-1">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <form onSubmit={handleLogin} className="space-y-5">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
                         id="email"
                         name="email"
                         type="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        className="pl-10 bg-input border-border"
+                        className="pl-11 h-12 bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/20 rounded-xl text-base"
                         placeholder="you@example.com"
                       />
                     </div>
@@ -508,23 +533,23 @@ const Auth = () => {
                     )}
                   </div>
 
-                  <div>
-                    <Label htmlFor="password">Password</Label>
-                    <div className="relative mt-1">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <div className="space-y-1.5">
+                    <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
                         id="password"
                         name="password"
                         type={showPassword ? "text" : "password"}
                         value={formData.password}
                         onChange={handleInputChange}
-                        className="pl-10 pr-10 bg-input border-border"
+                        className="pl-11 pr-11 h-12 bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/20 rounded-xl text-base"
                         placeholder="••••••••"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
                       >
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -538,7 +563,7 @@ const Auth = () => {
                     <button
                       type="button"
                       onClick={() => setMode("forgot")}
-                      className="text-sm text-primary hover:underline"
+                      className="text-sm text-primary hover:text-primary/80 transition-colors"
                     >
                       Forgot password?
                     </button>
@@ -546,7 +571,7 @@ const Auth = () => {
 
                   <Button
                     type="submit"
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                    className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-medium text-base shadow-lg shadow-primary/20 transition-all hover:shadow-xl hover:shadow-primary/30"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (
@@ -562,17 +587,17 @@ const Auth = () => {
 
                 <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-border"></div>
+                    <div className="w-full border-t border-border/50"></div>
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">Or</span>
+                    <span className="bg-card/80 px-3 text-muted-foreground tracking-wider">Or</span>
                   </div>
                 </div>
 
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full border-border hover:border-primary"
+                  className="w-full h-12 border-border/50 hover:border-primary/50 hover:bg-primary/5 rounded-xl font-medium transition-all"
                   onClick={() => setMode("email-otp")}
                 >
                   <Mail className="w-4 h-4 mr-2" />
@@ -584,7 +609,7 @@ const Auth = () => {
                     Don't have an account?{" "}
                     <button
                       onClick={() => setMode("signup")}
-                      className="text-primary hover:underline font-medium"
+                      className="text-primary hover:text-primary/80 font-medium transition-colors"
                     >
                       Sign up
                     </button>
@@ -596,96 +621,96 @@ const Auth = () => {
             {/* Signup Form */}
             {mode === "signup" && (
               <>
-                <form onSubmit={handleSignup} className="space-y-6">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="firstName">First Name</Label>
-                      <div className="relative mt-1">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <form onSubmit={handleSignup} className="space-y-5">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="firstName" className="text-sm font-medium">First Name</Label>
+                      <div className="relative">
+                        <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                           id="firstName"
                           name="firstName"
                           value={formData.firstName}
                           onChange={handleInputChange}
-                          className="pl-10 bg-input border-border"
+                          className="pl-11 h-12 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl text-base"
                           placeholder="John"
                         />
                       </div>
                       {errors.firstName && (
-                        <p className="text-destructive text-xs mt-1">{errors.firstName}</p>
+                        <p className="text-destructive text-xs">{errors.firstName}</p>
                       )}
                     </div>
-                    <div>
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <div className="relative mt-1">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <div className="space-y-1.5">
+                      <Label htmlFor="lastName" className="text-sm font-medium">Last Name</Label>
+                      <div className="relative">
+                        <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                           id="lastName"
                           name="lastName"
                           value={formData.lastName}
                           onChange={handleInputChange}
-                          className="pl-10 bg-input border-border"
+                          className="pl-11 h-12 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl text-base"
                           placeholder="Doe"
                         />
                       </div>
                       {errors.lastName && (
-                        <p className="text-destructive text-xs mt-1">{errors.lastName}</p>
+                        <p className="text-destructive text-xs">{errors.lastName}</p>
                       )}
                     </div>
                   </div>
 
-                  <div>
-                    <Label htmlFor="signupEmail">Email Address</Label>
-                    <div className="relative mt-1">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <div className="space-y-1.5">
+                    <Label htmlFor="signupEmail" className="text-sm font-medium">Email Address</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
                         id="signupEmail"
                         name="email"
                         type="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        className="pl-10 bg-input border-border"
+                        className="pl-11 h-12 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl text-base"
                         placeholder="you@example.com"
                       />
                     </div>
                     {errors.email && (
-                      <p className="text-destructive text-xs mt-1">{errors.email}</p>
+                      <p className="text-destructive text-xs">{errors.email}</p>
                     )}
                   </div>
 
-                  <div>
-                    <Label htmlFor="signupPhone">Phone Number</Label>
-                    <div className="relative mt-1">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <div className="space-y-1.5">
+                    <Label htmlFor="signupPhone" className="text-sm font-medium">Phone Number</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
                         id="signupPhone"
                         name="phone"
                         type="tel"
                         value={formData.phone}
                         onChange={handleInputChange}
-                        className="pl-10 bg-input border-border"
+                        className="pl-11 h-12 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl text-base"
                         placeholder="+91 9876543210"
                       />
                     </div>
                     {errors.phone && (
-                      <p className="text-destructive text-xs mt-1">{errors.phone}</p>
+                      <p className="text-destructive text-xs">{errors.phone}</p>
                     )}
                   </div>
 
-                  <p className="text-xs text-muted-foreground text-center bg-muted/30 p-3 rounded-lg">
-                    <Mail className="w-4 h-4 inline mr-1" />
-                    We'll send a verification code to your email to complete signup
-                  </p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground bg-primary/5 border border-primary/10 p-3 rounded-xl">
+                    <Mail className="w-4 h-4 text-primary flex-shrink-0" />
+                    <span>We'll send a verification code to your email</span>
+                  </div>
 
                   <Button
                     type="submit"
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                    className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-medium text-base shadow-lg shadow-primary/20 transition-all hover:shadow-xl hover:shadow-primary/30"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (
                       <span className="flex items-center gap-2">
                         <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                        Sending verification code...
+                        Sending code...
                       </span>
                     ) : (
                       <span>Continue</span>
@@ -693,13 +718,12 @@ const Auth = () => {
                   </Button>
                 </form>
 
-
                 <div className="mt-6 text-center">
                   <p className="text-muted-foreground text-sm">
                     Already have an account?{" "}
                     <button
                       onClick={() => setMode("login")}
-                      className="text-primary hover:underline font-medium"
+                      className="text-primary hover:text-primary/80 font-medium transition-colors"
                     >
                       Sign in
                     </button>
@@ -711,15 +735,11 @@ const Auth = () => {
             {/* Signup OTP Verification Form */}
             {mode === "signup-verify" && (
               <>
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Mail className="w-8 h-8 text-primary" />
-                </div>
-                
-                <form onSubmit={handleSignupVerify} className="space-y-6">
+                <form onSubmit={handleSignupVerify} className="space-y-5">
                   <div className="space-y-4">
-                    <Label className="text-center block">Verification Code</Label>
-                    <div className="flex justify-center">
-                      <div className="bg-muted/30 border border-border rounded-xl p-6">
+                    <Label className="text-center block text-sm font-medium">Enter Verification Code</Label>
+                    <div className="flex justify-center overflow-x-auto pb-2">
+                      <div className="bg-background/50 border border-border/50 rounded-2xl p-4 md:p-6">
                         <InputOTP
                           maxLength={8}
                           value={formData.otp}
@@ -728,27 +748,27 @@ const Auth = () => {
                             setErrors((prev) => ({ ...prev, otp: "" }));
                           }}
                         >
-                          <InputOTPGroup className="gap-2">
-                            <InputOTPSlot index={0} className="w-10 h-12 text-lg font-bold border-border bg-background" />
-                            <InputOTPSlot index={1} className="w-10 h-12 text-lg font-bold border-border bg-background" />
-                            <InputOTPSlot index={2} className="w-10 h-12 text-lg font-bold border-border bg-background" />
-                            <InputOTPSlot index={3} className="w-10 h-12 text-lg font-bold border-border bg-background" />
-                            <InputOTPSlot index={4} className="w-10 h-12 text-lg font-bold border-border bg-background" />
-                            <InputOTPSlot index={5} className="w-10 h-12 text-lg font-bold border-border bg-background" />
-                            <InputOTPSlot index={6} className="w-10 h-12 text-lg font-bold border-border bg-background" />
-                            <InputOTPSlot index={7} className="w-10 h-12 text-lg font-bold border-border bg-background" />
+                          <InputOTPGroup className="gap-1.5 md:gap-2">
+                            <InputOTPSlot index={0} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={1} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={2} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={3} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={4} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={5} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={6} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={7} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
                           </InputOTPGroup>
                         </InputOTP>
                       </div>
                     </div>
                     {errors.otp && (
-                      <p className="text-destructive text-xs mt-1 text-center">{errors.otp}</p>
+                      <p className="text-destructive text-xs text-center">{errors.otp}</p>
                     )}
                   </div>
 
                   <Button
                     type="submit"
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                    className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-medium text-base shadow-lg shadow-primary/20"
                     disabled={isSubmitting || formData.otp.length !== 8}
                   >
                     {isSubmitting ? (
@@ -768,14 +788,14 @@ const Auth = () => {
                     <button
                       onClick={resendSignupOtp}
                       disabled={isSubmitting}
-                      className="text-primary hover:underline font-medium disabled:opacity-50"
+                      className="text-primary hover:text-primary/80 font-medium disabled:opacity-50 transition-colors"
                     >
                       Resend
                     </button>
                   </p>
                   <button
                     onClick={() => setMode("signup")}
-                    className="text-muted-foreground hover:text-foreground text-sm"
+                    className="text-muted-foreground hover:text-foreground text-sm transition-colors"
                   >
                     ← Change details
                   </button>
@@ -786,29 +806,29 @@ const Auth = () => {
             {/* Email OTP Login Form */}
             {mode === "email-otp" && (
               <>
-                <form onSubmit={handleEmailOtpLogin} className="space-y-6">
-                  <div>
-                    <Label htmlFor="otpEmail">Email Address</Label>
-                    <div className="relative mt-1">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <form onSubmit={handleEmailOtpLogin} className="space-y-5">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="otpEmail" className="text-sm font-medium">Email Address</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
                         id="otpEmail"
                         name="otpEmail"
                         type="email"
                         value={formData.otpEmail}
                         onChange={handleInputChange}
-                        className="pl-10 bg-input border-border"
+                        className="pl-11 h-12 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl text-base"
                         placeholder="you@example.com"
                       />
                     </div>
                     {errors.otpEmail && (
-                      <p className="text-destructive text-xs mt-1">{errors.otpEmail}</p>
+                      <p className="text-destructive text-xs">{errors.otpEmail}</p>
                     )}
                   </div>
 
                   <Button
                     type="submit"
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                    className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-medium text-base shadow-lg shadow-primary/20"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (
@@ -825,7 +845,7 @@ const Auth = () => {
                 <div className="mt-6 text-center">
                   <button
                     onClick={() => setMode("login")}
-                    className="text-muted-foreground hover:text-foreground text-sm"
+                    className="text-muted-foreground hover:text-foreground text-sm transition-colors"
                   >
                     ← Back to password login
                   </button>
@@ -836,11 +856,11 @@ const Auth = () => {
             {/* Email OTP Verification Form */}
             {mode === "email-otp-verify" && (
               <>
-                <form onSubmit={handleVerifyEmailOtp} className="space-y-6">
+                <form onSubmit={handleVerifyEmailOtp} className="space-y-5">
                   <div className="space-y-4">
-                    <Label className="text-center block">Verification Code</Label>
-                    <div className="flex justify-center">
-                      <div className="bg-muted/30 border border-border rounded-xl p-6">
+                    <Label className="text-center block text-sm font-medium">Enter Verification Code</Label>
+                    <div className="flex justify-center overflow-x-auto pb-2">
+                      <div className="bg-background/50 border border-border/50 rounded-2xl p-4 md:p-6">
                         <InputOTP
                           maxLength={8}
                           value={formData.otp}
@@ -849,27 +869,27 @@ const Auth = () => {
                             setErrors((prev) => ({ ...prev, otp: "" }));
                           }}
                         >
-                          <InputOTPGroup className="gap-2">
-                            <InputOTPSlot index={0} className="w-10 h-12 text-lg font-bold border-border bg-background" />
-                            <InputOTPSlot index={1} className="w-10 h-12 text-lg font-bold border-border bg-background" />
-                            <InputOTPSlot index={2} className="w-10 h-12 text-lg font-bold border-border bg-background" />
-                            <InputOTPSlot index={3} className="w-10 h-12 text-lg font-bold border-border bg-background" />
-                            <InputOTPSlot index={4} className="w-10 h-12 text-lg font-bold border-border bg-background" />
-                            <InputOTPSlot index={5} className="w-10 h-12 text-lg font-bold border-border bg-background" />
-                            <InputOTPSlot index={6} className="w-10 h-12 text-lg font-bold border-border bg-background" />
-                            <InputOTPSlot index={7} className="w-10 h-12 text-lg font-bold border-border bg-background" />
+                          <InputOTPGroup className="gap-1.5 md:gap-2">
+                            <InputOTPSlot index={0} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={1} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={2} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={3} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={4} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={5} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={6} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={7} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
                           </InputOTPGroup>
                         </InputOTP>
                       </div>
                     </div>
                     {errors.otp && (
-                      <p className="text-destructive text-xs mt-1 text-center">{errors.otp}</p>
+                      <p className="text-destructive text-xs text-center">{errors.otp}</p>
                     )}
                   </div>
 
                   <Button
                     type="submit"
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                    className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-medium text-base shadow-lg shadow-primary/20"
                     disabled={isSubmitting || formData.otp.length !== 8}
                   >
                     {isSubmitting ? (
@@ -889,14 +909,14 @@ const Auth = () => {
                     <button
                       onClick={resendEmailOtp}
                       disabled={isSubmitting}
-                      className="text-primary hover:underline font-medium disabled:opacity-50"
+                      className="text-primary hover:text-primary/80 font-medium disabled:opacity-50 transition-colors"
                     >
                       Resend
                     </button>
                   </p>
                   <button
                     onClick={() => setMode("email-otp")}
-                    className="text-muted-foreground hover:text-foreground text-sm"
+                    className="text-muted-foreground hover:text-foreground text-sm transition-colors"
                   >
                     ← Change email
                   </button>
@@ -907,29 +927,29 @@ const Auth = () => {
             {/* Forgot Password Form */}
             {mode === "forgot" && (
               <>
-                <form onSubmit={handleForgotPassword} className="space-y-6">
-                  <div>
-                    <Label htmlFor="forgotEmail">Email Address</Label>
-                    <div className="relative mt-1">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <form onSubmit={handleForgotPassword} className="space-y-5">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="forgotEmail" className="text-sm font-medium">Email Address</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
                         id="forgotEmail"
                         name="email"
                         type="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        className="pl-10 bg-input border-border"
+                        className="pl-11 h-12 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl text-base"
                         placeholder="you@example.com"
                       />
                     </div>
                     {errors.email && (
-                      <p className="text-destructive text-xs mt-1">{errors.email}</p>
+                      <p className="text-destructive text-xs">{errors.email}</p>
                     )}
                   </div>
 
                   <Button
                     type="submit"
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                    className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-medium text-base shadow-lg shadow-primary/20"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (
@@ -946,7 +966,7 @@ const Auth = () => {
                 <div className="mt-6 text-center">
                   <button
                     onClick={() => setMode("login")}
-                    className="text-muted-foreground hover:text-foreground text-sm"
+                    className="text-muted-foreground hover:text-foreground text-sm transition-colors"
                   >
                     ← Back to login
                   </button>
@@ -957,55 +977,55 @@ const Auth = () => {
             {/* Reset Password Form */}
             {mode === "reset" && (
               <>
-                <form onSubmit={handleResetPassword} className="space-y-6">
-                  <div>
-                    <Label htmlFor="newPassword">New Password</Label>
-                    <div className="relative mt-1">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <form onSubmit={handleResetPassword} className="space-y-5">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="newPassword" className="text-sm font-medium">New Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
                         id="newPassword"
                         name="password"
                         type={showPassword ? "text" : "password"}
                         value={formData.password}
                         onChange={handleInputChange}
-                        className="pl-10 pr-10 bg-input border-border"
+                        className="pl-11 pr-11 h-12 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl text-base"
                         placeholder="••••••••"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
                       >
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
                     {errors.password && (
-                      <p className="text-destructive text-xs mt-1">{errors.password}</p>
+                      <p className="text-destructive text-xs">{errors.password}</p>
                     )}
                   </div>
 
-                  <div>
-                    <Label htmlFor="confirmPassword">Confirm Password</Label>
-                    <div className="relative mt-1">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <div className="space-y-1.5">
+                    <Label htmlFor="confirmPassword" className="text-sm font-medium">Confirm Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
                         id="confirmPassword"
                         name="confirmPassword"
                         type={showPassword ? "text" : "password"}
                         value={formData.confirmPassword}
                         onChange={handleInputChange}
-                        className="pl-10 bg-input border-border"
+                        className="pl-11 h-12 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl text-base"
                         placeholder="••••••••"
                       />
                     </div>
                     {errors.confirmPassword && (
-                      <p className="text-destructive text-xs mt-1">{errors.confirmPassword}</p>
+                      <p className="text-destructive text-xs">{errors.confirmPassword}</p>
                     )}
                   </div>
 
                   <Button
                     type="submit"
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                    className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-medium text-base shadow-lg shadow-primary/20"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (
@@ -1020,7 +1040,7 @@ const Auth = () => {
                 </form>
               </>
             )}
-          </div>
+          </motion.div>
         </motion.div>
       </main>
 
