@@ -28,6 +28,7 @@ interface OrderConfirmationRequest {
   order_number: string;
   customer_name: string;
   customer_email: string;
+  customer_phone?: string;
   items: OrderItem[];
   subtotal: number;
   discount: number;
@@ -494,7 +495,7 @@ const generateAdminOrderEmailHTML = (order: OrderConfirmationRequest): string =>
 
 const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promise<Uint8Array> => {
   const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([400, 300]); // 4x3 inch label size
+  const page = pdfDoc.addPage([400, 350]); // 4x3.5 inch label size (increased height for phone numbers)
   
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -528,9 +529,18 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
     color: rgb(0, 0, 0),
   });
   
-  page.drawText('India', {
+  page.drawText('Kozhikode, Kerala, India', {
     x: 20,
     y: height - 62,
+    size: 9,
+    font: font,
+    color: rgb(0.2, 0.2, 0.2),
+  });
+
+  // Company phone number
+  page.drawText('Ph: +91 8606502813', {
+    x: 20,
+    y: height - 76,
     size: 9,
     font: font,
     color: rgb(0.2, 0.2, 0.2),
@@ -538,8 +548,8 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   
   // Divider line
   page.drawLine({
-    start: { x: 20, y: height - 80 },
-    end: { x: width - 20, y: height - 80 },
+    start: { x: 20, y: height - 90 },
+    end: { x: width - 20, y: height - 90 },
     thickness: 1,
     color: rgb(0.7, 0.7, 0.7),
   });
@@ -547,7 +557,7 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   // TO section
   page.drawText('SHIP TO:', {
     x: 20,
-    y: height - 100,
+    y: height - 110,
     size: 10,
     font: boldFont,
     color: rgb(0, 0, 0),
@@ -556,16 +566,26 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   // Customer name
   page.drawText(order.customer_name.toUpperCase(), {
     x: 20,
-    y: height - 125,
+    y: height - 135,
     size: 14,
     font: boldFont,
+    color: rgb(0, 0, 0),
+  });
+
+  // Customer phone number
+  const customerPhone = order.customer_phone || 'N/A';
+  page.drawText(`Ph: ${customerPhone}`, {
+    x: 20,
+    y: height - 152,
+    size: 10,
+    font: font,
     color: rgb(0, 0, 0),
   });
   
   // Address
   page.drawText(order.shipping_address.address, {
     x: 20,
-    y: height - 145,
+    y: height - 170,
     size: 11,
     font: font,
     color: rgb(0, 0, 0),
@@ -574,7 +594,7 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   // City, State, ZIP
   page.drawText(`${order.shipping_address.city}, ${order.shipping_address.state} ${order.shipping_address.zipCode}`, {
     x: 20,
-    y: height - 162,
+    y: height - 187,
     size: 11,
     font: font,
     color: rgb(0, 0, 0),
@@ -583,7 +603,7 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   // Country
   page.drawText(order.shipping_address.country.toUpperCase(), {
     x: 20,
-    y: height - 179,
+    y: height - 204,
     size: 11,
     font: boldFont,
     color: rgb(0, 0, 0),
