@@ -10,6 +10,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { downloadInvoicePDF } from "@/lib/generateInvoicePDF";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { 
   Copy, 
   Link, 
@@ -23,7 +30,10 @@ import {
   Settings,
   Save,
   Phone,
-  Mail
+  Mail,
+  Eye,
+  Download,
+  X
 } from "lucide-react";
 
 interface AffiliateData {
@@ -39,13 +49,38 @@ interface AffiliateData {
   created_at: string;
 }
 
+interface OrderItem {
+  productId: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+interface ShippingAddress {
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+}
+
 interface Order {
   id: string;
   order_number: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string | null;
   total: number;
+  subtotal: number;
+  discount: number | null;
+  shipping: number | null;
   order_status: string;
+  payment_status: string;
+  payment_method: string;
   created_at: string;
-  items: unknown;
+  items: OrderItem[];
+  shipping_address: ShippingAddress;
+  coupon_code: string | null;
 }
 
 interface ProfileData {
@@ -61,6 +96,8 @@ const Account = () => {
   const [affiliate, setAffiliate] = useState<AffiliateData | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -125,7 +162,18 @@ const Account = () => {
         .order("created_at", { ascending: false });
 
       if (ordersData) {
-        setOrders(ordersData);
+        const mappedOrders: Order[] = ordersData.map((order) => ({
+          ...order,
+          items: (order.items as unknown as OrderItem[]) || [],
+          shipping_address: (order.shipping_address as unknown as ShippingAddress) || {
+            address: "",
+            city: "",
+            state: "",
+            zipCode: "",
+            country: "",
+          },
+        }));
+        setOrders(mappedOrders);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -560,10 +608,49 @@ const Account = () => {
                             </p>
                           </div>
                         </div>
-                        <div className="mt-4 pt-4 border-t border-border">
+                        <div className="mt-4 pt-4 border-t border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <p className="text-sm text-muted-foreground">
-                            {Array.isArray(order.items) ? (order.items as unknown[]).length : 0} item(s)
+                            {order.items.length} item(s)
                           </p>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedOrder(order);
+                                setIsOrderModalOpen(true);
+                              }}
+                            >
+                              <Eye size={16} className="mr-2" />
+                              View Order
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                downloadInvoicePDF({
+                                  orderNumber: order.order_number,
+                                  customerName: order.customer_name,
+                                  customerEmail: order.customer_email,
+                                  items: order.items,
+                                  subtotal: order.subtotal,
+                                  discount: order.discount || 0,
+                                  shipping: order.shipping || 0,
+                                  total: order.total,
+                                  shippingAddress: order.shipping_address,
+                                  paymentMethod: order.payment_method,
+                                  orderDate: order.created_at,
+                                });
+                                toast({
+                                  title: "Invoice Downloaded",
+                                  description: `Invoice for ${order.order_number} has been downloaded.`,
+                                });
+                              }}
+                            >
+                              <Download size={16} className="mr-2" />
+                              Invoice PDF
+                            </Button>
+                          </div>
                         </div>
                       </motion.div>
                     ))}
@@ -907,6 +994,145 @@ const Account = () => {
       </main>
 
       <Footer />
+
+      {/* Order Details Modal */}
+      <Dialog open={isOrderModalOpen} onOpenChange={setIsOrderModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package size={20} className="text-primary" />
+              Order Details
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedOrder && (
+            <div className="space-y-6">
+              {/* Order Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-muted rounded-lg">
+                <div>
+                  <p className="text-sm text-muted-foreground">Order Number</p>
+                  <p className="font-mono font-semibold text-primary">{selectedOrder.order_number}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-muted-foreground">Order Date</p>
+                  <p className="font-medium">
+                    {new Date(selectedOrder.created_at).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </p>
+                </div>
+              </div>
+
+              {/* Status */}
+              <div className="flex items-center gap-4">
+                <span className={`px-3 py-1 rounded-full text-sm font-medium capitalize ${getStatusColor(selectedOrder.order_status)}`}>
+                  {selectedOrder.order_status}
+                </span>
+                <span className={`px-3 py-1 rounded-full text-sm font-medium capitalize ${
+                  selectedOrder.payment_status === 'paid' 
+                    ? 'text-green-500 bg-green-500/10' 
+                    : 'text-yellow-500 bg-yellow-500/10'
+                }`}>
+                  {selectedOrder.payment_status}
+                </span>
+              </div>
+
+              {/* Items */}
+              <div>
+                <h3 className="font-semibold text-foreground mb-3">Items Ordered</h3>
+                <div className="space-y-3">
+                  {selectedOrder.items.map((item, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-foreground">{item.name}</p>
+                        <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                      </div>
+                      <p className="font-semibold text-foreground">₹{(item.price * item.quantity).toLocaleString()}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Order Summary */}
+              <div className="border-t border-border pt-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="text-foreground">₹{selectedOrder.subtotal.toLocaleString()}</span>
+                </div>
+                {selectedOrder.discount && selectedOrder.discount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-green-500">Discount</span>
+                    <span className="text-green-500">-₹{selectedOrder.discount.toLocaleString()}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Shipping</span>
+                  <span className="text-foreground">
+                    {selectedOrder.shipping === 0 ? 'FREE' : `₹${selectedOrder.shipping?.toLocaleString()}`}
+                  </span>
+                </div>
+                <div className="flex justify-between text-lg font-semibold pt-2 border-t border-border">
+                  <span className="text-foreground">Total</span>
+                  <span className="text-primary">₹{selectedOrder.total.toLocaleString()}</span>
+                </div>
+              </div>
+
+              {/* Shipping Address */}
+              <div>
+                <h3 className="font-semibold text-foreground mb-3">Shipping Address</h3>
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <p className="font-medium text-foreground">{selectedOrder.customer_name}</p>
+                  <p className="text-muted-foreground">{selectedOrder.shipping_address.address}</p>
+                  <p className="text-muted-foreground">
+                    {selectedOrder.shipping_address.city}, {selectedOrder.shipping_address.state} {selectedOrder.shipping_address.zipCode}
+                  </p>
+                  <p className="text-muted-foreground">{selectedOrder.shipping_address.country}</p>
+                  {selectedOrder.customer_phone && (
+                    <p className="text-muted-foreground mt-2">Phone: {selectedOrder.customer_phone}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Payment Method */}
+              <div>
+                <h3 className="font-semibold text-foreground mb-3">Payment Method</h3>
+                <p className="text-muted-foreground">
+                  {selectedOrder.payment_method === 'cod' ? 'Cash on Delivery' : 'Online Payment (Razorpay)'}
+                </p>
+              </div>
+
+              {/* Download Invoice Button */}
+              <Button
+                className="w-full"
+                onClick={() => {
+                  downloadInvoicePDF({
+                    orderNumber: selectedOrder.order_number,
+                    customerName: selectedOrder.customer_name,
+                    customerEmail: selectedOrder.customer_email,
+                    items: selectedOrder.items,
+                    subtotal: selectedOrder.subtotal,
+                    discount: selectedOrder.discount || 0,
+                    shipping: selectedOrder.shipping || 0,
+                    total: selectedOrder.total,
+                    shippingAddress: selectedOrder.shipping_address,
+                    paymentMethod: selectedOrder.payment_method,
+                    orderDate: selectedOrder.created_at,
+                  });
+                  toast({
+                    title: "Invoice Downloaded",
+                    description: `Invoice for ${selectedOrder.order_number} has been downloaded.`,
+                  });
+                }}
+              >
+                <Download size={18} className="mr-2" />
+                Download Invoice PDF
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
