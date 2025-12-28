@@ -757,6 +757,45 @@ const Account = () => {
                       </motion.div>
                     </div>
 
+                    {/* Withdraw Earnings Card */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.35 }}
+                      className="bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20 rounded-2xl p-6"
+                    >
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-12 w-12 rounded-full bg-green-500/20 flex items-center justify-center">
+                            <IndianRupee size={24} className="text-green-500" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-foreground">Available Balance</h3>
+                            <p className="text-2xl font-bold text-green-500">₹{affiliate.total_earnings.toLocaleString()}</p>
+                          </div>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-3">
+                          <Button 
+                            variant="outline"
+                            className="border-green-500/30 text-green-500 hover:bg-green-500/10"
+                            onClick={() => {
+                              toast({
+                                title: "Withdraw Request",
+                                description: "Minimum withdrawal amount is ₹500. This feature will be available soon!",
+                              });
+                            }}
+                            disabled={affiliate.total_earnings < 500}
+                          >
+                            <IndianRupee size={16} className="mr-2" />
+                            Withdraw Earnings
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-4">
+                        Minimum withdrawal: ₹500 • Withdrawals are processed within 3-5 business days
+                      </p>
+                    </motion.div>
+
                     {/* How it works */}
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
