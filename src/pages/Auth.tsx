@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, KeyRound, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +24,7 @@ const passwordSchema = z
 const otpSchema = z.string().length(8, "OTP must be 8 digits").regex(/^\d+$/, "OTP must contain only numbers");
 const phoneSchema = z.string().min(10, "Phone number must be at least 10 digits").max(15, "Phone number too long").regex(/^[+]?[\d\s-]+$/, "Invalid phone number format");
 
-type AuthMode = "login" | "signup" | "forgot" | "reset" | "email-otp" | "email-otp-verify";
+type AuthMode = "login" | "signup" | "signup-verify" | "forgot" | "reset" | "email-otp" | "email-otp-verify";
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
@@ -89,11 +90,6 @@ const Auth = () => {
     const emailResult = emailSchema.safeParse(formData.email);
     if (!emailResult.success) {
       newErrors.email = emailResult.error.errors[0].message;
-    }
-
-    const passwordResult = passwordSchema.safeParse(formData.password);
-    if (!passwordResult.success) {
-      newErrors.password = passwordResult.error.errors[0].message;
     }
 
     if (!formData.firstName.trim()) {
@@ -210,34 +206,93 @@ const Auth = () => {
 
     setIsSubmitting(true);
     try {
-      const { error } = await signUp(
-        formData.email,
-        formData.password,
-        formData.firstName,
-        formData.lastName,
-        formData.phone
-      );
+      // Send OTP to verify email first
+      const { error } = await signInWithEmailOtp(formData.email);
       if (error) {
-        if (error.message.includes("already registered")) {
-          toast({
-            title: "Account Exists",
-            description: "This email is already registered. Please log in instead.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Error",
-            description: error.message,
-            variant: "destructive",
-          });
-        }
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
         return;
       }
       toast({
+        title: "Verification Code Sent!",
+        description: "Please check your email for the 8-digit code.",
+      });
+      // Store the OTP in state and move to verify mode
+      setFormData(prev => ({ ...prev, otp: "" }));
+      setMode("signup-verify");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSignupVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateOtpForm()) return;
+
+    setIsSubmitting(true);
+    try {
+      // Verify OTP first
+      const { error: otpError } = await verifyEmailOtp(formData.email, formData.otp);
+      if (otpError) {
+        toast({
+          title: "Verification Failed",
+          description: "Invalid or expired code. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // OTP verified - now update the user's profile with additional data
+      // The user is now logged in via OTP, update their profile
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Update auth user metadata
+        await supabase.auth.updateUser({
+          data: {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            phone: formData.phone,
+          }
+        });
+
+        // Update or create profile
+        await supabase.from('profiles').upsert({
+          user_id: user.id,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          phone: formData.phone,
+        }, { onConflict: 'user_id' });
+      }
+
+      toast({
         title: "Account Created!",
-        description: "You have successfully signed up. Welcome!",
+        description: "Your email has been verified. Welcome to RAYN ADAM!",
       });
       navigate("/");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const resendSignupOtp = async () => {
+    setIsSubmitting(true);
+    try {
+      const { error } = await signInWithEmailOtp(formData.email);
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+      toast({
+        title: "OTP Sent!",
+        description: "A new verification code has been sent to your email.",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -376,6 +431,7 @@ const Auth = () => {
   const getTitle = () => {
     switch (mode) {
       case "signup": return "Create Account";
+      case "signup-verify": return "Verify Email";
       case "forgot": return "Forgot Password";
       case "reset": return "Reset Password";
       case "email-otp": return "Email OTP Login";
@@ -387,6 +443,7 @@ const Auth = () => {
   const getSubtitle = () => {
     switch (mode) {
       case "signup": return "Join RAYN ADAM for exclusive offers";
+      case "signup-verify": return `Enter the 8-digit code sent to ${formData.email}`;
       case "forgot": return "Enter your email to receive a reset link";
       case "reset": return "Enter your new password";
       case "email-otp": return "Enter your email to receive a verification code";
@@ -615,31 +672,10 @@ const Auth = () => {
                     )}
                   </div>
 
-                  <div>
-                    <Label htmlFor="signupPassword">Password</Label>
-                    <div className="relative mt-1">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="signupPassword"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        className="pl-10 pr-10 bg-input border-border"
-                        placeholder="••••••••"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                    {errors.password && (
-                      <p className="text-destructive text-xs mt-1">{errors.password}</p>
-                    )}
-                  </div>
+                  <p className="text-xs text-muted-foreground text-center bg-muted/30 p-3 rounded-lg">
+                    <Mail className="w-4 h-4 inline mr-1" />
+                    We'll send a verification code to your email to complete signup
+                  </p>
 
                   <Button
                     type="submit"
@@ -649,10 +685,10 @@ const Auth = () => {
                     {isSubmitting ? (
                       <span className="flex items-center gap-2">
                         <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                        Creating account...
+                        Sending verification code...
                       </span>
                     ) : (
-                      <span>Create Account</span>
+                      <span>Continue</span>
                     )}
                   </Button>
                 </form>
@@ -668,6 +704,81 @@ const Auth = () => {
                       Sign in
                     </button>
                   </p>
+                </div>
+              </>
+            )}
+
+            {/* Signup OTP Verification Form */}
+            {mode === "signup-verify" && (
+              <>
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Mail className="w-8 h-8 text-primary" />
+                </div>
+                
+                <form onSubmit={handleSignupVerify} className="space-y-6">
+                  <div className="space-y-4">
+                    <Label className="text-center block">Verification Code</Label>
+                    <div className="flex justify-center">
+                      <div className="bg-muted/30 border border-border rounded-xl p-6">
+                        <InputOTP
+                          maxLength={8}
+                          value={formData.otp}
+                          onChange={(value) => {
+                            setFormData((prev) => ({ ...prev, otp: value }));
+                            setErrors((prev) => ({ ...prev, otp: "" }));
+                          }}
+                        >
+                          <InputOTPGroup className="gap-2">
+                            <InputOTPSlot index={0} className="w-10 h-12 text-lg font-bold border-border bg-background" />
+                            <InputOTPSlot index={1} className="w-10 h-12 text-lg font-bold border-border bg-background" />
+                            <InputOTPSlot index={2} className="w-10 h-12 text-lg font-bold border-border bg-background" />
+                            <InputOTPSlot index={3} className="w-10 h-12 text-lg font-bold border-border bg-background" />
+                            <InputOTPSlot index={4} className="w-10 h-12 text-lg font-bold border-border bg-background" />
+                            <InputOTPSlot index={5} className="w-10 h-12 text-lg font-bold border-border bg-background" />
+                            <InputOTPSlot index={6} className="w-10 h-12 text-lg font-bold border-border bg-background" />
+                            <InputOTPSlot index={7} className="w-10 h-12 text-lg font-bold border-border bg-background" />
+                          </InputOTPGroup>
+                        </InputOTP>
+                      </div>
+                    </div>
+                    {errors.otp && (
+                      <p className="text-destructive text-xs mt-1 text-center">{errors.otp}</p>
+                    )}
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                    disabled={isSubmitting || formData.otp.length !== 8}
+                  >
+                    {isSubmitting ? (
+                      <span className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                        Creating account...
+                      </span>
+                    ) : (
+                      <span>Verify & Create Account</span>
+                    )}
+                  </Button>
+                </form>
+
+                <div className="mt-6 text-center space-y-3">
+                  <p className="text-muted-foreground text-sm">
+                    Didn't receive the code?{" "}
+                    <button
+                      onClick={resendSignupOtp}
+                      disabled={isSubmitting}
+                      className="text-primary hover:underline font-medium disabled:opacity-50"
+                    >
+                      Resend
+                    </button>
+                  </p>
+                  <button
+                    onClick={() => setMode("signup")}
+                    className="text-muted-foreground hover:text-foreground text-sm"
+                  >
+                    ← Change details
+                  </button>
                 </div>
               </>
             )}
