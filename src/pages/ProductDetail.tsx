@@ -76,17 +76,22 @@ const ProductDetail = () => {
         <title>{product.name} | Rayn Adam Luxury Perfumes</title>
         <meta name="description" content={product.description} />
         
-        {/* Open Graph / Social Sharing - uses relative paths that work on any domain */}
+        {/* Canonical URL - uses current domain dynamically */}
+        <link rel="canonical" href={`${window.location.origin}/product/${product.id}`} />
+        
+        {/* Open Graph / Social Sharing - dynamic URL based on current domain */}
         <meta property="og:title" content={`${product.name} | Rayn Adam Luxury Perfumes`} />
         <meta property="og:description" content={product.description} />
         <meta property="og:type" content="product" />
-        <meta property="og:image" content={product.image} />
+        <meta property="og:url" content={`${window.location.origin}/product/${product.id}`} />
+        <meta property="og:image" content={`${window.location.origin}${product.image}`} />
+        <meta property="og:site_name" content="Rayn Adam Perfumes" />
         
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={`${product.name} | Rayn Adam Luxury Perfumes`} />
         <meta name="twitter:description" content={product.description} />
-        <meta name="twitter:image" content={product.image} />
+        <meta name="twitter:image" content={`${window.location.origin}${product.image}`} />
         
         {/* Product structured data */}
         <meta property="product:price:amount" content={product.price.toString()} />
