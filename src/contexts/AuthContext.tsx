@@ -86,13 +86,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signInWithEmailOtp = async (email: string) => {
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        shouldCreateUser: true,
-      },
-    });
-    return { error };
+    try {
+      // Use custom edge function for branded OTP email via Resend
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/send-email-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: new Error(errorData.error || "Failed to send OTP") };
+      }
+
+      return { error: null };
+    } catch (err: any) {
+      console.error("Error sending OTP:", err);
+      return { error: new Error(err.message || "Failed to send OTP") };
+    }
   };
 
   const verifyEmailOtp = async (email: string, token: string) => {

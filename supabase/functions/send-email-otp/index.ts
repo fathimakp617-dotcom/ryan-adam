@@ -11,13 +11,7 @@ const corsHeaders = {
 
 interface OtpRequest {
   email: string;
-  redirectUrl: string;
 }
-
-// Generate a 6-digit OTP
-const generateOtp = (): string => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-};
 
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -25,9 +19,10 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, redirectUrl }: OtpRequest = await req.json();
+    const { email }: OtpRequest = await req.json();
 
     if (!email) {
+      console.error("Email is required");
       return new Response(
         JSON.stringify({ error: "Email is required" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -37,6 +32,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
+      console.error("Invalid email format:", email);
       return new Response(
         JSON.stringify({ error: "Invalid email format" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -50,47 +46,39 @@ const handler = async (req: Request): Promise<Response> => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    // Generate OTP using Supabase's built-in method
-    const { data, error: otpError } = await supabaseAdmin.auth.admin.generateLink({
+    console.log("Generating OTP for email:", email);
+
+    // Generate magic link using admin API - this creates a token we can extract
+    const { data, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: "magiclink",
       email: email,
       options: {
-        redirectTo: redirectUrl,
+        redirectTo: Deno.env.get("SITE_URL") || "https://raynadamperfume.com",
       },
     });
 
-    if (otpError) {
-      console.error("Error generating OTP link:", otpError);
+    if (linkError) {
+      console.error("Error generating magic link:", linkError);
       return new Response(
-        JSON.stringify({ error: "Failed to generate OTP" }),
+        JSON.stringify({ error: "Failed to generate login link" }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    // Extract the OTP token from the link
-    const otpToken = data?.properties?.hashed_token;
+    // Extract the OTP from the link properties
+    const emailOtp = data?.properties?.email_otp;
     
-    // Generate a simple 6-digit code for display
-    const displayOtp = generateOtp();
-    
-    // Store OTP in a simple way - we'll use Supabase's built-in OTP
-    // For now, trigger the built-in OTP flow but send custom email
-    const { error: signInError } = await supabaseAdmin.auth.signInWithOtp({
-      email: email,
-      options: {
-        shouldCreateUser: true,
-      },
-    });
-
-    if (signInError) {
-      console.error("Error triggering OTP:", signInError);
+    if (!emailOtp) {
+      console.error("No OTP found in generated link data:", data);
       return new Response(
-        JSON.stringify({ error: "Failed to send OTP" }),
+        JSON.stringify({ error: "Failed to generate OTP code" }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    // Send branded email via Resend
+    console.log("OTP generated successfully, sending email via Resend");
+
+    // Send branded email via Resend with the actual OTP
     const emailResponse = await resend.emails.send({
       from: "Rayn Adam <noreply@raynadamperfume.com>",
       to: [email],
@@ -134,11 +122,8 @@ const handler = async (req: Request): Promise<Response> => {
                         <p style="margin: 0; font-size: 14px; color: #888; text-transform: uppercase; letter-spacing: 2px;">
                           Verification Code
                         </p>
-                        <p style="margin: 15px 0 0; font-size: 36px; letter-spacing: 12px; color: #c9a45c; font-weight: bold; font-family: monospace;">
-                          Check your inbox
-                        </p>
-                        <p style="margin: 15px 0 0; font-size: 13px; color: #666;">
-                          (Supabase will send you the actual code)
+                        <p style="margin: 15px 0 0; font-size: 42px; letter-spacing: 12px; color: #c9a45c; font-weight: bold; font-family: monospace;">
+                          ${emailOtp}
                         </p>
                       </div>
                       
@@ -166,7 +151,7 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log("OTP email sent successfully:", emailResponse);
+    console.log("Email sent successfully:", emailResponse);
 
     return new Response(
       JSON.stringify({ success: true, message: "OTP sent successfully" }),
