@@ -5,8 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-// Use a fixed public site URL when deployed (so reset links don't point to Lovable preview)
-const APP_ORIGIN = (import.meta.env.VITE_PUBLIC_SITE_URL as string | undefined)?.replace(/\/$/, "") || window.location.origin;
+// Always use current origin - works on localhost, Lovable preview, or production domain
+const getAppOrigin = () => window.location.origin;
 
 interface AuthContextType {
   user: User | null;
@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signUp = async (email: string, password: string, firstName: string, lastName: string) => {
-    const redirectUrl = `${APP_ORIGIN}/`;
+    const redirectUrl = `${getAppOrigin()}/`;
     
     const { error } = await supabase.auth.signUp({
       email,
@@ -78,7 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${APP_ORIGIN}/`,
+        redirectTo: `${getAppOrigin()}/`,
       },
     });
     return { error };
@@ -108,7 +108,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const resetPassword = async (email: string) => {
-    const redirectUrl = `${APP_ORIGIN}/auth?mode=reset`;
+    const redirectUrl = `${getAppOrigin()}/auth?mode=reset`;
     
     try {
       // Use custom edge function for branded email
