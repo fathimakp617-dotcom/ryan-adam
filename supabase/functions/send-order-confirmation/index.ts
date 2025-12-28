@@ -794,7 +794,7 @@ const generateAdminOrderEmailHTML = (order: OrderConfirmationRequest): string =>
 
 const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promise<Uint8Array> => {
   const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([400, 380]); // Increased height to accommodate contact info
+  const page = pdfDoc.addPage([400, 400]); // Increased height to accommodate customer email
   
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -889,11 +889,20 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
     font: font,
     color: rgb(0, 0, 0),
   });
+
+  // Customer email
+  page.drawText(`Email: ${order.customer_email}`, {
+    x: 20,
+    y: height - 181,
+    size: 9,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
   
   // Address
   page.drawText(order.shipping_address.address, {
     x: 20,
-    y: height - 185,
+    y: height - 198,
     size: 11,
     font: font,
     color: rgb(0, 0, 0),
@@ -902,7 +911,7 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   // City, State, ZIP
   page.drawText(`${order.shipping_address.city}, ${order.shipping_address.state} ${order.shipping_address.zipCode}`, {
     x: 20,
-    y: height - 202,
+    y: height - 215,
     size: 11,
     font: font,
     color: rgb(0, 0, 0),
@@ -911,7 +920,7 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   // Country
   page.drawText(order.shipping_address.country.toUpperCase(), {
     x: 20,
-    y: height - 219,
+    y: height - 232,
     size: 11,
     font: boldFont,
     color: rgb(0, 0, 0),
