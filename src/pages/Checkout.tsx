@@ -16,6 +16,12 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CouponInput from "@/components/CouponInput";
 
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
 const Checkout = () => {
   const { items, totalPrice, clearCart } = useCart();
   const { affiliateCode, appliedCoupon, calculateDiscount } = useAffiliate();
@@ -46,6 +52,15 @@ const Checkout = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (paymentMethod === "razorpay") {
+      await handleRazorpayPayment();
+    } else {
+      await handleCODOrder();
+    }
+  };
+
+  const handleCODOrder = async () => {
     setIsProcessing(true);
 
     try {
@@ -66,7 +81,7 @@ const Checkout = () => {
           price: item.product.price,
           quantity: item.quantity,
         })),
-        payment_method: paymentMethod,
+        payment_method: "cod",
         coupon_code: appliedCoupon?.code || null,
         affiliate_code: affiliateCode || null,
       };
@@ -93,6 +108,142 @@ const Checkout = () => {
       toast({
         title: "Error placing order",
         description: error instanceof Error ? error.message : "Please try again or contact support.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRazorpayPayment = async () => {
+    setIsProcessing(true);
+
+    try {
+      // Create Razorpay order
+      const { data: orderData, error: orderError } = await supabase.functions.invoke('create-razorpay-order', {
+        body: {
+          amount: orderTotal,
+          currency: "INR",
+          receipt: `receipt_${Date.now()}`,
+          notes: {
+            customer_email: formData.email,
+            customer_name: `${formData.firstName} ${formData.lastName}`,
+          },
+        },
+      });
+
+      if (orderError || !orderData?.success) {
+        throw new Error(orderData?.error || "Failed to create payment order");
+      }
+
+      // Load Razorpay script if not loaded
+      if (!window.Razorpay) {
+        await loadRazorpayScript();
+      }
+
+      const options = {
+        key: orderData.key_id,
+        amount: orderData.order.amount,
+        currency: orderData.order.currency,
+        name: "Rayn Adam",
+        description: "Luxury Perfume Purchase",
+        order_id: orderData.order.id,
+        handler: async (response: any) => {
+          await verifyAndCompleteOrder(response);
+        },
+        prefill: {
+          name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          contact: formData.phone,
+        },
+        theme: {
+          color: "#c9a962",
+        },
+        modal: {
+          ondismiss: () => {
+            setIsProcessing(false);
+            toast({
+              title: "Payment Cancelled",
+              description: "Your payment was cancelled. You can try again.",
+              variant: "destructive",
+            });
+          },
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    } catch (error) {
+      console.error("Razorpay error:", error);
+      toast({
+        title: "Payment Error",
+        description: error instanceof Error ? error.message : "Failed to initiate payment. Please try again.",
+        variant: "destructive",
+      });
+      setIsProcessing(false);
+    }
+  };
+
+  const loadRazorpayScript = (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Failed to load Razorpay'));
+      document.body.appendChild(script);
+    });
+  };
+
+  const verifyAndCompleteOrder = async (response: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+  }) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-razorpay-payment', {
+        body: {
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_signature: response.razorpay_signature,
+          order_data: {
+            customer_name: `${formData.firstName} ${formData.lastName}`,
+            customer_email: formData.email,
+            customer_phone: formData.phone,
+            shipping_address: {
+              address: formData.address,
+              city: formData.city,
+              state: formData.state,
+              zipCode: formData.zipCode,
+              country: formData.country,
+            },
+            items: items.map(item => ({
+              productId: item.product.id,
+              name: item.product.name,
+              price: item.product.price,
+              quantity: item.quantity,
+            })),
+            coupon_code: appliedCoupon?.code || null,
+            affiliate_code: affiliateCode || null,
+          },
+        },
+      });
+
+      if (error || !data?.success) {
+        throw new Error(data?.error || "Payment verification failed");
+      }
+
+      toast({
+        title: "Payment Successful!",
+        description: `Order #${data.order.order_number}. You will receive a confirmation email shortly.`,
+      });
+
+      clearCart();
+      navigate(`/?order=${data.order.order_number}`);
+    } catch (error) {
+      console.error("Verification error:", error);
+      toast({
+        title: "Payment Verification Failed",
+        description: "Please contact support with your payment details.",
         variant: "destructive",
       });
     } finally {
@@ -284,11 +435,12 @@ const Checkout = () => {
                         Cash on Delivery
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-3 bg-input border border-border rounded-lg p-4 cursor-pointer hover:border-primary transition-colors opacity-50">
-                      <RadioGroupItem value="razorpay" id="razorpay" disabled />
+                    <div className="flex items-center space-x-3 bg-input border border-border rounded-lg p-4 cursor-pointer hover:border-primary transition-colors">
+                      <RadioGroupItem value="razorpay" id="razorpay" />
                       <Label htmlFor="razorpay" className="flex items-center gap-2 cursor-pointer flex-1">
                         <CreditCard className="w-5 h-5 text-primary" />
-                        Razorpay (Coming Soon)
+                        Pay Online (Razorpay)
+                        <span className="ml-auto text-xs text-muted-foreground">UPI, Cards, Netbanking</span>
                       </Label>
                     </div>
                   </RadioGroup>
