@@ -7,6 +7,7 @@ import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import FloatingParticles from "@/components/FloatingParticles";
 import PageTransition from "@/components/PageTransition";
+import OrderSuccessModal from "@/components/OrderSuccessModal";
 
 const Index = () => {
   return (
@@ -24,6 +25,7 @@ const Index = () => {
       </Helmet>
 
       <FloatingParticles />
+      <OrderSuccessModal />
 
       <PageTransition>
         <main className="min-h-screen bg-background relative z-10">
