@@ -80,6 +80,7 @@ const Checkout = () => {
 
     try {
       const orderData = {
+        user_id: user.id,
         customer_name: `${formData.firstName} ${formData.lastName}`,
         customer_email: formData.email,
         customer_phone: formData.phone,
@@ -221,6 +222,7 @@ const Checkout = () => {
           razorpay_payment_id: response.razorpay_payment_id,
           razorpay_signature: response.razorpay_signature,
           order_data: {
+            user_id: user?.id,
             customer_name: `${formData.firstName} ${formData.lastName}`,
             customer_email: formData.email,
             customer_phone: formData.phone,
