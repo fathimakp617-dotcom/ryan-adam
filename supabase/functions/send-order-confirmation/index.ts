@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { PDFDocument, StandardFonts, rgb } from "https://esm.sh/pdf-lib@1.17.1";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -491,6 +492,152 @@ const generateAdminOrderEmailHTML = (order: OrderConfirmationRequest): string =>
   `;
 };
 
+const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promise<Uint8Array> => {
+  const pdfDoc = await PDFDocument.create();
+  const page = pdfDoc.addPage([400, 300]); // 4x3 inch label size
+  
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  
+  const { width, height } = page.getSize();
+  
+  // Draw border
+  page.drawRectangle({
+    x: 10,
+    y: 10,
+    width: width - 20,
+    height: height - 20,
+    borderColor: rgb(0, 0, 0),
+    borderWidth: 2,
+  });
+  
+  // Header - FROM
+  page.drawText('FROM:', {
+    x: 20,
+    y: height - 35,
+    size: 8,
+    font: font,
+    color: rgb(0.4, 0.4, 0.4),
+  });
+  
+  page.drawText('RAYN ADAM PERFUMES', {
+    x: 20,
+    y: height - 48,
+    size: 10,
+    font: boldFont,
+    color: rgb(0, 0, 0),
+  });
+  
+  page.drawText('India', {
+    x: 20,
+    y: height - 62,
+    size: 9,
+    font: font,
+    color: rgb(0.2, 0.2, 0.2),
+  });
+  
+  // Divider line
+  page.drawLine({
+    start: { x: 20, y: height - 80 },
+    end: { x: width - 20, y: height - 80 },
+    thickness: 1,
+    color: rgb(0.7, 0.7, 0.7),
+  });
+  
+  // TO section
+  page.drawText('SHIP TO:', {
+    x: 20,
+    y: height - 100,
+    size: 10,
+    font: boldFont,
+    color: rgb(0, 0, 0),
+  });
+  
+  // Customer name
+  page.drawText(order.customer_name.toUpperCase(), {
+    x: 20,
+    y: height - 125,
+    size: 14,
+    font: boldFont,
+    color: rgb(0, 0, 0),
+  });
+  
+  // Address
+  page.drawText(order.shipping_address.address, {
+    x: 20,
+    y: height - 145,
+    size: 11,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
+  
+  // City, State, ZIP
+  page.drawText(`${order.shipping_address.city}, ${order.shipping_address.state} ${order.shipping_address.zipCode}`, {
+    x: 20,
+    y: height - 162,
+    size: 11,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
+  
+  // Country
+  page.drawText(order.shipping_address.country.toUpperCase(), {
+    x: 20,
+    y: height - 179,
+    size: 11,
+    font: boldFont,
+    color: rgb(0, 0, 0),
+  });
+  
+  // Divider line
+  page.drawLine({
+    start: { x: 20, y: 70 },
+    end: { x: width - 20, y: 70 },
+    thickness: 1,
+    color: rgb(0.7, 0.7, 0.7),
+  });
+  
+  // Order number box
+  page.drawRectangle({
+    x: 20,
+    y: 20,
+    width: width - 40,
+    height: 40,
+    color: rgb(0.95, 0.95, 0.95),
+    borderColor: rgb(0.7, 0.7, 0.7),
+    borderWidth: 1,
+  });
+  
+  page.drawText('ORDER:', {
+    x: 30,
+    y: 45,
+    size: 8,
+    font: font,
+    color: rgb(0.4, 0.4, 0.4),
+  });
+  
+  page.drawText(order.order_number, {
+    x: 70,
+    y: 43,
+    size: 12,
+    font: boldFont,
+    color: rgb(0, 0, 0),
+  });
+  
+  // Payment method indicator
+  const paymentText = order.payment_method === 'cod' ? `COD: ${formatCurrency(order.total)}` : 'PREPAID';
+  page.drawText(paymentText, {
+    x: width - 120,
+    y: 43,
+    size: 10,
+    font: boldFont,
+    color: order.payment_method === 'cod' ? rgb(0.8, 0.2, 0) : rgb(0, 0.5, 0),
+  });
+  
+  const pdfBytes = await pdfDoc.save();
+  return pdfBytes;
+};
+
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -531,6 +678,11 @@ const handler = async (req: Request): Promise<Response> => {
     const adminEmail = Deno.env.get("ADMIN_ORDER_EMAIL");
     if (adminEmail) {
       const adminEmailHTML = generateAdminOrderEmailHTML(orderData);
+      
+      // Generate shipping label PDF
+      const shippingLabelPdf = await generateShippingLabelPDF(orderData);
+      const shippingLabelBase64 = btoa(String.fromCharCode(...shippingLabelPdf));
+      
       const adminEmailResponse = await resend.emails.send({
         from: "Rayn Adam Orders <orders@raynadamperfume.com>",
         to: [adminEmail],
@@ -540,6 +692,10 @@ const handler = async (req: Request): Promise<Response> => {
           {
             filename: `invoice-${orderData.order_number}.txt`,
             content: invoiceBase64,
+          },
+          {
+            filename: `shipping-label-${orderData.order_number}.pdf`,
+            content: shippingLabelBase64,
           },
         ],
       });
