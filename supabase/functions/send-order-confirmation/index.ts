@@ -676,30 +676,41 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send admin notification email for packing and shipping
     const adminEmail = Deno.env.get("ADMIN_ORDER_EMAIL");
+    console.log("Admin email configured:", adminEmail ? "YES" : "NO");
+    
     if (adminEmail) {
-      const adminEmailHTML = generateAdminOrderEmailHTML(orderData);
-      
-      // Generate shipping label PDF
-      const shippingLabelPdf = await generateShippingLabelPDF(orderData);
-      const shippingLabelBase64 = btoa(String.fromCharCode(...shippingLabelPdf));
-      
-      const adminEmailResponse = await resend.emails.send({
-        from: "Rayn Adam Orders <orders@raynadamperfume.com>",
-        to: [adminEmail],
-        subject: `🚚 NEW ORDER - ${orderData.order_number} - ${orderData.customer_name}`,
-        html: adminEmailHTML,
-        attachments: [
-          {
-            filename: `invoice-${orderData.order_number}.txt`,
-            content: invoiceBase64,
-          },
-          {
-            filename: `shipping-label-${orderData.order_number}.pdf`,
-            content: shippingLabelBase64,
-          },
-        ],
-      });
-      console.log("Admin notification email sent successfully:", adminEmailResponse);
+      try {
+        console.log("Generating admin email HTML...");
+        const adminEmailHTML = generateAdminOrderEmailHTML(orderData);
+        
+        // Generate shipping label PDF
+        console.log("Generating shipping label PDF...");
+        const shippingLabelPdf = await generateShippingLabelPDF(orderData);
+        const shippingLabelBase64 = btoa(String.fromCharCode(...shippingLabelPdf));
+        console.log("Shipping label PDF generated, size:", shippingLabelPdf.length);
+        
+        console.log("Sending admin notification email to:", adminEmail);
+        const adminEmailResponse = await resend.emails.send({
+          from: "Rayn Adam Orders <orders@raynadamperfume.com>",
+          to: [adminEmail],
+          subject: `🚚 NEW ORDER - ${orderData.order_number} - ${orderData.customer_name}`,
+          html: adminEmailHTML,
+          attachments: [
+            {
+              filename: `invoice-${orderData.order_number}.txt`,
+              content: invoiceBase64,
+            },
+            {
+              filename: `shipping-label-${orderData.order_number}.pdf`,
+              content: shippingLabelBase64,
+            },
+          ],
+        });
+        console.log("Admin notification email sent successfully:", JSON.stringify(adminEmailResponse));
+      } catch (adminError: any) {
+        console.error("Failed to send admin notification email:", adminError.message);
+        console.error("Admin email error details:", JSON.stringify(adminError));
+      }
     } else {
       console.warn("ADMIN_ORDER_EMAIL not configured, skipping admin notification");
     }
