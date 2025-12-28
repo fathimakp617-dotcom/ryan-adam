@@ -5,6 +5,7 @@ import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, KeyRound, Phone } from "lucid
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
@@ -19,7 +20,7 @@ const passwordSchema = z
   .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
   .regex(/[a-z]/, "Password must contain at least one lowercase letter")
   .regex(/[!@#$%^&*(),.?":{}|<>]/, "Password must contain at least one special character (!@#$%^&*)");
-const otpSchema = z.string().length(6, "OTP must be 6 digits").regex(/^\d+$/, "OTP must contain only numbers");
+const otpSchema = z.string().length(8, "OTP must be 8 digits").regex(/^\d+$/, "OTP must contain only numbers");
 const phoneSchema = z.string().min(10, "Phone number must be at least 10 digits").max(15, "Phone number too long").regex(/^[+]?[\d\s-]+$/, "Invalid phone number format");
 
 type AuthMode = "login" | "signup" | "forgot" | "reset" | "email-otp" | "email-otp-verify";
@@ -309,7 +310,7 @@ const Auth = () => {
       }
       toast({
         title: "OTP Sent!",
-        description: "Check your email for the 6-digit verification code.",
+        description: "Check your email for the 8-digit verification code.",
       });
       setMode("email-otp-verify");
     } finally {
@@ -389,7 +390,7 @@ const Auth = () => {
       case "forgot": return "Enter your email to receive a reset link";
       case "reset": return "Enter your new password";
       case "email-otp": return "Enter your email to receive a verification code";
-      case "email-otp-verify": return `Enter the 6-digit code sent to ${formData.otpEmail}`;
+      case "email-otp-verify": return `Enter the 8-digit code sent to ${formData.otpEmail}`;
       default: return "Sign in to access your account";
     }
   };
@@ -725,31 +726,40 @@ const Auth = () => {
             {mode === "email-otp-verify" && (
               <>
                 <form onSubmit={handleVerifyEmailOtp} className="space-y-6">
-                  <div>
-                    <Label htmlFor="otp">Verification Code</Label>
-                    <div className="relative mt-1">
-                      <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="otp"
-                        name="otp"
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={6}
-                        value={formData.otp}
-                        onChange={handleInputChange}
-                        className="pl-10 bg-input border-border text-center tracking-widest text-lg"
-                        placeholder="000000"
-                      />
+                  <div className="space-y-4">
+                    <Label className="text-center block">Verification Code</Label>
+                    <div className="flex justify-center">
+                      <div className="bg-muted/30 border border-border rounded-xl p-6">
+                        <InputOTP
+                          maxLength={8}
+                          value={formData.otp}
+                          onChange={(value) => {
+                            setFormData((prev) => ({ ...prev, otp: value }));
+                            setErrors((prev) => ({ ...prev, otp: "" }));
+                          }}
+                        >
+                          <InputOTPGroup className="gap-2">
+                            <InputOTPSlot index={0} className="w-10 h-12 text-lg font-bold border-border bg-background" />
+                            <InputOTPSlot index={1} className="w-10 h-12 text-lg font-bold border-border bg-background" />
+                            <InputOTPSlot index={2} className="w-10 h-12 text-lg font-bold border-border bg-background" />
+                            <InputOTPSlot index={3} className="w-10 h-12 text-lg font-bold border-border bg-background" />
+                            <InputOTPSlot index={4} className="w-10 h-12 text-lg font-bold border-border bg-background" />
+                            <InputOTPSlot index={5} className="w-10 h-12 text-lg font-bold border-border bg-background" />
+                            <InputOTPSlot index={6} className="w-10 h-12 text-lg font-bold border-border bg-background" />
+                            <InputOTPSlot index={7} className="w-10 h-12 text-lg font-bold border-border bg-background" />
+                          </InputOTPGroup>
+                        </InputOTP>
+                      </div>
                     </div>
                     {errors.otp && (
-                      <p className="text-destructive text-xs mt-1">{errors.otp}</p>
+                      <p className="text-destructive text-xs mt-1 text-center">{errors.otp}</p>
                     )}
                   </div>
 
                   <Button
                     type="submit"
                     className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || formData.otp.length !== 8}
                   >
                     {isSubmitting ? (
                       <span className="flex items-center gap-2">
