@@ -625,7 +625,8 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   });
   
   // Payment method indicator
-  const paymentText = order.payment_method === 'cod' ? `COD: ${formatCurrency(order.total)}` : 'PREPAID';
+  const totalInr = `INR ${order.total.toLocaleString('en-IN')}`;
+  const paymentText = order.payment_method === 'cod' ? `COD: ${totalInr}` : 'PREPAID';
   page.drawText(paymentText, {
     x: width - 120,
     y: 43,
