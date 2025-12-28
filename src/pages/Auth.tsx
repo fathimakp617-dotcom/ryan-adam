@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, KeyRound } from "lucide-react";
+import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, KeyRound, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,14 +11,16 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { z } from "zod";
 
-const emailSchema = z.string().email("Invalid email address");
+const emailSchema = z.string().email("Invalid email address").max(255, "Email too long");
 const passwordSchema = z
   .string()
   .min(8, "Password must be at least 8 characters")
+  .max(72, "Password too long")
   .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
   .regex(/[a-z]/, "Password must contain at least one lowercase letter")
   .regex(/[!@#$%^&*(),.?":{}|<>]/, "Password must contain at least one special character (!@#$%^&*)");
-const otpSchema = z.string().length(6, "OTP must be 6 digits");
+const otpSchema = z.string().length(6, "OTP must be 6 digits").regex(/^\d+$/, "OTP must contain only numbers");
+const phoneSchema = z.string().min(10, "Phone number must be at least 10 digits").max(15, "Phone number too long").regex(/^[+]?[\d\s-]+$/, "Invalid phone number format");
 
 type AuthMode = "login" | "signup" | "forgot" | "reset" | "email-otp" | "email-otp-verify";
 
@@ -33,6 +35,7 @@ const Auth = () => {
     confirmPassword: "",
     firstName: "",
     lastName: "",
+    phone: "",
     otpEmail: "",
     otp: "",
   });
@@ -94,9 +97,21 @@ const Auth = () => {
 
     if (!formData.firstName.trim()) {
       newErrors.firstName = "First name is required";
+    } else if (formData.firstName.length > 50) {
+      newErrors.firstName = "First name too long";
     }
     if (!formData.lastName.trim()) {
       newErrors.lastName = "Last name is required";
+    } else if (formData.lastName.length > 50) {
+      newErrors.lastName = "Last name too long";
+    }
+    
+    // Phone validation - required
+    const phoneResult = phoneSchema.safeParse(formData.phone);
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Phone number is required";
+    } else if (!phoneResult.success) {
+      newErrors.phone = phoneResult.error.errors[0].message;
     }
 
     setErrors(newErrors);
@@ -198,7 +213,8 @@ const Auth = () => {
         formData.email,
         formData.password,
         formData.firstName,
-        formData.lastName
+        formData.lastName,
+        formData.phone
       );
       if (error) {
         if (error.message.includes("already registered")) {
@@ -576,6 +592,25 @@ const Auth = () => {
                     </div>
                     {errors.email && (
                       <p className="text-destructive text-xs mt-1">{errors.email}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="signupPhone">Phone Number</Label>
+                    <div className="relative mt-1">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="signupPhone"
+                        name="phone"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        className="pl-10 bg-input border-border"
+                        placeholder="+91 9876543210"
+                      />
+                    </div>
+                    {errors.phone && (
+                      <p className="text-destructive text-xs mt-1">{errors.phone}</p>
                     )}
                   </div>
 
