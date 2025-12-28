@@ -327,6 +327,170 @@ Payment Method: ${paymentMethodLabel}
   return invoiceText;
 };
 
+const generateAdminOrderEmailHTML = (order: OrderConfirmationRequest): string => {
+  const itemsHTML = order.items.map(item => `
+    <tr>
+      <td style="padding: 12px; border-bottom: 1px solid #ddd; font-family: Arial, sans-serif;">
+        ${item.name}
+      </td>
+      <td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: center; font-family: Arial, sans-serif;">
+        ${item.quantity}
+      </td>
+      <td style="padding: 12px; border-bottom: 1px solid #ddd; text-align: right; font-family: Arial, sans-serif;">
+        ${formatCurrency(item.price * item.quantity)}
+      </td>
+    </tr>
+  `).join('');
+
+  const paymentMethodLabel = order.payment_method === 'cod' ? 'Cash on Delivery' : 'Online Payment';
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin: 0; padding: 0; background-color: #f0f0f0;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f0f0f0; padding: 20px;">
+        <tr>
+          <td align="center">
+            <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 2px solid #c9a962;">
+              <!-- Header -->
+              <tr>
+                <td style="background-color: #1a1a1a; padding: 20px; text-align: center;">
+                  <h1 style="margin: 0; color: #c9a962; font-family: Arial, sans-serif; font-size: 20px;">
+                    🚚 NEW ORDER - PACK & SHIP
+                  </h1>
+                </td>
+              </tr>
+              
+              <!-- Order Details -->
+              <tr>
+                <td style="padding: 30px;">
+                  <div style="background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                    <h2 style="margin: 0; color: #856404; font-family: Arial, sans-serif; font-size: 18px;">
+                      ⚠️ Order Ready for Fulfillment
+                    </h2>
+                  </div>
+                  
+                  <!-- Order Number & Date -->
+                  <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 20px;">
+                    <tr>
+                      <td style="padding: 10px; background-color: #f8f9fa; border-radius: 4px;">
+                        <strong style="font-family: Arial, sans-serif;">Order Number:</strong>
+                        <span style="color: #c9a962; font-weight: bold; font-family: Arial, sans-serif; font-size: 18px;"> ${order.order_number}</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px;">
+                        <strong style="font-family: Arial, sans-serif;">Order Date:</strong>
+                        <span style="font-family: Arial, sans-serif;"> ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px; background-color: ${order.payment_method === 'cod' ? '#fff3cd' : '#d4edda'}; border-radius: 4px;">
+                        <strong style="font-family: Arial, sans-serif;">Payment:</strong>
+                        <span style="font-family: Arial, sans-serif; font-weight: bold; color: ${order.payment_method === 'cod' ? '#856404' : '#155724'};"> ${paymentMethodLabel}</span>
+                        ${order.payment_method === 'cod' ? '<span style="font-family: Arial, sans-serif; color: #856404;"> - Collect ₹' + order.total.toLocaleString('en-IN') + '</span>' : ''}
+                      </td>
+                    </tr>
+                  </table>
+                  
+                  <!-- Customer Info -->
+                  <h3 style="margin: 0 0 10px; color: #1a1a1a; font-family: Arial, sans-serif; font-size: 16px; border-bottom: 2px solid #c9a962; padding-bottom: 5px;">
+                    📋 Customer Information
+                  </h3>
+                  <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 20px; background-color: #f8f9fa; border-radius: 4px;">
+                    <tr>
+                      <td style="padding: 10px; font-family: Arial, sans-serif;">
+                        <strong>Name:</strong> ${order.customer_name}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px; font-family: Arial, sans-serif;">
+                        <strong>Email:</strong> ${order.customer_email}
+                      </td>
+                    </tr>
+                  </table>
+                  
+                  <!-- Shipping Address -->
+                  <h3 style="margin: 0 0 10px; color: #1a1a1a; font-family: Arial, sans-serif; font-size: 16px; border-bottom: 2px solid #c9a962; padding-bottom: 5px;">
+                    📍 Shipping Address
+                  </h3>
+                  <div style="background-color: #e7f3ff; border: 1px solid #0066cc; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                    <p style="margin: 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6;">
+                      <strong>${order.customer_name}</strong><br>
+                      ${order.shipping_address.address}<br>
+                      ${order.shipping_address.city}, ${order.shipping_address.state} ${order.shipping_address.zipCode}<br>
+                      <strong>${order.shipping_address.country}</strong>
+                    </p>
+                  </div>
+                  
+                  <!-- Order Items -->
+                  <h3 style="margin: 0 0 10px; color: #1a1a1a; font-family: Arial, sans-serif; font-size: 16px; border-bottom: 2px solid #c9a962; padding-bottom: 5px;">
+                    📦 Items to Pack
+                  </h3>
+                  <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 20px; border: 1px solid #ddd; border-radius: 4px;">
+                    <thead>
+                      <tr style="background-color: #1a1a1a;">
+                        <th style="padding: 12px; text-align: left; font-family: Arial, sans-serif; font-size: 12px; color: #c9a962; text-transform: uppercase;">
+                          Product
+                        </th>
+                        <th style="padding: 12px; text-align: center; font-family: Arial, sans-serif; font-size: 12px; color: #c9a962; text-transform: uppercase;">
+                          Qty
+                        </th>
+                        <th style="padding: 12px; text-align: right; font-family: Arial, sans-serif; font-size: 12px; color: #c9a962; text-transform: uppercase;">
+                          Price
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${itemsHTML}
+                    </tbody>
+                  </table>
+                  
+                  <!-- Order Totals -->
+                  <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 20px; background-color: #f8f9fa; border-radius: 4px;">
+                    <tr>
+                      <td style="padding: 8px 15px; font-family: Arial, sans-serif;">Subtotal</td>
+                      <td style="padding: 8px 15px; text-align: right; font-family: Arial, sans-serif;">${formatCurrency(order.subtotal)}</td>
+                    </tr>
+                    ${order.discount > 0 ? `
+                    <tr>
+                      <td style="padding: 8px 15px; font-family: Arial, sans-serif; color: #28a745;">Discount</td>
+                      <td style="padding: 8px 15px; text-align: right; font-family: Arial, sans-serif; color: #28a745;">-${formatCurrency(order.discount)}</td>
+                    </tr>
+                    ` : ''}
+                    <tr>
+                      <td style="padding: 8px 15px; font-family: Arial, sans-serif;">Shipping</td>
+                      <td style="padding: 8px 15px; text-align: right; font-family: Arial, sans-serif;">${order.shipping === 0 ? 'FREE' : formatCurrency(order.shipping)}</td>
+                    </tr>
+                    <tr style="background-color: #1a1a1a;">
+                      <td style="padding: 12px 15px; font-family: Arial, sans-serif; font-weight: bold; color: #ffffff; font-size: 16px;">TOTAL</td>
+                      <td style="padding: 12px 15px; text-align: right; font-family: Arial, sans-serif; font-weight: bold; color: #c9a962; font-size: 16px;">${formatCurrency(order.total)}</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              
+              <!-- Footer -->
+              <tr>
+                <td style="background-color: #1a1a1a; padding: 15px; text-align: center;">
+                  <p style="margin: 0; color: #888; font-family: Arial, sans-serif; font-size: 12px;">
+                    Rayn Adam Order Management System
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+};
+
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -347,6 +511,7 @@ const handler = async (req: Request): Promise<Response> => {
     const invoiceBytes = encoder.encode(invoiceContent);
     const invoiceBase64 = btoa(String.fromCharCode(...invoiceBytes));
 
+    // Send customer confirmation email
     const emailResponse = await resend.emails.send({
       from: "Rayn Adam <orders@raynadamperfume.com>",
       to: [orderData.customer_email],
@@ -360,7 +525,28 @@ const handler = async (req: Request): Promise<Response> => {
       ],
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    console.log("Customer email sent successfully:", emailResponse);
+
+    // Send admin notification email for packing and shipping
+    const adminEmail = Deno.env.get("ADMIN_ORDER_EMAIL");
+    if (adminEmail) {
+      const adminEmailHTML = generateAdminOrderEmailHTML(orderData);
+      const adminEmailResponse = await resend.emails.send({
+        from: "Rayn Adam Orders <orders@raynadamperfume.com>",
+        to: [adminEmail],
+        subject: `🚚 NEW ORDER - ${orderData.order_number} - ${orderData.customer_name}`,
+        html: adminEmailHTML,
+        attachments: [
+          {
+            filename: `invoice-${orderData.order_number}.txt`,
+            content: invoiceBase64,
+          },
+        ],
+      });
+      console.log("Admin notification email sent successfully:", adminEmailResponse);
+    } else {
+      console.warn("ADMIN_ORDER_EMAIL not configured, skipping admin notification");
+    }
 
     return new Response(JSON.stringify({ success: true, data: emailResponse }), {
       status: 200,
