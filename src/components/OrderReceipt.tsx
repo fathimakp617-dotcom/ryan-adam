@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Download, X, CheckCircle } from "lucide-react";
+import { Download, X, CheckCircle, FileText, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { downloadInvoicePDF } from "@/lib/generateInvoicePDF";
 
 interface OrderItem {
   name: string;
@@ -49,6 +50,30 @@ const OrderReceipt = ({
   onClose,
 }: OrderReceiptProps) => {
   const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadPDF = () => {
+    setIsDownloading(true);
+    
+    try {
+      downloadInvoicePDF({
+        orderNumber,
+        customerName,
+        customerEmail,
+        items,
+        subtotal,
+        discount,
+        shipping,
+        total,
+        shippingAddress,
+        paymentMethod,
+        orderDate,
+      });
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+    } finally {
+      setTimeout(() => setIsDownloading(false), 1000);
+    }
+  };
 
   const generateReceiptHTML = () => {
     const itemsHTML = items.map(item => `
@@ -154,24 +179,6 @@ const OrderReceipt = ({
     `;
   };
 
-  const handleDownload = () => {
-    setIsDownloading(true);
-    
-    const html = generateReceiptHTML();
-    const blob = new Blob([html], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `receipt-${orderNumber}.html`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    setTimeout(() => setIsDownloading(false), 1000);
-  };
-
   const handlePrint = () => {
     const html = generateReceiptHTML();
     const printWindow = window.open('', '_blank');
@@ -247,21 +254,22 @@ const OrderReceipt = ({
           </div>
         </div>
 
-        <div className="flex gap-3">
+        <div className="space-y-3">
           <Button
-            onClick={handleDownload}
-            className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={handleDownloadPDF}
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
             disabled={isDownloading}
           >
-            <Download className="w-4 h-4 mr-2" />
-            {isDownloading ? 'Downloading...' : 'Download'}
+            <FileText className="w-4 h-4 mr-2" />
+            {isDownloading ? 'Generating PDF...' : 'Download Invoice (PDF)'}
           </Button>
           <Button
             onClick={handlePrint}
             variant="outline"
-            className="flex-1 border-border hover:border-primary"
+            className="w-full border-border hover:border-primary"
           >
-            Print
+            <Printer className="w-4 h-4 mr-2" />
+            Print Receipt
           </Button>
         </div>
       </motion.div>

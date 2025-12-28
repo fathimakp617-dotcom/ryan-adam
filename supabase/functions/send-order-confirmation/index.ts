@@ -57,6 +57,45 @@ const generateOrderEmailHTML = (order: OrderConfirmationRequest): string => {
 
   const paymentMethodLabel = order.payment_method === 'cod' ? 'Cash on Delivery' : 'Online Payment';
 
+  // Generate a simple text-based invoice for PDF-like attachment simulation
+  const invoiceText = `
+RAYN ADAM - LUXURY PERFUMES
+================================
+INVOICE
+
+Order Number: ${order.order_number}
+Date: ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+
+Customer: ${order.customer_name}
+Email: ${order.customer_email}
+
+Shipping Address:
+${order.shipping_address.address}
+${order.shipping_address.city}, ${order.shipping_address.state} ${order.shipping_address.zipCode}
+${order.shipping_address.country}
+
+--------------------------------
+ORDER ITEMS
+--------------------------------
+${order.items.map(item => `${item.name} x${item.quantity} - ${formatCurrency(item.price * item.quantity)}`).join('\n')}
+
+--------------------------------
+Subtotal: ${formatCurrency(order.subtotal)}
+${order.discount > 0 ? `Discount: -${formatCurrency(order.discount)}` : ''}
+Shipping: ${order.shipping === 0 ? 'FREE' : formatCurrency(order.shipping)}
+--------------------------------
+TOTAL: ${formatCurrency(order.total)}
+
+Payment Method: ${paymentMethodLabel}
+
+================================
+Thank you for shopping with Rayn Adam!
+For questions: support@raynadamperfume.com
+  `.trim();
+
+  // Base64 encode the invoice text for attachment
+  const invoiceBase64 = btoa(unescape(encodeURIComponent(invoiceText)));
+
   return `
     <!DOCTYPE html>
     <html>
@@ -96,6 +135,13 @@ const generateOrderEmailHTML = (order: OrderConfirmationRequest): string => {
                   <p style="margin: 0 0 30px; text-align: center; color: #666; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 16px;">
                     Hi ${order.customer_name}, your order has been confirmed.
                   </p>
+                  
+                  <!-- Invoice Download Button -->
+                  <div style="text-align: center; margin-bottom: 30px;">
+                    <p style="margin: 0 0 10px; color: #666; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px;">
+                      📄 Your invoice is attached to this email
+                    </p>
+                  </div>
                   
                   <!-- Order Number -->
                   <div style="background-color: #f8f8f8; border-radius: 8px; padding: 20px; margin-bottom: 30px; text-align: center;">
@@ -221,6 +267,66 @@ const generateOrderEmailHTML = (order: OrderConfirmationRequest): string => {
   `;
 };
 
+const generateInvoiceAttachment = (order: OrderConfirmationRequest): string => {
+  const formattedDate = new Date().toLocaleDateString('en-IN', { 
+    day: 'numeric', 
+    month: 'long', 
+    year: 'numeric' 
+  });
+  
+  const paymentMethodLabel = order.payment_method === 'cod' ? 'Cash on Delivery' : 'Online Payment';
+  
+  const itemsText = order.items.map(item => 
+    `${item.name.padEnd(30)} x${item.quantity.toString().padStart(2)}    ${formatCurrency(item.price * item.quantity).padStart(12)}`
+  ).join('\n');
+
+  const invoiceText = `
+================================================================================
+                              RAYN ADAM
+                           LUXURY PERFUMES
+================================================================================
+
+                                INVOICE
+
+--------------------------------------------------------------------------------
+Order Number: ${order.order_number}
+Date: ${formattedDate}
+--------------------------------------------------------------------------------
+
+BILL TO:
+${order.customer_name}
+${order.customer_email}
+
+SHIP TO:
+${order.shipping_address.address}
+${order.shipping_address.city}, ${order.shipping_address.state} ${order.shipping_address.zipCode}
+${order.shipping_address.country}
+
+================================================================================
+                             ORDER DETAILS
+================================================================================
+
+${itemsText}
+
+--------------------------------------------------------------------------------
+                                          Subtotal:    ${formatCurrency(order.subtotal).padStart(12)}
+${order.discount > 0 ? `                                          Discount:   -${formatCurrency(order.discount).padStart(11)}` : ''}
+                                          Shipping:    ${order.shipping === 0 ? 'FREE'.padStart(12) : formatCurrency(order.shipping).padStart(12)}
+--------------------------------------------------------------------------------
+                                          TOTAL:       ${formatCurrency(order.total).padStart(12)}
+================================================================================
+
+Payment Method: ${paymentMethodLabel}
+
+================================================================================
+                     Thank you for shopping with Rayn Adam!
+              For questions, contact: support@raynadamperfume.com
+================================================================================
+  `.trim();
+
+  return invoiceText;
+};
+
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -234,12 +340,24 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Order number:", orderData.order_number);
 
     const emailHTML = generateOrderEmailHTML(orderData);
+    const invoiceContent = generateInvoiceAttachment(orderData);
+
+    // Convert invoice text to base64 for attachment
+    const encoder = new TextEncoder();
+    const invoiceBytes = encoder.encode(invoiceContent);
+    const invoiceBase64 = btoa(String.fromCharCode(...invoiceBytes));
 
     const emailResponse = await resend.emails.send({
       from: "Rayn Adam <orders@raynadamperfume.com>",
       to: [orderData.customer_email],
       subject: `Order Confirmed - ${orderData.order_number}`,
       html: emailHTML,
+      attachments: [
+        {
+          filename: `invoice-${orderData.order_number}.txt`,
+          content: invoiceBase64,
+        },
+      ],
     });
 
     console.log("Email sent successfully:", emailResponse);
