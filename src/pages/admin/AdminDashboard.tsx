@@ -590,15 +590,25 @@ const AdminDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Reminder Note */}
-      <Card className="bg-amber-500/10 border-amber-500/20">
-        <CardContent className="p-4 flex items-center gap-3">
-          <CreditCard className="h-5 w-5 text-amber-500" />
-          <p className="text-sm text-amber-700 dark:text-amber-300">
-            <strong>Reminder:</strong> Razorpay integration pending. Let me know when you're ready to set it up!
-          </p>
-        </CardContent>
-      </Card>
+      {/* Reminder Notes */}
+      <div className="space-y-3">
+        <Card className="bg-blue-500/10 border-blue-500/20">
+          <CardContent className="p-4 flex items-center gap-3">
+            <Users className="h-5 w-5 text-blue-500" />
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              <strong>📌 To Discuss:</strong> Multiple admin Gmail accounts setup (Owner + Shipping departments) - need to configure ADMIN_EMAILS with comma-separated emails.
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="bg-amber-500/10 border-amber-500/20">
+          <CardContent className="p-4 flex items-center gap-3">
+            <CreditCard className="h-5 w-5 text-amber-500" />
+            <p className="text-sm text-amber-700 dark:text-amber-300">
+              <strong>Reminder:</strong> Razorpay integration pending. Let me know when you're ready to set it up!
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
