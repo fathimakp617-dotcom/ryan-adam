@@ -105,19 +105,19 @@ For questions: support@raynadamperfume.com
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
-    <body style="margin: 0; padding: 0; background-color: #f5f5f5;">
-      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
+    <body style="margin: 0; padding: 0; background-color: #1c1c1c;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1c1c1c; padding: 40px 20px;">
         <tr>
           <td align="center">
-            <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <table width="600" cellpadding="0" cellspacing="0" style="background-color: #242424; border-radius: 8px; overflow: hidden; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);">
               <!-- Header -->
               <tr>
-                <td style="background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); padding: 40px; text-align: center;">
-                  <h1 style="margin: 0; color: #c9a962; font-family: Georgia, serif; font-size: 28px; letter-spacing: 2px;">
+                <td style="background: linear-gradient(135deg, #1c1c1c 0%, #2d2d2d 100%); padding: 45px 40px; text-align: center; border-bottom: 2px solid #a87c39;">
+                  <h1 style="margin: 0; color: #c7915e; font-family: Georgia, serif; font-size: 32px; letter-spacing: 3px; font-weight: 300;">
                     RAYN ADAM
                   </h1>
-                  <p style="margin: 10px 0 0; color: #888; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; letter-spacing: 3px;">
-                    LUXURY PERFUMES
+                  <p style="margin: 10px 0 0; color: #a87c39; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; letter-spacing: 3px; text-transform: uppercase;">
+                    Luxury Perfumes
                   </p>
                 </td>
               </tr>
@@ -126,117 +126,127 @@ For questions: support@raynadamperfume.com
               <tr>
                 <td style="padding: 40px;">
                   <div style="text-align: center; margin-bottom: 30px;">
-                    <div style="width: 60px; height: 60px; background-color: #22c55e; border-radius: 50%; display: inline-block; line-height: 60px;">
-                      <span style="color: white; font-size: 30px;">✓</span>
+                    <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #a87c39 0%, #c7915e 100%); border-radius: 50%; display: inline-block; line-height: 70px;">
+                      <span style="color: #1c1c1c; font-size: 36px;">✓</span>
                     </div>
                   </div>
                   
-                  <h2 style="margin: 0 0 10px; text-align: center; color: #1a1a1a; font-family: Georgia, serif; font-size: 24px;">
+                  <h2 style="margin: 0 0 10px; text-align: center; color: #f5f5f0; font-family: Georgia, serif; font-size: 26px; font-weight: 400;">
                     Thank You for Your Order!
                   </h2>
-                  <p style="margin: 0 0 30px; text-align: center; color: #666; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 16px;">
+                  <p style="margin: 0 0 30px; text-align: center; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 16px;">
                     Hi ${order.customer_name}, your order has been confirmed.
                   </p>
                   
                   <!-- Invoice Download Button -->
                   <div style="text-align: center; margin-bottom: 30px;">
-                    <p style="margin: 0 0 10px; color: #666; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px;">
+                    <p style="margin: 0 0 10px; color: #888; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px;">
                       📄 Your invoice is attached to this email
                     </p>
                   </div>
                   
                   <!-- Order Number -->
-                  <div style="background-color: #f8f8f8; border-radius: 8px; padding: 20px; margin-bottom: 30px; text-align: center;">
-                    <p style="margin: 0 0 5px; color: #888; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">
+                  <div style="background-color: #1c1c1c; border-radius: 8px; padding: 25px; margin-bottom: 30px; text-align: center; border: 1px solid #3d3d3d;">
+                    <p style="margin: 0 0 8px; color: #a87c39; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 2px;">
                       Order Number
                     </p>
-                    <p style="margin: 0; color: #c9a962; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 20px; font-weight: bold; letter-spacing: 1px;">
+                    <p style="margin: 0; color: #c7915e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 22px; font-weight: bold; letter-spacing: 2px;">
                       ${order.order_number}
                     </p>
                   </div>
                   
                   <!-- Order Items -->
-                  <h3 style="margin: 0 0 15px; color: #1a1a1a; font-family: Georgia, serif; font-size: 18px;">
+                  <h3 style="margin: 0 0 18px; color: #c7915e; font-family: Georgia, serif; font-size: 18px; font-weight: 500; letter-spacing: 1px;">
                     Order Summary
                   </h3>
-                  <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 20px;">
+                  <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 25px; background: #1c1c1c; border-radius: 6px; overflow: hidden;">
                     <thead>
-                      <tr style="background-color: #f8f8f8;">
-                        <th style="padding: 12px; text-align: left; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px;">
+                      <tr style="background-color: #2d2d2d;">
+                        <th style="padding: 14px; text-align: left; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; color: #a87c39; text-transform: uppercase; letter-spacing: 1px;">
                           Item
                         </th>
-                        <th style="padding: 12px; text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px;">
+                        <th style="padding: 14px; text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; color: #a87c39; text-transform: uppercase; letter-spacing: 1px;">
                           Qty
                         </th>
-                        <th style="padding: 12px; text-align: right; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px;">
+                        <th style="padding: 14px; text-align: right; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; color: #a87c39; text-transform: uppercase; letter-spacing: 1px;">
                           Price
                         </th>
                       </tr>
                     </thead>
                     <tbody>
-                      ${itemsHTML}
+                      ${order.items.map(item => `
+                        <tr>
+                          <td style="padding: 14px; border-bottom: 1px solid #3d3d3d; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #f5f5f0;">
+                            ${item.name}
+                          </td>
+                          <td style="padding: 14px; border-bottom: 1px solid #3d3d3d; text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #e0e0e0;">
+                            ${item.quantity}
+                          </td>
+                          <td style="padding: 14px; border-bottom: 1px solid #3d3d3d; text-align: right; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #f5f5f0;">
+                            ${formatCurrency(item.price * item.quantity)}
+                          </td>
+                        </tr>
+                      `).join('')}
                     </tbody>
                   </table>
                   
                   <!-- Order Totals -->
                   <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 30px;">
                     <tr>
-                      <td style="padding: 8px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #666;">
+                      <td style="padding: 10px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #888;">
                         Subtotal
                       </td>
-                      <td style="padding: 8px 0; text-align: right; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1a1a1a;">
+                      <td style="padding: 10px 0; text-align: right; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #f5f5f0;">
                         ${formatCurrency(order.subtotal)}
                       </td>
                     </tr>
                     ${order.discount > 0 ? `
                     <tr>
-                      <td style="padding: 8px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #22c55e;">
+                      <td style="padding: 10px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #22c55e;">
                         Discount
                       </td>
-                      <td style="padding: 8px 0; text-align: right; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #22c55e;">
+                      <td style="padding: 10px 0; text-align: right; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #22c55e;">
                         -${formatCurrency(order.discount)}
                       </td>
                     </tr>
                     ` : ''}
                     <tr>
-                      <td style="padding: 8px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #666;">
+                      <td style="padding: 10px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #888;">
                         Shipping
                       </td>
-                      <td style="padding: 8px 0; text-align: right; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1a1a1a;">
+                      <td style="padding: 10px 0; text-align: right; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #f5f5f0;">
                         ${order.shipping === 0 ? 'FREE' : formatCurrency(order.shipping)}
                       </td>
                     </tr>
                     <tr>
-                      <td style="padding: 12px 0; border-top: 2px solid #1a1a1a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: bold; color: #1a1a1a; font-size: 18px;">
+                      <td style="padding: 15px 0; border-top: 2px solid #a87c39; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: bold; color: #f5f5f0; font-size: 18px;">
                         Total
                       </td>
-                      <td style="padding: 12px 0; border-top: 2px solid #1a1a1a; text-align: right; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: bold; color: #c9a962; font-size: 18px;">
+                      <td style="padding: 15px 0; border-top: 2px solid #a87c39; text-align: right; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: bold; color: #c7915e; font-size: 20px;">
                         ${formatCurrency(order.total)}
                       </td>
                     </tr>
                   </table>
                   
                   <!-- Shipping Address -->
-                  <div style="display: flex; gap: 20px;">
-                    <div style="flex: 1; background-color: #f8f8f8; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-                      <h4 style="margin: 0 0 10px; color: #888; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">
-                        Shipping Address
-                      </h4>
-                      <p style="margin: 0; color: #1a1a1a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.6;">
-                        ${order.customer_name}<br>
-                        ${order.shipping_address.address}<br>
-                        ${order.shipping_address.city}, ${order.shipping_address.state} ${order.shipping_address.zipCode}<br>
-                        ${order.shipping_address.country}
-                      </p>
-                    </div>
+                  <div style="background-color: #1c1c1c; border-radius: 8px; padding: 25px; margin-bottom: 20px; border: 1px solid #3d3d3d;">
+                    <h4 style="margin: 0 0 12px; color: #c7915e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 2px;">
+                      📍 Shipping Address
+                    </h4>
+                    <p style="margin: 0; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.7;">
+                      ${order.customer_name}<br>
+                      ${order.shipping_address.address}<br>
+                      ${order.shipping_address.city}, ${order.shipping_address.state} ${order.shipping_address.zipCode}<br>
+                      ${order.shipping_address.country}
+                    </p>
                   </div>
                   
                   <!-- Payment Method -->
-                  <div style="background-color: #f8f8f8; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
-                    <h4 style="margin: 0 0 10px; color: #888; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">
-                      Payment Method
+                  <div style="background-color: #1c1c1c; border-radius: 8px; padding: 25px; margin-bottom: 30px; border: 1px solid #3d3d3d;">
+                    <h4 style="margin: 0 0 12px; color: #c7915e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 2px;">
+                      💳 Payment Method
                     </h4>
-                    <p style="margin: 0; color: #1a1a1a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px;">
+                    <p style="margin: 0; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px;">
                       ${paymentMethodLabel}
                     </p>
                   </div>
@@ -244,19 +254,22 @@ For questions: support@raynadamperfume.com
                   <!-- Footer Message -->
                   <p style="margin: 0; text-align: center; color: #888; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.6;">
                     If you have any questions about your order, please contact us at<br>
-                    <a href="mailto:support@raynadamperfume.com" style="color: #c9a962;">support@raynadamperfume.com</a>
+                    <a href="mailto:support@raynadamperfume.com" style="color: #c7915e; text-decoration: none;">support@raynadamperfume.com</a>
                   </p>
                 </td>
               </tr>
               
               <!-- Footer -->
               <tr>
-                <td style="background-color: #1a1a1a; padding: 30px; text-align: center;">
-                  <p style="margin: 0 0 10px; color: #c9a962; font-family: Georgia, serif; font-size: 16px; letter-spacing: 2px;">
+                <td style="background: linear-gradient(135deg, #1c1c1c 0%, #0f0f0f 100%); padding: 30px; text-align: center; border-top: 1px solid #3d3d3d;">
+                  <p style="margin: 0 0 10px; color: #a87c39; font-family: Georgia, serif; font-size: 14px; letter-spacing: 2px;">
                     RAYN ADAM
                   </p>
-                  <p style="margin: 0; color: #666; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px;">
-                    © 2024 Rayn Adam. All rights reserved.
+                  <p style="margin: 0; color: #666; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px;">
+                    © 2026 Rayn Adam. All rights reserved.
+                  </p>
+                  <p style="margin: 8px 0 0; color: #555; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 10px;">
+                    Kozhikode, Kerala, India
                   </p>
                 </td>
               </tr>

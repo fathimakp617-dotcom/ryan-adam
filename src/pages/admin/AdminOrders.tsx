@@ -26,7 +26,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, Search, RefreshCw, Truck, Package, CheckCircle, X, Clock, Loader2 } from "lucide-react";
+import { Eye, Search, RefreshCw, Truck, Package, CheckCircle, X, Clock, Loader2, Download } from "lucide-react";
 
 interface OrderItem {
   productId: string;
@@ -257,6 +257,53 @@ const AdminOrders = () => {
     }
   };
 
+  const downloadShippingAddresses = () => {
+    // Filter orders that need shipping (not cancelled/delivered)
+    const ordersToShip = filteredOrders.filter(
+      order => order.order_status === "pending" || order.order_status === "processing"
+    );
+
+    if (ordersToShip.length === 0) {
+      toast({
+        title: "No orders to export",
+        description: "No pending or processing orders found",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create CSV content
+    const headers = ["Order Number", "Customer Name", "Phone", "Address", "City", "State", "ZIP", "Country", "Status"];
+    const rows = ordersToShip.map(order => [
+      order.order_number,
+      order.customer_name,
+      order.customer_phone || "N/A",
+      order.shipping_address.address,
+      order.shipping_address.city,
+      order.shipping_address.state,
+      order.shipping_address.zipCode,
+      order.shipping_address.country,
+      order.order_status
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
+    ].join("\n");
+
+    // Download the file
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `shipping-addresses-${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+
+    toast({
+      title: "Downloaded",
+      description: `Exported ${ordersToShip.length} shipping addresses`,
+    });
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -312,10 +359,16 @@ const AdminOrders = () => {
           <h1 className="text-2xl font-heading font-bold text-foreground">Orders</h1>
           <p className="text-muted-foreground">Manage customer orders</p>
         </div>
-        <Button onClick={fetchOrders} variant="outline" size="sm">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={downloadShippingAddresses} variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            Export Addresses
+          </Button>
+          <Button onClick={fetchOrders} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}

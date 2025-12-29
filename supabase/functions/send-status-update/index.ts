@@ -48,14 +48,14 @@ const getStatusConfig = (status: string) => {
       return {
         title: "Order Being Processed",
         emoji: "⚙️",
-        color: "#3b82f6",
+        color: "#a87c39", // Brand gold
         message: "Great news! Your order is now being processed and will be shipped soon.",
       };
     case "shipped":
       return {
         title: "Order Shipped",
         emoji: "🚚",
-        color: "#8b5cf6",
+        color: "#c7915e", // Brand light gold
         message: "Your order is on its way! Track your package using the details below.",
       };
     case "delivered":
@@ -76,7 +76,7 @@ const getStatusConfig = (status: string) => {
       return {
         title: "Order Update",
         emoji: "📦",
-        color: "#6b7280",
+        color: "#a87c39",
         message: "There's an update to your order.",
       };
   }
@@ -99,10 +99,10 @@ const generateStatusEmailHTML = (request: StatusUpdateRequest): string => {
   const trackingSection =
     request.new_status === "shipped" && (request.tracking_number || request.tracking_url)
       ? `
-      <div style="background: #f3e8ff; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
-        <h3 style="color: #7c3aed; margin: 0 0 10px 0;">📍 Track Your Order</h3>
-        ${request.tracking_number ? `<p style="margin: 5px 0;"><strong>Tracking Number:</strong> ${request.tracking_number}</p>` : ""}
-        ${request.tracking_url ? `<p style="margin: 10px 0;"><a href="${request.tracking_url}" style="display: inline-block; background: #7c3aed; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">Track Package</a></p>` : ""}
+      <div style="background: linear-gradient(135deg, rgba(168, 124, 57, 0.1) 0%, rgba(199, 145, 94, 0.1) 100%); padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; border: 1px solid rgba(168, 124, 57, 0.3);">
+        <h3 style="color: #a87c39; margin: 0 0 10px 0;">📍 Track Your Order</h3>
+        ${request.tracking_number ? `<p style="margin: 5px 0; color: #1c1c1c;"><strong>Tracking Number:</strong> ${request.tracking_number}</p>` : ""}
+        ${request.tracking_url ? `<p style="margin: 10px 0;"><a href="${request.tracking_url}" style="display: inline-block; background: linear-gradient(135deg, #a87c39 0%, #c7915e 100%); color: white; padding: 12px 24px; border-radius: 4px; text-decoration: none; font-weight: 500;">Track Package</a></p>` : ""}
       </div>
     `
       : "";
@@ -115,46 +115,46 @@ const generateStatusEmailHTML = (request: StatusUpdateRequest): string => {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>${config.title}</title>
     </head>
-    <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5;">
-      <div style="max-width: 600px; margin: 0 auto; background: white;">
+    <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #1c1c1c;">
+      <div style="max-width: 600px; margin: 0 auto; background: #242424;">
         
         <!-- Header -->
-        <div style="background: linear-gradient(135deg, #1c1c1c 0%, #2d2d2d 100%); padding: 30px; text-align: center;">
-          <h1 style="color: #c7915e; margin: 0; font-size: 28px; letter-spacing: 2px;">RAYN ADAM</h1>
-          <p style="color: #a87c39; margin: 5px 0 0 0; font-size: 12px; letter-spacing: 1px;">LUXURY PERFUMES</p>
+        <div style="background: linear-gradient(135deg, #1c1c1c 0%, #2d2d2d 100%); padding: 40px 30px; text-align: center; border-bottom: 2px solid #a87c39;">
+          <h1 style="color: #c7915e; margin: 0; font-size: 32px; letter-spacing: 3px; font-weight: 300;">RAYN ADAM</h1>
+          <p style="color: #a87c39; margin: 8px 0 0 0; font-size: 11px; letter-spacing: 3px; text-transform: uppercase;">Luxury Perfumes</p>
         </div>
 
         <!-- Status Banner -->
-        <div style="background: ${config.color}; padding: 25px; text-align: center;">
-          <span style="font-size: 40px;">${config.emoji}</span>
-          <h2 style="color: white; margin: 10px 0 0 0; font-size: 24px;">${config.title}</h2>
+        <div style="background: linear-gradient(135deg, ${config.color} 0%, ${config.color}dd 100%); padding: 30px; text-align: center;">
+          <span style="font-size: 48px;">${config.emoji}</span>
+          <h2 style="color: white; margin: 15px 0 0 0; font-size: 26px; font-weight: 500; letter-spacing: 1px;">${config.title}</h2>
         </div>
 
         <!-- Content -->
-        <div style="padding: 30px;">
-          <p style="font-size: 16px; color: #374151;">Dear ${request.customer_name},</p>
-          <p style="font-size: 16px; color: #374151; line-height: 1.6;">${config.message}</p>
+        <div style="padding: 35px 30px;">
+          <p style="font-size: 16px; color: #f5f5f0;">Dear ${request.customer_name},</p>
+          <p style="font-size: 16px; color: #e0e0e0; line-height: 1.7;">${config.message}</p>
 
           <!-- Order Info -->
-          <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="color: #1f2937; margin: 0 0 15px 0; border-bottom: 2px solid ${config.color}; padding-bottom: 10px;">
+          <div style="background: #1c1c1c; padding: 25px; border-radius: 8px; margin: 25px 0; border: 1px solid #3d3d3d;">
+            <h3 style="color: #c7915e; margin: 0 0 20px 0; border-bottom: 2px solid #a87c39; padding-bottom: 12px; font-weight: 500; letter-spacing: 1px;">
               Order #${request.order_number}
             </h3>
             <table style="width: 100%; border-collapse: collapse;">
               <thead>
-                <tr style="background: #e5e7eb;">
-                  <th style="padding: 12px; text-align: left;">Item</th>
-                  <th style="padding: 12px; text-align: center;">Qty</th>
-                  <th style="padding: 12px; text-align: right;">Price</th>
+                <tr style="background: #2d2d2d;">
+                  <th style="padding: 14px; text-align: left; color: #a87c39; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Item</th>
+                  <th style="padding: 14px; text-align: center; color: #a87c39; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Qty</th>
+                  <th style="padding: 14px; text-align: right; color: #a87c39; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Price</th>
                 </tr>
               </thead>
               <tbody>
-                ${itemsList}
+                ${itemsList.replace(/border-bottom: 1px solid #e5e7eb/g, 'border-bottom: 1px solid #3d3d3d; color: #f5f5f0')}
               </tbody>
               <tfoot>
                 <tr>
-                  <td colspan="2" style="padding: 15px 12px; text-align: right; font-weight: bold;">Total:</td>
-                  <td style="padding: 15px 12px; text-align: right; font-weight: bold; color: ${config.color}; font-size: 18px;">
+                  <td colspan="2" style="padding: 18px 14px; text-align: right; font-weight: bold; color: #f5f5f0; border-top: 1px solid #3d3d3d;">Total:</td>
+                  <td style="padding: 18px 14px; text-align: right; font-weight: bold; color: #c7915e; font-size: 20px; border-top: 1px solid #3d3d3d;">
                     ${formatCurrency(request.total)}
                   </td>
                 </tr>
@@ -165,9 +165,9 @@ const generateStatusEmailHTML = (request: StatusUpdateRequest): string => {
           ${trackingSection}
 
           <!-- Shipping Address -->
-          <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="color: #1f2937; margin: 0 0 10px 0;">📍 Shipping Address</h3>
-            <p style="margin: 0; color: #6b7280; line-height: 1.6;">
+          <div style="background: #1c1c1c; padding: 25px; border-radius: 8px; margin: 25px 0; border: 1px solid #3d3d3d;">
+            <h3 style="color: #c7915e; margin: 0 0 12px 0; font-weight: 500;">📍 Shipping Address</h3>
+            <p style="margin: 0; color: #e0e0e0; line-height: 1.7;">
               ${request.shipping_address.address}<br>
               ${request.shipping_address.city}, ${request.shipping_address.state} ${request.shipping_address.zipCode}<br>
               ${request.shipping_address.country}
@@ -175,20 +175,23 @@ const generateStatusEmailHTML = (request: StatusUpdateRequest): string => {
           </div>
 
           <!-- Support -->
-          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-            <p style="color: #6b7280; font-size: 14px;">
+          <div style="text-align: center; margin-top: 35px; padding-top: 25px; border-top: 1px solid #3d3d3d;">
+            <p style="color: #888; font-size: 14px;">
               Questions? Contact us at<br>
-              <a href="mailto:support@raynadamperfume.com" style="color: #a87c39;">support@raynadamperfume.com</a>
+              <a href="mailto:support@raynadamperfume.com" style="color: #c7915e; text-decoration: none;">support@raynadamperfume.com</a>
             </p>
           </div>
         </div>
 
         <!-- Footer -->
-        <div style="background: #1c1c1c; padding: 20px; text-align: center;">
-          <p style="color: #a87c39; margin: 0; font-size: 12px;">
+        <div style="background: linear-gradient(135deg, #1c1c1c 0%, #0f0f0f 100%); padding: 25px; text-align: center; border-top: 1px solid #3d3d3d;">
+          <p style="color: #a87c39; margin: 0; font-size: 13px; letter-spacing: 2px;">
+            RAYN ADAM
+          </p>
+          <p style="color: #666; margin: 8px 0 0 0; font-size: 11px;">
             © 2026 Rayn Adam. All rights reserved.
           </p>
-          <p style="color: #6b7280; margin: 10px 0 0 0; font-size: 11px;">
+          <p style="color: #555; margin: 8px 0 0 0; font-size: 10px;">
             Kozhikode, Kerala, India
           </p>
         </div>
