@@ -57,7 +57,7 @@ const AdminDashboard = () => {
   const fetchStats = async () => {
     try {
       // Get admin session from localStorage
-      const sessionData = localStorage.getItem("admin_session");
+      const sessionData = localStorage.getItem("rayn_admin_session");
       if (!sessionData) {
         throw new Error("No admin session found");
       }
@@ -67,7 +67,7 @@ const AdminDashboard = () => {
       const { data, error } = await supabase.functions.invoke('get-admin-stats', {
         body: {
           admin_email: session.email,
-          admin_token: session.session_token,
+          admin_token: session.token,
         }
       });
       
