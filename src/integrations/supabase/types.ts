@@ -203,6 +203,13 @@ export type Database = {
     }
     Functions: {
       can_view_order: { Args: { order_email: string }; Returns: boolean }
+      check_account_exists: {
+        Args: { check_email: string; check_phone: string }
+        Returns: {
+          email_exists: boolean
+          phone_exists: boolean
+        }[]
+      }
       validate_affiliate_code: {
         Args: { affiliate_code: string }
         Returns: {

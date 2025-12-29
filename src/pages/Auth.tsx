@@ -206,6 +206,46 @@ const Auth = () => {
 
     setIsSubmitting(true);
     try {
+      // Check if email or phone already exists
+      const { data: existsData, error: existsError } = await supabase
+        .rpc('check_account_exists', { 
+          check_email: formData.email, 
+          check_phone: formData.phone 
+        });
+
+      if (existsError) {
+        toast({
+          title: "Error",
+          description: "Unable to verify account details. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (existsData && existsData.length > 0) {
+        const { email_exists, phone_exists } = existsData[0];
+        
+        if (email_exists) {
+          setErrors(prev => ({ ...prev, email: "An account with this email already exists" }));
+          toast({
+            title: "Email Already Registered",
+            description: "This email is already associated with an account. Please sign in instead.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (phone_exists) {
+          setErrors(prev => ({ ...prev, phone: "This phone number is already registered" }));
+          toast({
+            title: "Phone Number Already Registered",
+            description: "This phone number is already associated with an account.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
       // Send OTP to verify email first
       const { error } = await signInWithEmailOtp(formData.email);
       if (error) {
