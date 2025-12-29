@@ -95,7 +95,7 @@ serve(async (req) => {
     const resend = new Resend(resendApiKey);
     
     const { error: emailError } = await resend.emails.send({
-      from: "Rayn Adam <security@raynadamperfume.com>",
+      from: "Rayn Adam <onboarding@resend.dev>",
       to: [normalizedEmail],
       subject: "🔐 Admin Access OTP - Rayn Adam",
       html: `
