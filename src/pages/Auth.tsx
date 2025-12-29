@@ -6,6 +6,7 @@ import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, KeyRound, Phone } from "lucid
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -32,6 +33,7 @@ const Auth = () => {
   const [mode, setMode] = useState<AuthMode>("login");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -200,7 +202,7 @@ const Auth = () => {
 
     setIsSubmitting(true);
     try {
-      const { error } = await signIn(formData.email, formData.password);
+      const { error } = await signIn(formData.email, formData.password, rememberMe);
       if (error) {
         if (error.message.includes("Invalid login credentials")) {
           toast({
@@ -683,7 +685,17 @@ const Auth = () => {
                     )}
                   </div>
 
-                  <div className="text-right">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="rememberMe"
+                        checked={rememberMe}
+                        onCheckedChange={(checked) => setRememberMe(checked === true)}
+                      />
+                      <Label htmlFor="rememberMe" className="text-sm text-muted-foreground cursor-pointer">
+                        Remember me
+                      </Label>
+                    </div>
                     <button
                       type="button"
                       onClick={() => setMode("forgot")}

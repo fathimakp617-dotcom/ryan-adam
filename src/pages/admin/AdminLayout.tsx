@@ -44,17 +44,18 @@ const AdminLayout = () => {
 
   const checkExistingSession = () => {
     try {
-      const stored = localStorage.getItem(ADMIN_SESSION_KEY);
+      // Use sessionStorage for admin - auto logout on browser close
+      const stored = sessionStorage.getItem(ADMIN_SESSION_KEY);
       if (stored) {
         const session: AdminSession = JSON.parse(stored);
         if (session.expiry > Date.now()) {
           setAdminSession(session);
         } else {
-          localStorage.removeItem(ADMIN_SESSION_KEY);
+          sessionStorage.removeItem(ADMIN_SESSION_KEY);
         }
       }
     } catch (error) {
-      localStorage.removeItem(ADMIN_SESSION_KEY);
+      sessionStorage.removeItem(ADMIN_SESSION_KEY);
     }
     setIsChecking(false);
   };
@@ -85,7 +86,8 @@ const AdminLayout = () => {
           email: data.email,
           expiry: data.session_expiry,
         };
-        localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(session));
+        // Use sessionStorage - admin session ends when browser closes
+        sessionStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(session));
         setAdminSession(session);
         toast({
           title: "Welcome, Admin",
@@ -106,7 +108,7 @@ const AdminLayout = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem(ADMIN_SESSION_KEY);
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
     setAdminSession(null);
     setEmail("");
     setPassword("");
