@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Outlet, useNavigate, Link, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -17,8 +17,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Package, LayoutDashboard, LogOut, ArrowLeft, Mail, KeyRound, Loader2, Shield } from "lucide-react";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { Package, LayoutDashboard, LogOut, ArrowLeft, Mail, Lock, Loader2, Shield } from "lucide-react";
 import { motion } from "framer-motion";
 
 const ADMIN_SESSION_KEY = "rayn_admin_session";
@@ -32,11 +31,9 @@ interface AdminSession {
 const AdminLayout = () => {
   const [adminSession, setAdminSession] = useState<AdminSession | null>(null);
   const [isChecking, setIsChecking] = useState(true);
-  const [step, setStep] = useState<"email" | "otp">("email");
   const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -62,13 +59,13 @@ const AdminLayout = () => {
     setIsChecking(false);
   };
 
-  const handleSendOTP = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email.trim()) {
+    if (!email.trim() || !password.trim()) {
       toast({
         title: "Error",
-        description: "Please enter your email",
+        description: "Please enter both email and password",
         variant: "destructive",
       });
       return;
@@ -76,43 +73,8 @@ const AdminLayout = () => {
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("send-admin-otp", {
-        body: { email: email.trim() },
-      });
-
-      if (error) throw error;
-
-      setOtpSent(true);
-      setStep("otp");
-      toast({
-        title: "OTP Sent",
-        description: "Check your email for the verification code",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to send OTP",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleVerifyOTP = async () => {
-    if (otp.length !== 8) {
-      toast({
-        title: "Error",
-        description: "Please enter the complete 8-digit OTP",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("verify-admin-otp", {
-        body: { email: email.trim(), otp },
+      const { data, error } = await supabase.functions.invoke("verify-admin-password", {
+        body: { email: email.trim(), password },
       });
 
       if (error) throw error;
@@ -130,15 +92,14 @@ const AdminLayout = () => {
           description: "You have successfully logged in",
         });
       } else {
-        throw new Error(data.error || "Verification failed");
+        throw new Error(data.error || "Login failed");
       }
     } catch (error: any) {
       toast({
-        title: "Verification Failed",
-        description: error.message || "Invalid OTP",
+        title: "Login Failed",
+        description: error.message || "Invalid credentials",
         variant: "destructive",
       });
-      setOtp("");
     } finally {
       setIsLoading(false);
     }
@@ -147,10 +108,8 @@ const AdminLayout = () => {
   const handleLogout = () => {
     localStorage.removeItem(ADMIN_SESSION_KEY);
     setAdminSession(null);
-    setStep("email");
     setEmail("");
-    setOtp("");
-    setOtpSent(false);
+    setPassword("");
     navigate("/");
   };
 
@@ -165,7 +124,7 @@ const AdminLayout = () => {
     );
   }
 
-  // Show OTP login screen if not authenticated
+  // Show login screen if not authenticated
   if (!adminSession) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -182,102 +141,58 @@ const AdminLayout = () => {
               </div>
               <h1 className="text-2xl font-heading font-bold text-foreground">Admin Access</h1>
               <p className="text-muted-foreground text-sm mt-2">
-                {step === "email" 
-                  ? "Enter your admin email to receive a verification code" 
-                  : "Enter the 8-digit code sent to your email"}
+                Enter your admin credentials to continue
               </p>
             </div>
 
-            {step === "email" ? (
-              <form onSubmit={handleSendOTP} className="space-y-6">
-                <div>
-                  <Label htmlFor="admin_email">Admin Email</Label>
-                  <div className="relative mt-1">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="admin_email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10"
-                      placeholder="admin@example.com"
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-
-                <Button 
-                  type="submit" 
-                  className="w-full"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sending OTP...
-                    </>
-                  ) : (
-                    <>
-                      <KeyRound className="mr-2 h-4 w-4" />
-                      Send Verification Code
-                    </>
-                  )}
-                </Button>
-              </form>
-            ) : (
-              <div className="space-y-6">
-                <div className="flex flex-col items-center">
-                  <Label className="mb-4">Enter Verification Code</Label>
-                  <InputOTP
-                    maxLength={8}
-                    value={otp}
-                    onChange={(value) => setOtp(value)}
+            <form onSubmit={handleLogin} className="space-y-5">
+              <div>
+                <Label htmlFor="admin_email">Admin Email</Label>
+                <div className="relative mt-1">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="admin_email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
+                    placeholder="admin@example.com"
                     disabled={isLoading}
-                  >
-                    <InputOTPGroup>
-                      <InputOTPSlot index={0} />
-                      <InputOTPSlot index={1} />
-                      <InputOTPSlot index={2} />
-                      <InputOTPSlot index={3} />
-                      <InputOTPSlot index={4} />
-                      <InputOTPSlot index={5} />
-                      <InputOTPSlot index={6} />
-                      <InputOTPSlot index={7} />
-                    </InputOTPGroup>
-                  </InputOTP>
-                  <p className="text-xs text-muted-foreground mt-3">
-                    Code sent to {email}
-                  </p>
+                  />
                 </div>
-
-                <Button 
-                  onClick={handleVerifyOTP}
-                  className="w-full"
-                  disabled={isLoading || otp.length !== 8}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Verifying...
-                    </>
-                  ) : (
-                    "Verify & Login"
-                  )}
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  className="w-full"
-                  onClick={() => {
-                    setStep("email");
-                    setOtp("");
-                  }}
-                  disabled={isLoading}
-                >
-                  Use Different Email
-                </Button>
               </div>
-            )}
+
+              <div>
+                <Label htmlFor="admin_password">Password</Label>
+                <div className="relative mt-1">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="admin_password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10"
+                    placeholder="••••••••"
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+
+              <Button 
+                type="submit" 
+                className="w-full"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Logging in...
+                  </>
+                ) : (
+                  "Login"
+                )}
+              </Button>
+            </form>
 
             <div className="mt-8 pt-6 border-t border-border text-center">
               <Button
