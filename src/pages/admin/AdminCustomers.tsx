@@ -10,34 +10,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Download, Search, Loader2, Users, Mail, RefreshCw, Trash2, AlertTriangle } from "lucide-react";
+import { Download, Search, Loader2, Users, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
-interface CustomerEmail {
+interface CustomerData {
   email: string;
-  name: string;
-  orderCount: number;
-  lastOrderDate: string;
-  totalSpent: number;
+  created_at: string;
 }
 
 const AdminCustomers = () => {
-  const [customers, setCustomers] = useState<CustomerEmail[]>([]);
+  const [customers, setCustomers] = useState<CustomerData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [deleteCustomerEmail, setDeleteCustomerEmail] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -78,23 +63,18 @@ const AdminCustomers = () => {
     }
   };
 
-  const filteredCustomers = customers.filter(
-    (customer) =>
-      customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCustomers = customers.filter((customer) =>
+    customer.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const exportToCSV = () => {
-    const headers = ["Email", "Name", "Order Count", "Total Spent", "Last Order Date"];
+    const headers = ["Email", "Registered On"];
     const csvContent = [
       headers.join(","),
       ...filteredCustomers.map((customer) =>
         [
           `"${customer.email}"`,
-          `"${customer.name}"`,
-          customer.orderCount,
-          customer.totalSpent,
-          `"${customer.lastOrderDate}"`,
+          `"${formatDate(customer.created_at)}"`,
         ].join(",")
       ),
     ].join("\n");
@@ -113,55 +93,6 @@ const AdminCustomers = () => {
       title: "Export Complete",
       description: `${filteredCustomers.length} customer emails exported to CSV`,
     });
-  };
-
-  const handleDeleteCustomer = async (email: string) => {
-    setIsDeleting(true);
-    try {
-      const stored = localStorage.getItem("rayn_admin_session");
-      if (!stored) {
-        throw new Error("Admin session not found");
-      }
-
-      const session = JSON.parse(stored);
-      
-      const { data, error } = await supabase.functions.invoke("delete-customer-orders", {
-        body: {
-          admin_email: session.email,
-          admin_token: session.token,
-          customer_email: email,
-        },
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Customer Deleted",
-        description: data.message || "Customer and orders deleted successfully",
-      });
-
-      // Remove from local state
-      setCustomers(customers.filter(c => c.email !== email));
-      setDeleteCustomerEmail(null);
-
-    } catch (error: any) {
-      console.error("Error deleting customer:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete customer",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 0,
-    }).format(amount);
   };
 
   const formatDate = (dateString: string) => {
@@ -189,9 +120,9 @@ const AdminCustomers = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-foreground">Customers</h1>
+          <h1 className="text-2xl font-heading font-bold text-foreground">Registered Customers</h1>
           <p className="text-muted-foreground text-sm">
-            {customers.length} unique customers
+            {customers.length} registered users
           </p>
         </div>
         <div className="flex gap-2">
@@ -206,39 +137,15 @@ const AdminCustomers = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-card border border-border rounded-xl p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-              <Users className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Customers</p>
-              <p className="text-xl font-bold text-foreground">{customers.length}</p>
-            </div>
+      {/* Stats Card */}
+      <div className="bg-card border border-border rounded-xl p-6">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center">
+            <Users className="h-7 w-7 text-primary" />
           </div>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center">
-              <Mail className="h-5 w-5 text-green-500" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Emails Available</p>
-              <p className="text-xl font-bold text-foreground">{customers.length}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center">
-              <Download className="h-5 w-5 text-blue-500" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Ready to Export</p>
-              <p className="text-xl font-bold text-foreground">{filteredCustomers.length}</p>
-            </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Total Registered Customers</p>
+            <p className="text-3xl font-bold text-foreground">{customers.length}</p>
           </div>
         </div>
       </div>
@@ -247,7 +154,7 @@ const AdminCustomers = () => {
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Search by email or name..."
+          placeholder="Search by email..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="pl-10"
@@ -259,47 +166,25 @@ const AdminCustomers = () => {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
+              <TableHead className="w-12">#</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead className="text-center">Orders</TableHead>
-              <TableHead className="text-right">Total Spent</TableHead>
-              <TableHead className="text-right">Last Order</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="text-right">Registered On</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredCustomers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                  {searchTerm ? "No customers found matching your search" : "No customer data available"}
+                <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                  {searchTerm ? "No customers found matching your search" : "No registered customers yet"}
                 </TableCell>
               </TableRow>
             ) : (
-              filteredCustomers.map((customer) => (
+              filteredCustomers.map((customer, index) => (
                 <TableRow key={customer.email} className="hover:bg-muted/30">
+                  <TableCell className="text-muted-foreground">{index + 1}</TableCell>
                   <TableCell className="font-medium">{customer.email}</TableCell>
-                  <TableCell>{customer.name}</TableCell>
-                  <TableCell className="text-center">
-                    <span className="inline-flex items-center justify-center w-8 h-8 bg-primary/10 text-primary rounded-full text-sm font-medium">
-                      {customer.orderCount}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right font-medium text-green-600">
-                    {formatCurrency(customer.totalSpent)}
-                  </TableCell>
                   <TableCell className="text-right text-muted-foreground">
-                    {formatDate(customer.lastOrderDate)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setDeleteCustomerEmail(customer.email)}
-                      title="Delete customer and orders"
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {formatDate(customer.created_at)}
                   </TableCell>
                 </TableRow>
               ))
@@ -307,50 +192,6 @@ const AdminCustomers = () => {
           </TableBody>
         </Table>
       </div>
-
-      {/* Export Info */}
-      <div className="bg-muted/50 border border-border rounded-xl p-4">
-        <h3 className="font-medium text-foreground mb-2">💡 Export Tips</h3>
-        <ul className="text-sm text-muted-foreground space-y-1">
-          <li>• Use the search to filter customers before exporting</li>
-          <li>• CSV file can be imported to email marketing tools (Mailchimp, etc.)</li>
-          <li>• Customer emails are extracted from order data</li>
-        </ul>
-      </div>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!deleteCustomerEmail} onOpenChange={() => setDeleteCustomerEmail(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-destructive" />
-              Delete Customer
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete <strong>{deleteCustomerEmail}</strong>? 
-              This will permanently delete all orders associated with this customer. 
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deleteCustomerEmail && handleDeleteCustomer(deleteCustomerEmail)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={isDeleting}
-            >
-              {isDeleting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                "Delete Customer"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </motion.div>
   );
 };
