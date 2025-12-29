@@ -26,3 +26,18 @@ verify_jwt = false
 
 [functions.cancel-order]
 verify_jwt = false
+
+[functions.send-status-update]
+verify_jwt = false
+
+[functions.update-order-status]
+verify_jwt = false
+
+[functions.check-admin-access]
+verify_jwt = false
+
+[functions.get-admin-orders]
+verify_jwt = false
+
+[functions.get-admin-stats]
+verify_jwt = false

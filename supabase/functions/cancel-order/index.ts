@@ -99,71 +99,132 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Order ${order.order_number} cancelled successfully`);
 
-    // Send notification email to admin
-    if (resendApiKey && adminEmail) {
+    // Send notification emails
+    if (resendApiKey) {
+      const resend = new Resend(resendApiKey);
+      const items = order.items as Array<{ name: string; quantity: number; price: number }>;
+      const itemsList = items.map((item) => 
+        `<li>${item.name} x${item.quantity} - ₹${item.price.toLocaleString()}</li>`
+      ).join("");
+
+      // Send customer cancellation email
       try {
-        const resend = new Resend(resendApiKey);
-        
-        const items = order.items as Array<{ name: string; quantity: number; price: number }>;
-        const itemsList = items.map((item) => 
-          `<li>${item.name} x${item.quantity} - ₹${item.price.toLocaleString()}</li>`
-        ).join("");
-
         await resend.emails.send({
-          from: "Rayn Adam <onboarding@resend.dev>",
-          to: [adminEmail],
-          subject: `⚠️ Order Cancelled - ${order.order_number}`,
+          from: "Rayn Adam <shipping@raynadamperfume.com>",
+          to: [order.customer_email],
+          subject: `❌ Order Cancelled - ${order.order_number}`,
           html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h1 style="color: #dc2626; border-bottom: 2px solid #dc2626; padding-bottom: 10px;">Order Cancelled</h1>
-              
-              <div style="background: #fef2f2; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                <p style="margin: 0; font-size: 18px;"><strong>Order Number:</strong> ${order.order_number}</p>
-                <p style="margin: 10px 0 0 0;"><strong>Cancelled At:</strong> ${new Date().toLocaleString()}</p>
-                ${reason ? `<p style="margin: 10px 0 0 0;"><strong>Reason:</strong> ${reason}</p>` : ''}
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 0;">
+              <!-- Header -->
+              <div style="background: linear-gradient(135deg, #1c1c1c 0%, #2d2d2d 100%); padding: 30px; text-align: center;">
+                <h1 style="color: #c7915e; margin: 0; font-size: 28px; letter-spacing: 2px;">RAYN ADAM</h1>
+                <p style="color: #a87c39; margin: 5px 0 0 0; font-size: 12px; letter-spacing: 1px;">LUXURY PERFUMES</p>
               </div>
 
-              <h2 style="color: #374151;">Customer Details</h2>
-              <table style="width: 100%; border-collapse: collapse;">
-                <tr>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Name:</strong></td>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${order.customer_name}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Email:</strong></td>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${order.customer_email}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Phone:</strong></td>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${order.customer_phone || 'N/A'}</td>
-                </tr>
-              </table>
-
-              <h2 style="color: #374151; margin-top: 20px;">Cancelled Items</h2>
-              <ul style="background: #f9fafb; padding: 15px 15px 15px 35px; border-radius: 8px;">
-                ${itemsList}
-              </ul>
-
-              <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin-top: 20px;">
-                <p style="margin: 0;"><strong>Order Total:</strong> ₹${order.total.toLocaleString()}</p>
-                <p style="margin: 10px 0 0 0;"><strong>Payment Method:</strong> ${order.payment_method}</p>
-                <p style="margin: 10px 0 0 0;"><strong>Payment Status:</strong> ${order.payment_status}</p>
+              <!-- Status Banner -->
+              <div style="background: #ef4444; padding: 25px; text-align: center;">
+                <span style="font-size: 40px;">❌</span>
+                <h2 style="color: white; margin: 10px 0 0 0; font-size: 24px;">Order Cancelled</h2>
               </div>
 
-              <p style="color: #6b7280; font-size: 12px; margin-top: 30px; text-align: center;">
-                This is an automated notification from Rayn Adam
-              </p>
+              <div style="padding: 30px;">
+                <p style="font-size: 16px; color: #374151;">Dear ${order.customer_name},</p>
+                <p style="font-size: 16px; color: #374151; line-height: 1.6;">
+                  Your order has been successfully cancelled as requested. If you did not request this cancellation, please contact us immediately.
+                </p>
+                ${reason ? `<p style="font-size: 14px; color: #6b7280;"><strong>Reason:</strong> ${reason}</p>` : ''}
+
+                <div style="background: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                  <h3 style="color: #dc2626; margin: 0 0 15px 0;">Order #${order.order_number}</h3>
+                  <ul style="margin: 0; padding-left: 20px; color: #374151;">
+                    ${itemsList}
+                  </ul>
+                  <p style="margin: 15px 0 0 0; font-weight: bold;">
+                    Total: ₹${order.total.toLocaleString()}
+                  </p>
+                </div>
+
+                <p style="color: #6b7280; font-size: 14px;">
+                  If you paid online, your refund will be processed within 5-7 business days.
+                </p>
+
+                <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                  <p style="color: #6b7280; font-size: 14px;">
+                    Questions? Contact us at<br>
+                    <a href="mailto:support@raynadamperfume.com" style="color: #a87c39;">support@raynadamperfume.com</a>
+                  </p>
+                </div>
+              </div>
+
+              <!-- Footer -->
+              <div style="background: #1c1c1c; padding: 20px; text-align: center;">
+                <p style="color: #a87c39; margin: 0; font-size: 12px;">© 2026 Rayn Adam. All rights reserved.</p>
+              </div>
             </div>
           `,
         });
-        
-        console.log("Admin notification email sent successfully");
+        console.log("Customer cancellation email sent successfully");
       } catch (emailError) {
-        console.error("Failed to send admin notification email:", emailError);
-        // Don't fail the cancellation if email fails
+        console.error("Failed to send customer cancellation email:", emailError);
+      }
+
+      // Send admin notification email
+      if (adminEmail) {
+        try {
+          await resend.emails.send({
+            from: "Rayn Adam <shipping@raynadamperfume.com>",
+            to: [adminEmail],
+            subject: `⚠️ Order Cancelled - ${order.order_number}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h1 style="color: #dc2626; border-bottom: 2px solid #dc2626; padding-bottom: 10px;">Order Cancelled</h1>
+                
+                <div style="background: #fef2f2; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                  <p style="margin: 0; font-size: 18px;"><strong>Order Number:</strong> ${order.order_number}</p>
+                  <p style="margin: 10px 0 0 0;"><strong>Cancelled At:</strong> ${new Date().toLocaleString()}</p>
+                  ${reason ? `<p style="margin: 10px 0 0 0;"><strong>Reason:</strong> ${reason}</p>` : ''}
+                </div>
+
+                <h2 style="color: #374151;">Customer Details</h2>
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Name:</strong></td>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${order.customer_name}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Email:</strong></td>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${order.customer_email}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Phone:</strong></td>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${order.customer_phone || 'N/A'}</td>
+                  </tr>
+                </table>
+
+                <h2 style="color: #374151; margin-top: 20px;">Cancelled Items</h2>
+                <ul style="background: #f9fafb; padding: 15px 15px 15px 35px; border-radius: 8px;">
+                  ${itemsList}
+                </ul>
+
+                <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                  <p style="margin: 0;"><strong>Order Total:</strong> ₹${order.total.toLocaleString()}</p>
+                  <p style="margin: 10px 0 0 0;"><strong>Payment Method:</strong> ${order.payment_method}</p>
+                  <p style="margin: 10px 0 0 0;"><strong>Payment Status:</strong> ${order.payment_status}</p>
+                </div>
+
+                <p style="color: #6b7280; font-size: 12px; margin-top: 30px; text-align: center;">
+                  This is an automated notification from Rayn Adam
+                </p>
+              </div>
+            `,
+          });
+          console.log("Admin notification email sent successfully");
+        } catch (emailError) {
+          console.error("Failed to send admin notification email:", emailError);
+        }
       }
     } else {
-      console.log("Skipping admin notification: RESEND_API_KEY or ADMIN_ORDER_EMAIL not configured");
+      console.log("Skipping emails: RESEND_API_KEY not configured");
     }
 
     return new Response(
