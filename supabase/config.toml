@@ -41,3 +41,9 @@ verify_jwt = false
 
 [functions.get-admin-stats]
 verify_jwt = false
+
+[functions.send-admin-otp]
+verify_jwt = false
+
+[functions.verify-admin-otp]
+verify_jwt = false

@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_otps: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          otp_hash: string
+          verified: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          otp_hash: string
+          verified?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          otp_hash?: string
+          verified?: boolean | null
+        }
+        Relationships: []
+      }
       affiliates: {
         Row: {
           code: string
@@ -216,6 +243,7 @@ export type Database = {
           phone_exists: boolean
         }[]
       }
+      cleanup_expired_admin_otps: { Args: never; Returns: undefined }
       validate_affiliate_code: {
         Args: { affiliate_code: string }
         Returns: {
