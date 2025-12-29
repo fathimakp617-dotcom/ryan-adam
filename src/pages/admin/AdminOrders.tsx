@@ -27,8 +27,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, Search, RefreshCw, Truck, Package, CheckCircle, X, Clock, Loader2, Download, FileText, Calendar } from "lucide-react";
+import { Eye, Search, RefreshCw, Truck, Package, CheckCircle, X, Clock, Loader2, Download, FileText, Calendar, Trash2, AlertTriangle } from "lucide-react";
 import jsPDF from "jspdf";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface OrderItem {
   productId: string;
@@ -81,6 +91,8 @@ const AdminOrders = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState("");
   const [trackingUrl, setTrackingUrl] = useState("");
+  const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
 
   // Initialize status filter from URL params
@@ -394,6 +406,47 @@ const AdminOrders = () => {
     }
   };
 
+  const handleDeleteOrder = async (orderId: string) => {
+    setIsDeleting(true);
+    try {
+      const sessionData = localStorage.getItem("rayn_admin_session");
+      if (!sessionData) {
+        throw new Error("No admin session found");
+      }
+      
+      const session = JSON.parse(sessionData);
+      
+      const { data, error } = await supabase.functions.invoke('delete-admin-order', {
+        body: {
+          admin_email: session.email,
+          admin_token: session.token,
+          order_id: orderId,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Order Deleted",
+        description: data.message || "Order deleted successfully",
+      });
+
+      // Remove from local state
+      setOrders(orders.filter(order => order.id !== orderId));
+      setDeleteOrderId(null);
+
+    } catch (error: any) {
+      console.error("Error deleting order:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete order",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const downloadShippingAddresses = () => {
     // Filter orders that need shipping (not cancelled/delivered)
     const ordersToShip = filteredOrders.filter(
@@ -644,6 +697,15 @@ const AdminOrders = () => {
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setDeleteOrderId(order.id)}
+                        title="Delete order"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -664,51 +726,63 @@ const AdminOrders = () => {
             <div className="space-y-6">
               {/* Status Update */}
               <div className="p-4 bg-muted/30 rounded-lg">
-                <Label className="text-sm font-medium mb-3 block">Update Status</Label>
-                <div className="flex flex-wrap gap-2">
-                  {["pending", "processing", "shipped", "delivered", "cancelled"].map((status) => (
-                    <Button
-                      key={status}
-                      variant={selectedOrder.order_status === status ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handleUpdateStatus(status)}
-                      disabled={isUpdating || selectedOrder.order_status === status}
-                      className="capitalize"
-                    >
-                      {isUpdating ? (
-                        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                      ) : (
-                        getStatusIcon(status)
-                      )}
-                      <span className="ml-1">{status}</span>
-                    </Button>
-                  ))}
-                </div>
-
-                {/* Tracking Info (show for shipped) */}
-                {(selectedOrder.order_status === "shipped" || selectedOrder.order_status === "processing") && (
-                  <div className="mt-4 space-y-3">
+                {selectedOrder.order_status === "cancelled" ? (
+                  <div className="flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                    <AlertTriangle className="h-5 w-5 text-red-500" />
                     <div>
-                      <Label htmlFor="tracking_number">Tracking Number</Label>
-                      <Input
-                        id="tracking_number"
-                        value={trackingNumber}
-                        onChange={(e) => setTrackingNumber(e.target.value)}
-                        placeholder="Enter tracking number"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="tracking_url">Tracking URL</Label>
-                      <Input
-                        id="tracking_url"
-                        value={trackingUrl}
-                        onChange={(e) => setTrackingUrl(e.target.value)}
-                        placeholder="https://..."
-                        className="mt-1"
-                      />
+                      <p className="font-medium text-red-500">Order Cancelled</p>
+                      <p className="text-sm text-muted-foreground">This order has been cancelled and cannot be edited.</p>
                     </div>
                   </div>
+                ) : (
+                  <>
+                    <Label className="text-sm font-medium mb-3 block">Update Status</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {["pending", "processing", "shipped", "delivered", "cancelled"].map((status) => (
+                        <Button
+                          key={status}
+                          variant={selectedOrder.order_status === status ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleUpdateStatus(status)}
+                          disabled={isUpdating || selectedOrder.order_status === status}
+                          className="capitalize"
+                        >
+                          {isUpdating ? (
+                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                          ) : (
+                            getStatusIcon(status)
+                          )}
+                          <span className="ml-1">{status}</span>
+                        </Button>
+                      ))}
+                    </div>
+
+                    {/* Tracking Info (show for shipped) */}
+                    {(selectedOrder.order_status === "shipped" || selectedOrder.order_status === "processing") && (
+                      <div className="mt-4 space-y-3">
+                        <div>
+                          <Label htmlFor="tracking_number">Tracking Number</Label>
+                          <Input
+                            id="tracking_number"
+                            value={trackingNumber}
+                            onChange={(e) => setTrackingNumber(e.target.value)}
+                            placeholder="Enter tracking number"
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="tracking_url">Tracking URL</Label>
+                          <Input
+                            id="tracking_url"
+                            value={trackingUrl}
+                            onChange={(e) => setTrackingUrl(e.target.value)}
+                            placeholder="https://..."
+                            className="mt-1"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -788,6 +862,39 @@ const AdminOrders = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteOrderId} onOpenChange={() => setDeleteOrderId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Delete Order
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this order? This action cannot be undone.
+              All order data will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteOrderId && handleDeleteOrder(deleteOrderId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete Order"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
