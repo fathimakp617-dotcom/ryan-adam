@@ -22,9 +22,10 @@ const passwordSchema = z
   .regex(/[a-z]/, "Password must contain at least one lowercase letter")
   .regex(/[!@#$%^&*(),.?":{}|<>]/, "Password must contain at least one special character (!@#$%^&*)");
 const otpSchema = z.string().length(8, "OTP must be 8 digits").regex(/^\d+$/, "OTP must contain only numbers");
+const otp6Schema = z.string().length(6, "OTP must be 6 digits").regex(/^\d+$/, "OTP must contain only numbers");
 const phoneSchema = z.string().min(10, "Phone number must be at least 10 digits").max(15, "Phone number too long").regex(/^[+]?[\d\s-]+$/, "Invalid phone number format");
 
-type AuthMode = "login" | "signup" | "signup-verify" | "forgot" | "reset" | "email-otp" | "email-otp-verify";
+type AuthMode = "login" | "signup" | "signup-verify" | "forgot" | "forgot-verify" | "reset" | "email-otp" | "email-otp-verify";
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
@@ -40,12 +41,13 @@ const Auth = () => {
     phone: "",
     otpEmail: "",
     otp: "",
+    forgotOtp: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user, signIn, signUp, signInWithEmailOtp, verifyEmailOtp, resetPassword, updatePassword, isLoading } = useAuth();
+  const { user, signIn, signUp, signInWithEmailOtp, sendPasswordResetOtp, verifyEmailOtp, resetPassword, updatePassword, isLoading } = useAuth();
 
   // Check URL for password reset mode
   useEffect(() => {
@@ -161,6 +163,18 @@ const Auth = () => {
     const otpResult = otpSchema.safeParse(formData.otp);
     if (!otpResult.success) {
       newErrors.otp = otpResult.error.errors[0].message;
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateForgotOtpForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    const otpResult = otp6Schema.safeParse(formData.forgotOtp);
+    if (!otpResult.success) {
+      newErrors.forgotOtp = otpResult.error.errors[0].message;
     }
 
     setErrors(newErrors);
@@ -344,7 +358,8 @@ const Auth = () => {
 
     setIsSubmitting(true);
     try {
-      const { error } = await resetPassword(formData.email);
+      // Send OTP for password reset using 6-digit OTP
+      const { error } = await sendPasswordResetOtp(formData.email);
       if (error) {
         toast({
           title: "Error",
@@ -354,10 +369,58 @@ const Auth = () => {
         return;
       }
       toast({
-        title: "Reset Link Sent!",
-        description: "Check your email for a password reset link.",
+        title: "OTP Sent!",
+        description: "Check your email for the 6-digit verification code.",
       });
-      setMode("login");
+      setFormData(prev => ({ ...prev, forgotOtp: "" }));
+      setMode("forgot-verify");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleForgotVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForgotOtpForm()) return;
+
+    setIsSubmitting(true);
+    try {
+      // Verify OTP - this logs the user in
+      const { error } = await verifyEmailOtp(formData.email, formData.forgotOtp);
+      if (error) {
+        toast({
+          title: "Verification Failed",
+          description: "Invalid or expired code. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      toast({
+        title: "Verified!",
+        description: "Now set your new password.",
+      });
+      setMode("reset");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const resendForgotOtp = async () => {
+    setIsSubmitting(true);
+    try {
+      const { error } = await sendPasswordResetOtp(formData.email);
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+      toast({
+        title: "OTP Sent!",
+        description: "A new verification code has been sent to your email.",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -473,6 +536,7 @@ const Auth = () => {
       case "signup": return "Create Account";
       case "signup-verify": return "Verify Email";
       case "forgot": return "Forgot Password";
+      case "forgot-verify": return "Verify Email";
       case "reset": return "Reset Password";
       case "email-otp": return "Email OTP Login";
       case "email-otp-verify": return "Verify Email";
@@ -484,7 +548,8 @@ const Auth = () => {
     switch (mode) {
       case "signup": return "Join RAYN ADAM for exclusive offers";
       case "signup-verify": return `Enter the 8-digit code sent to ${formData.email}`;
-      case "forgot": return "Enter your email to receive a reset link";
+      case "forgot": return "Enter your email to receive a verification code";
+      case "forgot-verify": return `Enter the 6-digit code sent to ${formData.email}`;
       case "reset": return "Enter your new password";
       case "email-otp": return "Enter your email to receive a verification code";
       case "email-otp-verify": return `Enter the 8-digit code sent to ${formData.otpEmail}`;
@@ -525,7 +590,7 @@ const Auth = () => {
             transition={{ duration: 0.4, delay: 0.1 }}
           >
             {/* Icon header for verification modes */}
-            {(mode === "email-otp-verify" || mode === "signup-verify") && (
+            {(mode === "email-otp-verify" || mode === "signup-verify" || mode === "forgot-verify") && (
               <motion.div 
                 className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-primary/20"
                 initial={{ scale: 0 }}
@@ -537,7 +602,7 @@ const Auth = () => {
             )}
 
             {/* Logo for non-verification modes */}
-            {mode !== "email-otp-verify" && mode !== "signup-verify" && (
+            {mode !== "email-otp-verify" && mode !== "signup-verify" && mode !== "forgot-verify" && (
               <div className="text-center mb-4">
                 <span className="text-primary font-heading text-lg tracking-[0.3em]">RAYN ADAM</span>
               </div>
@@ -995,10 +1060,10 @@ const Auth = () => {
                     {isSubmitting ? (
                       <span className="flex items-center gap-2">
                         <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                        Sending...
+                        Sending OTP...
                       </span>
                     ) : (
-                      <span>Send Reset Link</span>
+                      <span>Send OTP</span>
                     )}
                   </Button>
                 </form>
@@ -1009,6 +1074,75 @@ const Auth = () => {
                     className="text-muted-foreground hover:text-foreground text-sm transition-colors"
                   >
                     ← Back to login
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Forgot Password OTP Verification Form */}
+            {mode === "forgot-verify" && (
+              <>
+                <form onSubmit={handleForgotVerify} className="space-y-5">
+                  <div className="space-y-4">
+                    <Label className="text-center block text-sm font-medium">Enter Verification Code</Label>
+                    <div className="flex justify-center overflow-x-auto pb-2">
+                      <div className="bg-background/50 border border-border/50 rounded-2xl p-4 md:p-6">
+                        <InputOTP
+                          maxLength={6}
+                          value={formData.forgotOtp}
+                          onChange={(value) => {
+                            setFormData((prev) => ({ ...prev, forgotOtp: value }));
+                            setErrors((prev) => ({ ...prev, forgotOtp: "" }));
+                          }}
+                        >
+                          <InputOTPGroup className="gap-2 md:gap-3">
+                            <InputOTPSlot index={0} className="w-11 h-13 md:w-12 md:h-14 text-xl font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={1} className="w-11 h-13 md:w-12 md:h-14 text-xl font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={2} className="w-11 h-13 md:w-12 md:h-14 text-xl font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={3} className="w-11 h-13 md:w-12 md:h-14 text-xl font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={4} className="w-11 h-13 md:w-12 md:h-14 text-xl font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={5} className="w-11 h-13 md:w-12 md:h-14 text-xl font-bold border-border/50 bg-background rounded-lg" />
+                          </InputOTPGroup>
+                        </InputOTP>
+                      </div>
+                    </div>
+                    {errors.forgotOtp && (
+                      <p className="text-destructive text-xs text-center">{errors.forgotOtp}</p>
+                    )}
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-medium text-base shadow-lg shadow-primary/20"
+                    disabled={isSubmitting || formData.forgotOtp.length !== 6}
+                  >
+                    {isSubmitting ? (
+                      <span className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                        Verifying...
+                      </span>
+                    ) : (
+                      <span>Verify & Continue</span>
+                    )}
+                  </Button>
+                </form>
+
+                <div className="mt-6 text-center space-y-3">
+                  <p className="text-muted-foreground text-sm">
+                    Didn't receive the code?{" "}
+                    <button
+                      onClick={resendForgotOtp}
+                      disabled={isSubmitting}
+                      className="text-primary hover:text-primary/80 font-medium disabled:opacity-50 transition-colors"
+                    >
+                      Resend
+                    </button>
+                  </p>
+                  <button
+                    onClick={() => setMode("forgot")}
+                    className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+                  >
+                    ← Change email
                   </button>
                 </div>
               </>
