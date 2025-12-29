@@ -56,15 +56,31 @@ const ProductDetail = () => {
   };
 
   const handleShare = async () => {
+    // Get current URL (works with local IP, Lovable preview, or production domain)
+    const shareUrl = window.location.href;
+    const shareText = `✨ Check out ${product.name} from RAYN ADAM!\n\n${product.tagline}\n\n💰 Price: ${formatPrice(product.price)}\n📦 Size: ${product.size} • ${product.concentration}\n\n🔗 `;
+    
     if (navigator.share) {
-      await navigator.share({
-        title: product.name,
-        text: product.description,
-        url: window.location.href,
-      });
+      try {
+        await navigator.share({
+          title: `${product.name} | RAYN ADAM Perfumes`,
+          text: shareText,
+          url: shareUrl,
+        });
+      } catch (error) {
+        // User cancelled or error occurred
+        if ((error as Error).name !== 'AbortError') {
+          // Fallback to clipboard
+          await navigator.clipboard.writeText(`${shareText}${shareUrl}`);
+          toast.success("Link copied to clipboard");
+        }
+      }
     } else {
-      await navigator.clipboard.writeText(window.location.href);
-      toast.success("Link copied to clipboard");
+      // Fallback for browsers that don't support Web Share API
+      await navigator.clipboard.writeText(`${shareText}${shareUrl}`);
+      toast.success("Link copied to clipboard", {
+        description: "Share this with your friends!",
+      });
     }
   };
 
