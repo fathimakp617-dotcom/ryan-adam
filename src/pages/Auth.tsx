@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
 import { z } from "zod";
 
 const emailSchema = z.string().email("Invalid email address").max(255, "Email too long");
@@ -1173,8 +1174,9 @@ const Auth = () => {
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
+                    <PasswordStrengthIndicator password={formData.password} />
                     {errors.password && (
-                      <p className="text-destructive text-xs">{errors.password}</p>
+                      <p className="text-destructive text-xs mt-2">{errors.password}</p>
                     )}
                   </div>
 
