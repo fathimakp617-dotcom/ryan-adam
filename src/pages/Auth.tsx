@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,6 +44,19 @@ const Auth = () => {
     forgotOtp: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [resendCountdown, setResendCountdown] = useState(0);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (resendCountdown > 0) {
+      const timer = setTimeout(() => setResendCountdown(resendCountdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCountdown]);
+
+  const startResendCountdown = useCallback(() => {
+    setResendCountdown(60); // 60 seconds countdown
+  }, []);
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -276,6 +289,7 @@ const Auth = () => {
       });
       // Store the OTP in state and move to verify mode
       setFormData(prev => ({ ...prev, otp: "" }));
+      startResendCountdown();
       setMode("signup-verify");
     } finally {
       setIsSubmitting(false);
@@ -347,6 +361,7 @@ const Auth = () => {
         title: "OTP Sent!",
         description: "A new verification code has been sent to your email.",
       });
+      startResendCountdown();
     } finally {
       setIsSubmitting(false);
     }
@@ -373,6 +388,7 @@ const Auth = () => {
         description: "Check your email for the 8-digit verification code.",
       });
       setFormData(prev => ({ ...prev, forgotOtp: "" }));
+      startResendCountdown();
       setMode("forgot-verify");
     } finally {
       setIsSubmitting(false);
@@ -421,6 +437,7 @@ const Auth = () => {
         title: "OTP Sent!",
         description: "A new verification code has been sent to your email.",
       });
+      startResendCountdown();
     } finally {
       setIsSubmitting(false);
     }
@@ -470,6 +487,7 @@ const Auth = () => {
         title: "OTP Sent!",
         description: "Check your email for the 8-digit verification code.",
       });
+      startResendCountdown();
       setMode("email-otp-verify");
     } finally {
       setIsSubmitting(false);
@@ -517,6 +535,7 @@ const Auth = () => {
         title: "OTP Sent!",
         description: "A new verification code has been sent to your email.",
       });
+      startResendCountdown();
     } finally {
       setIsSubmitting(false);
     }
@@ -889,14 +908,20 @@ const Auth = () => {
 
                 <div className="mt-6 text-center space-y-3">
                   <p className="text-muted-foreground text-sm">
-                    Didn't receive the code?{" "}
-                    <button
-                      onClick={resendSignupOtp}
-                      disabled={isSubmitting}
-                      className="text-primary hover:text-primary/80 font-medium disabled:opacity-50 transition-colors"
-                    >
-                      Resend
-                    </button>
+                    {resendCountdown > 0 ? (
+                      <span>Resend code in <span className="text-primary font-medium">{resendCountdown}s</span></span>
+                    ) : (
+                      <>
+                        Didn't receive the code?{" "}
+                        <button
+                          onClick={resendSignupOtp}
+                          disabled={isSubmitting}
+                          className="text-primary hover:text-primary/80 font-medium disabled:opacity-50 transition-colors"
+                        >
+                          Resend
+                        </button>
+                      </>
+                    )}
                   </p>
                   <button
                     onClick={() => setMode("signup")}
@@ -1010,14 +1035,20 @@ const Auth = () => {
 
                 <div className="mt-6 text-center space-y-3">
                   <p className="text-muted-foreground text-sm">
-                    Didn't receive the code?{" "}
-                    <button
-                      onClick={resendEmailOtp}
-                      disabled={isSubmitting}
-                      className="text-primary hover:text-primary/80 font-medium disabled:opacity-50 transition-colors"
-                    >
-                      Resend
-                    </button>
+                    {resendCountdown > 0 ? (
+                      <span>Resend code in <span className="text-primary font-medium">{resendCountdown}s</span></span>
+                    ) : (
+                      <>
+                        Didn't receive the code?{" "}
+                        <button
+                          onClick={resendEmailOtp}
+                          disabled={isSubmitting}
+                          className="text-primary hover:text-primary/80 font-medium disabled:opacity-50 transition-colors"
+                        >
+                          Resend
+                        </button>
+                      </>
+                    )}
                   </p>
                   <button
                     onClick={() => setMode("email-otp")}
@@ -1131,14 +1162,20 @@ const Auth = () => {
 
                 <div className="mt-6 text-center space-y-3">
                   <p className="text-muted-foreground text-sm">
-                    Didn't receive the code?{" "}
-                    <button
-                      onClick={resendForgotOtp}
-                      disabled={isSubmitting}
-                      className="text-primary hover:text-primary/80 font-medium disabled:opacity-50 transition-colors"
-                    >
-                      Resend
-                    </button>
+                    {resendCountdown > 0 ? (
+                      <span>Resend code in <span className="text-primary font-medium">{resendCountdown}s</span></span>
+                    ) : (
+                      <>
+                        Didn't receive the code?{" "}
+                        <button
+                          onClick={resendForgotOtp}
+                          disabled={isSubmitting}
+                          className="text-primary hover:text-primary/80 font-medium disabled:opacity-50 transition-colors"
+                        >
+                          Resend
+                        </button>
+                      </>
+                    )}
                   </p>
                   <button
                     onClick={() => setMode("forgot")}
