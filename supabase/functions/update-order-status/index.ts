@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-admin-email, x-admin-token",
 };
 
 interface UpdateStatusRequest {
@@ -31,40 +31,28 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Configured admin emails:", adminEmails.length);
 
-    // Get user from auth header
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    // Check for admin session from custom password-based auth
+    const adminEmail = req.headers.get("x-admin-email");
+    const adminToken = req.headers.get("x-admin-token");
+
+    if (!adminEmail || !adminToken) {
+      console.log("Missing admin credentials");
       return new Response(
-        JSON.stringify({ error: "No authorization header" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Access denied" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-      global: { headers: { Authorization: authHeader } }
-    });
-
-    // Get user
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
-    if (userError || !user) {
-      console.error("Auth error:", userError);
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Check if user is admin
-    const userEmail = user.email?.toLowerCase() || "";
-    if (!adminEmails.includes(userEmail)) {
-      console.log(`Access denied for user: ${userEmail}`);
+    // Verify admin email is in allowed list
+    if (!adminEmails.includes(adminEmail.toLowerCase())) {
+      console.log(`Admin email not in allowed list: ${adminEmail}`);
       return new Response(
         JSON.stringify({ error: "Access denied. Admin privileges required." }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`Admin access granted for: ${userEmail}`);
+    console.log(`Admin access granted for: ${adminEmail}`);
 
     const { order_id, new_status, tracking_number, tracking_url }: UpdateStatusRequest = await req.json();
 
