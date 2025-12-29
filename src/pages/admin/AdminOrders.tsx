@@ -89,7 +89,20 @@ const AdminOrders = () => {
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('get-admin-orders');
+      // Get admin session from localStorage
+      const sessionData = localStorage.getItem("admin_session");
+      if (!sessionData) {
+        throw new Error("No admin session found");
+      }
+      
+      const session = JSON.parse(sessionData);
+      
+      const { data, error } = await supabase.functions.invoke('get-admin-orders', {
+        headers: {
+          'x-admin-email': session.email,
+          'x-admin-token': session.session_token,
+        }
+      });
       
       if (error) throw error;
       
@@ -140,7 +153,19 @@ const AdminOrders = () => {
 
     setIsUpdating(true);
     try {
+      // Get admin session from localStorage
+      const sessionData = localStorage.getItem("admin_session");
+      if (!sessionData) {
+        throw new Error("No admin session found");
+      }
+      
+      const session = JSON.parse(sessionData);
+      
       const { data, error } = await supabase.functions.invoke('update-order-status', {
+        headers: {
+          'x-admin-email': session.email,
+          'x-admin-token': session.session_token,
+        },
         body: {
           order_id: selectedOrder.id,
           new_status: newStatus,

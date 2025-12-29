@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-admin-email, x-admin-token",
 };
 
 serve(async (req) => {
@@ -17,13 +17,20 @@ serve(async (req) => {
     const adminEmailsRaw = Deno.env.get("ADMIN_EMAILS") || "";
     const adminEmails = adminEmailsRaw.split(",").map(e => e.trim().toLowerCase()).filter(e => e);
 
-    const authHeader = req.headers.get("Authorization");
-    const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-      global: { headers: { Authorization: authHeader || "" } }
-    });
+    // Check for admin session from custom password-based auth
+    const adminEmail = req.headers.get("x-admin-email");
+    const adminToken = req.headers.get("x-admin-token");
 
-    const { data: { user } } = await userClient.auth.getUser();
-    if (!user?.email || !adminEmails.includes(user.email.toLowerCase())) {
+    if (!adminEmail || !adminToken) {
+      console.log("Missing admin credentials");
+      return new Response(JSON.stringify({ error: "Access denied" }), { 
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      });
+    }
+
+    // Verify admin email is in allowed list
+    if (!adminEmails.includes(adminEmail.toLowerCase())) {
+      console.log(`Admin email not in allowed list: ${adminEmail}`);
       return new Response(JSON.stringify({ error: "Access denied" }), { 
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } 
       });
@@ -36,6 +43,7 @@ serve(async (req) => {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } 
     });
   } catch (error) {
+    console.error("Error fetching orders:", error);
     return new Response(JSON.stringify({ error: "Failed to fetch orders" }), { 
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } 
     });
