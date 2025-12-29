@@ -61,7 +61,7 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="mt-16 pt-8 border-t border-border/30 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            © 2024 Rayn Adam. All rights reserved.
+            © 2026 Rayn Adam. All rights reserved.
           </p>
           <div className="flex gap-8 text-sm text-muted-foreground">
             <a href="#" className="hover:text-primary transition-colors">
