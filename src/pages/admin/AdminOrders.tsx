@@ -131,11 +131,15 @@ const AdminOrders = () => {
     try {
       // Get admin session from localStorage
       const sessionData = localStorage.getItem("admin_session");
+      console.log("Admin session data:", sessionData);
+      
       if (!sessionData) {
+        console.error("No admin session found in localStorage");
         throw new Error("No admin session found");
       }
       
       const session = JSON.parse(sessionData);
+      console.log("Parsed session:", { email: session.email, hasToken: !!session.session_token });
       
       const { data, error } = await supabase.functions.invoke('get-admin-orders', {
         body: {
@@ -144,9 +148,12 @@ const AdminOrders = () => {
         }
       });
       
+      console.log("get-admin-orders response:", { data, error });
+      
       if (error) throw error;
       
       if (data?.orders) {
+        console.log("Orders fetched successfully:", data.orders.length);
         setOrders(data.orders);
       }
     } catch (error) {
