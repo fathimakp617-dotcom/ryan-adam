@@ -26,7 +26,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, Search, RefreshCw, Truck, Package, CheckCircle, X, Clock, Loader2, Download } from "lucide-react";
+import { Eye, Search, RefreshCw, Truck, Package, CheckCircle, X, Clock, Loader2, Download, FileText, Calendar } from "lucide-react";
+import jsPDF from "jspdf";
 
 interface OrderItem {
   productId: string;
@@ -73,6 +74,8 @@ const AdminOrders = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState("");
   const [trackingUrl, setTrackingUrl] = useState("");
@@ -124,7 +127,7 @@ const AdminOrders = () => {
 
   useEffect(() => {
     filterOrders();
-  }, [orders, searchQuery, statusFilter]);
+  }, [orders, searchQuery, statusFilter, dateFrom, dateTo]);
 
   const fetchOrders = async () => {
     setIsLoading(true);
@@ -185,7 +188,131 @@ const AdminOrders = () => {
       filtered = filtered.filter((order) => order.order_status === statusFilter);
     }
 
+    // Date filtering
+    if (dateFrom) {
+      const fromDate = new Date(dateFrom);
+      fromDate.setHours(0, 0, 0, 0);
+      filtered = filtered.filter((order) => new Date(order.created_at) >= fromDate);
+    }
+
+    if (dateTo) {
+      const toDate = new Date(dateTo);
+      toDate.setHours(23, 59, 59, 999);
+      filtered = filtered.filter((order) => new Date(order.created_at) <= toDate);
+    }
+
     setFilteredOrders(filtered);
+  };
+
+  const generateShippingLabelPDF = (order: Order) => {
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: [100, 150] // 4x6 label size
+    });
+
+    // Brand colors
+    const goldColor = [168, 124, 57];
+    const darkColor = [28, 28, 28];
+
+    // Header
+    doc.setFillColor(darkColor[0], darkColor[1], darkColor[2]);
+    doc.rect(0, 0, 100, 25, "F");
+    
+    doc.setTextColor(goldColor[0], goldColor[1], goldColor[2]);
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("RAYN ADAM", 50, 12, { align: "center" });
+    
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    doc.text("LUXURY PERFUMES", 50, 18, { align: "center" });
+
+    // From section
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(8);
+    doc.text("FROM:", 8, 32);
+    
+    doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
+    doc.setFontSize(9);
+    doc.text("Rayn Adam Perfumes", 8, 38);
+    doc.setFontSize(8);
+    doc.text("Kozhikode, Kerala", 8, 43);
+    doc.text("India - 673001", 8, 48);
+
+    // Divider
+    doc.setDrawColor(goldColor[0], goldColor[1], goldColor[2]);
+    doc.setLineWidth(0.5);
+    doc.line(8, 54, 92, 54);
+
+    // To section
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(8);
+    doc.text("SHIP TO:", 8, 62);
+    
+    doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text(order.customer_name, 8, 70);
+    
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    
+    const addressLines = [
+      order.shipping_address.address,
+      `${order.shipping_address.city}, ${order.shipping_address.state}`,
+      order.shipping_address.zipCode,
+      order.shipping_address.country
+    ];
+    
+    let yPos = 77;
+    addressLines.forEach(line => {
+      doc.text(line, 8, yPos);
+      yPos += 6;
+    });
+
+    // Phone
+    if (order.customer_phone) {
+      doc.setFontSize(8);
+      doc.text(`Ph: ${order.customer_phone}`, 8, yPos + 2);
+    }
+
+    // Order info box
+    doc.setFillColor(248, 248, 248);
+    doc.rect(8, 110, 84, 20, "F");
+    
+    doc.setDrawColor(goldColor[0], goldColor[1], goldColor[2]);
+    doc.rect(8, 110, 84, 20, "S");
+    
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(7);
+    doc.text("ORDER #", 12, 117);
+    
+    doc.setTextColor(goldColor[0], goldColor[1], goldColor[2]);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text(order.order_number, 12, 124);
+    
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    doc.text("DATE", 60, 117);
+    
+    doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
+    doc.setFontSize(8);
+    doc.text(new Date(order.created_at).toLocaleDateString("en-IN"), 60, 124);
+
+    // Footer
+    doc.setTextColor(goldColor[0], goldColor[1], goldColor[2]);
+    doc.setFontSize(6);
+    doc.text("Handle with care • Fragile contents", 50, 140, { align: "center" });
+
+    doc.save(`shipping-label-${order.order_number}.pdf`);
+
+    toast({
+      title: "Downloaded",
+      description: `Shipping label for ${order.order_number} saved`,
+    });
   };
 
   const handleViewOrder = (order: Order) => {
@@ -372,29 +499,73 @@ const AdminOrders = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by order number, name, or email..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by order number, name, or email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full md:w-[180px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="processing">Processing</SelectItem>
+              <SelectItem value="shipped">Shipped</SelectItem>
+              <SelectItem value="delivered">Delivered</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full md:w-[180px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="processing">Processing</SelectItem>
-            <SelectItem value="shipped">Shipped</SelectItem>
-            <SelectItem value="delivered">Delivered</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
+        
+        {/* Date Filters */}
+        <div className="flex flex-col md:flex-row gap-4 items-end">
+          <div className="flex-1 md:flex-none">
+            <Label className="text-xs text-muted-foreground mb-1 block">From Date</Label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="pl-10 w-full md:w-[180px]"
+              />
+            </div>
+          </div>
+          <div className="flex-1 md:flex-none">
+            <Label className="text-xs text-muted-foreground mb-1 block">To Date</Label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="pl-10 w-full md:w-[180px]"
+              />
+            </div>
+          </div>
+          {(dateFrom || dateTo) && (
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => {
+                setDateFrom("");
+                setDateTo("");
+              }}
+              className="text-muted-foreground"
+            >
+              <X className="h-4 w-4 mr-1" />
+              Clear dates
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Orders Table */}
@@ -446,13 +617,24 @@ const AdminOrders = () => {
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleViewOrder(order)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => generateShippingLabelPDF(order)}
+                        title="Download shipping label"
+                      >
+                        <FileText className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleViewOrder(order)}
+                        title="View order details"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
