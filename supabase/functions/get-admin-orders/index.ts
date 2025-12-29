@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-admin-email, x-admin-token",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 serve(async (req) => {
@@ -17,12 +17,13 @@ serve(async (req) => {
     const adminEmailsRaw = Deno.env.get("ADMIN_EMAILS") || "";
     const adminEmails = adminEmailsRaw.split(",").map(e => e.trim().toLowerCase()).filter(e => e);
 
-    // Check for admin session from custom password-based auth
-    const adminEmail = req.headers.get("x-admin-email");
-    const adminToken = req.headers.get("x-admin-token");
+    // Get admin credentials from request body
+    const body = await req.json().catch(() => ({}));
+    const adminEmail = body.admin_email;
+    const adminToken = body.admin_token;
 
     if (!adminEmail || !adminToken) {
-      console.log("Missing admin credentials");
+      console.log("Missing admin credentials in body");
       return new Response(JSON.stringify({ error: "Access denied" }), { 
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } 
       });
@@ -35,6 +36,8 @@ serve(async (req) => {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } 
       });
     }
+
+    console.log(`Admin access granted for: ${adminEmail}`);
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const { data: orders } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
