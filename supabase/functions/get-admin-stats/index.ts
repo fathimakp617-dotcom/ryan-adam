@@ -17,10 +17,12 @@ serve(async (req) => {
     const adminEmailsRaw = Deno.env.get("ADMIN_EMAILS") || "";
     const adminEmails = adminEmailsRaw.split(",").map(e => e.trim().toLowerCase()).filter(e => e);
 
-    // Get admin credentials from request body
+    // Get admin credentials and filters from request body
     const body = await req.json().catch(() => ({}));
     const adminEmail = body.admin_email;
     const adminToken = body.admin_token;
+    const dateFrom = body.date_from;
+    const dateTo = body.date_to;
 
     if (!adminEmail || !adminToken) {
       console.log("Missing admin credentials in body");
@@ -38,23 +40,85 @@ serve(async (req) => {
     }
 
     console.log(`Admin access granted for: ${adminEmail}`);
+    console.log(`Date filter: ${dateFrom} to ${dateTo}`);
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { data: orders } = await supabase.from("orders").select("*");
+    
+    // Fetch all orders
+    const { data: allOrders } = await supabase.from("orders").select("*");
+    
+    // Filter orders by date if provided
+    let filteredOrders = allOrders || [];
+    
+    if (dateFrom) {
+      const fromDate = new Date(dateFrom);
+      fromDate.setHours(0, 0, 0, 0);
+      filteredOrders = filteredOrders.filter(o => new Date(o.created_at) >= fromDate);
+    }
+    
+    if (dateTo) {
+      const toDate = new Date(dateTo);
+      toDate.setHours(23, 59, 59, 999);
+      filteredOrders = filteredOrders.filter(o => new Date(o.created_at) <= toDate);
+    }
 
+    // Calculate stats for filtered orders
     const stats = {
-      total: orders?.length || 0,
-      pending: orders?.filter(o => o.order_status === "pending").length || 0,
-      processing: orders?.filter(o => o.order_status === "processing").length || 0,
-      shipped: orders?.filter(o => o.order_status === "shipped").length || 0,
-      delivered: orders?.filter(o => o.order_status === "delivered").length || 0,
-      cancelled: orders?.filter(o => o.order_status === "cancelled").length || 0,
-      totalRevenue: orders?.filter(o => o.order_status !== "cancelled").reduce((sum, o) => sum + (o.total || 0), 0) || 0,
+      total: filteredOrders.length,
+      pending: filteredOrders.filter(o => o.order_status === "pending").length,
+      processing: filteredOrders.filter(o => o.order_status === "processing").length,
+      shipped: filteredOrders.filter(o => o.order_status === "shipped").length,
+      delivered: filteredOrders.filter(o => o.order_status === "delivered").length,
+      cancelled: filteredOrders.filter(o => o.order_status === "cancelled").length,
+      totalRevenue: filteredOrders
+        .filter(o => o.order_status !== "cancelled")
+        .reduce((sum, o) => sum + (o.total || 0), 0),
     };
 
-    const recentOrders = orders?.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5) || [];
+    // Calculate all-time stats (without date filter)
+    const allTimeStats = {
+      total: allOrders?.length || 0,
+      totalRevenue: allOrders
+        ?.filter(o => o.order_status !== "cancelled")
+        .reduce((sum, o) => sum + (o.total || 0), 0) || 0,
+    };
 
-    return new Response(JSON.stringify({ stats, recentOrders }), { 
+    // Get monthly breakdown for the current year
+    const currentYear = new Date().getFullYear();
+    const monthlyRevenue: { month: string; revenue: number; orders: number }[] = [];
+    
+    for (let month = 0; month < 12; month++) {
+      const monthStart = new Date(currentYear, month, 1);
+      const monthEnd = new Date(currentYear, month + 1, 0, 23, 59, 59, 999);
+      
+      const monthOrders = (allOrders || []).filter(o => {
+        const orderDate = new Date(o.created_at);
+        return orderDate >= monthStart && orderDate <= monthEnd;
+      });
+      
+      const revenue = monthOrders
+        .filter(o => o.order_status !== "cancelled")
+        .reduce((sum, o) => sum + (o.total || 0), 0);
+      
+      monthlyRevenue.push({
+        month: monthStart.toLocaleString('en-US', { month: 'short' }),
+        revenue,
+        orders: monthOrders.length,
+      });
+    }
+
+    // Get recent orders (always from all orders, sorted by date)
+    const recentOrders = (allOrders || [])
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 5);
+
+    return new Response(JSON.stringify({ 
+      stats, 
+      allTimeStats,
+      monthlyRevenue,
+      recentOrders,
+      dateRange: { from: dateFrom, to: dateTo }
+    }), { 
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } 
     });
   } catch (error) {
