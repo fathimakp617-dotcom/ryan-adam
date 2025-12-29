@@ -103,6 +103,7 @@ const Account = () => {
   const [copied, setCopied] = useState(false);
   const [isCreatingAffiliate, setIsCreatingAffiliate] = useState(false);
   const [affiliateName, setAffiliateName] = useState("");
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
   const [profileForm, setProfileForm] = useState({
     first_name: "",
     last_name: "",
@@ -334,6 +335,47 @@ const Account = () => {
         return "text-red-500 bg-red-500/10";
       default:
         return "text-muted-foreground bg-muted";
+    }
+  };
+
+  const handleCancelOrder = async (orderId: string, orderNumber: string) => {
+    if (!confirm(`Are you sure you want to cancel order ${orderNumber}? This action cannot be undone.`)) {
+      return;
+    }
+
+    setCancellingOrderId(orderId);
+    try {
+      const { data, error } = await supabase.functions.invoke('cancel-order', {
+        body: { order_id: orderId },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Order Cancelled",
+        description: `Order ${orderNumber} has been cancelled successfully.`,
+      });
+
+      // Update the order in local state
+      setOrders(orders.map(order => 
+        order.id === orderId 
+          ? { ...order, order_status: 'cancelled' } 
+          : order
+      ));
+
+      // Close modal if the cancelled order is being viewed
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder({ ...selectedOrder, order_status: 'cancelled' });
+      }
+    } catch (error) {
+      console.error("Error cancelling order:", error);
+      toast({
+        title: "Failed to cancel order",
+        description: "Please try again or contact support.",
+        variant: "destructive",
+      });
+    } finally {
+      setCancellingOrderId(null);
     }
   };
 
@@ -612,7 +654,7 @@ const Account = () => {
                           <p className="text-sm text-muted-foreground">
                             {order.items.length} item(s)
                           </p>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <Button
                               variant="outline"
                               size="sm"
@@ -650,6 +692,26 @@ const Account = () => {
                               <Download size={16} className="mr-2" />
                               Invoice PDF
                             </Button>
+                            {order.order_status === "pending" && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleCancelOrder(order.id, order.order_number)}
+                                disabled={cancellingOrderId === order.id}
+                              >
+                                {cancellingOrderId === order.id ? (
+                                  <span className="flex items-center">
+                                    <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                                    Cancelling...
+                                  </span>
+                                ) : (
+                                  <>
+                                    <X size={16} className="mr-2" />
+                                    Cancel Order
+                                  </>
+                                )}
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </motion.div>
@@ -1142,32 +1204,55 @@ const Account = () => {
                 </p>
               </div>
 
-              {/* Download Invoice Button */}
-              <Button
-                className="w-full"
-                onClick={() => {
-                  downloadInvoicePDF({
-                    orderNumber: selectedOrder.order_number,
-                    customerName: selectedOrder.customer_name,
-                    customerEmail: selectedOrder.customer_email,
-                    items: selectedOrder.items,
-                    subtotal: selectedOrder.subtotal,
-                    discount: selectedOrder.discount || 0,
-                    shipping: selectedOrder.shipping || 0,
-                    total: selectedOrder.total,
-                    shippingAddress: selectedOrder.shipping_address,
-                    paymentMethod: selectedOrder.payment_method,
-                    orderDate: selectedOrder.created_at,
-                  });
-                  toast({
-                    title: "Invoice Downloaded",
-                    description: `Invoice for ${selectedOrder.order_number} has been downloaded.`,
-                  });
-                }}
-              >
-                <Download size={18} className="mr-2" />
-                Download Invoice PDF
-              </Button>
+              {/* Action Buttons */}
+              <div className="space-y-2">
+                <Button
+                  className="w-full"
+                  onClick={() => {
+                    downloadInvoicePDF({
+                      orderNumber: selectedOrder.order_number,
+                      customerName: selectedOrder.customer_name,
+                      customerEmail: selectedOrder.customer_email,
+                      items: selectedOrder.items,
+                      subtotal: selectedOrder.subtotal,
+                      discount: selectedOrder.discount || 0,
+                      shipping: selectedOrder.shipping || 0,
+                      total: selectedOrder.total,
+                      shippingAddress: selectedOrder.shipping_address,
+                      paymentMethod: selectedOrder.payment_method,
+                      orderDate: selectedOrder.created_at,
+                    });
+                    toast({
+                      title: "Invoice Downloaded",
+                      description: `Invoice for ${selectedOrder.order_number} has been downloaded.`,
+                    });
+                  }}
+                >
+                  <Download size={18} className="mr-2" />
+                  Download Invoice PDF
+                </Button>
+                
+                {selectedOrder.order_status === "pending" && (
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    onClick={() => handleCancelOrder(selectedOrder.id, selectedOrder.order_number)}
+                    disabled={cancellingOrderId === selectedOrder.id}
+                  >
+                    {cancellingOrderId === selectedOrder.id ? (
+                      <span className="flex items-center">
+                        <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                        Cancelling...
+                      </span>
+                    ) : (
+                      <>
+                        <X size={18} className="mr-2" />
+                        Cancel Order
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
             </div>
           )}
         </DialogContent>
