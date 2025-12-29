@@ -208,7 +208,7 @@ const AdminOrders = () => {
     const doc = new jsPDF({
       orientation: "portrait",
       unit: "mm",
-      format: [100, 150] // 4x6 label size
+      format: [100, 180] // Extended label size for products
     });
 
     // Brand colors
@@ -217,95 +217,112 @@ const AdminOrders = () => {
 
     // Header
     doc.setFillColor(darkColor[0], darkColor[1], darkColor[2]);
-    doc.rect(0, 0, 100, 25, "F");
+    doc.rect(0, 0, 100, 22, "F");
     
     doc.setTextColor(goldColor[0], goldColor[1], goldColor[2]);
-    doc.setFontSize(14);
+    doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
-    doc.text("RAYN ADAM", 50, 12, { align: "center" });
+    doc.text("RAYN ADAM", 50, 10, { align: "center" });
     
-    doc.setFontSize(7);
+    doc.setFontSize(6);
     doc.setFont("helvetica", "normal");
-    doc.text("LUXURY PERFUMES", 50, 18, { align: "center" });
+    doc.text("LUXURY PERFUMES", 50, 16, { align: "center" });
 
     // From section
     doc.setTextColor(100, 100, 100);
-    doc.setFontSize(8);
-    doc.text("FROM:", 8, 32);
+    doc.setFontSize(7);
+    doc.text("FROM:", 6, 28);
     
     doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
-    doc.setFontSize(9);
-    doc.text("Rayn Adam Perfumes", 8, 38);
     doc.setFontSize(8);
-    doc.text("Kozhikode, Kerala", 8, 43);
-    doc.text("India - 673001", 8, 48);
+    doc.text("Rayn Adam Perfumes", 6, 33);
+    doc.setFontSize(7);
+    doc.text("Kozhikode, Kerala - 673001", 6, 37);
 
     // Divider
     doc.setDrawColor(goldColor[0], goldColor[1], goldColor[2]);
-    doc.setLineWidth(0.5);
-    doc.line(8, 54, 92, 54);
+    doc.setLineWidth(0.4);
+    doc.line(6, 42, 94, 42);
 
     // To section
     doc.setTextColor(100, 100, 100);
-    doc.setFontSize(8);
-    doc.text("SHIP TO:", 8, 62);
+    doc.setFontSize(7);
+    doc.text("SHIP TO:", 6, 48);
     
     doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.text(order.customer_name, 8, 70);
-    
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    
-    const addressLines = [
-      order.shipping_address.address,
-      `${order.shipping_address.city}, ${order.shipping_address.state}`,
-      order.shipping_address.zipCode,
-      order.shipping_address.country
-    ];
-    
-    let yPos = 77;
-    addressLines.forEach(line => {
-      doc.text(line, 8, yPos);
-      yPos += 6;
-    });
-
-    // Phone
-    if (order.customer_phone) {
-      doc.setFontSize(8);
-      doc.text(`Ph: ${order.customer_phone}`, 8, yPos + 2);
-    }
-
-    // Order info box
-    doc.setFillColor(248, 248, 248);
-    doc.rect(8, 110, 84, 20, "F");
-    
-    doc.setDrawColor(goldColor[0], goldColor[1], goldColor[2]);
-    doc.rect(8, 110, 84, 20, "S");
-    
-    doc.setTextColor(100, 100, 100);
-    doc.setFontSize(7);
-    doc.text("ORDER #", 12, 117);
-    
-    doc.setTextColor(goldColor[0], goldColor[1], goldColor[2]);
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    doc.text(order.order_number, 12, 124);
+    doc.text(order.customer_name, 6, 54);
     
-    doc.setTextColor(100, 100, 100);
-    doc.setFontSize(7);
+    doc.setFontSize(8);
     doc.setFont("helvetica", "normal");
-    doc.text("DATE", 60, 117);
+    
+    let yPos = 60;
+    doc.text(order.shipping_address.address, 6, yPos);
+    yPos += 5;
+    doc.text(`${order.shipping_address.city}, ${order.shipping_address.state} - ${order.shipping_address.zipCode}`, 6, yPos);
+    yPos += 5;
+    doc.text(order.shipping_address.country, 6, yPos);
+
+    if (order.customer_phone) {
+      yPos += 5;
+      doc.setFontSize(7);
+      doc.text(`Ph: ${order.customer_phone}`, 6, yPos);
+    }
+
+    // Products section
+    yPos += 8;
+    doc.setDrawColor(goldColor[0], goldColor[1], goldColor[2]);
+    doc.line(6, yPos, 94, yPos);
+    yPos += 6;
+    
+    doc.setTextColor(goldColor[0], goldColor[1], goldColor[2]);
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "bold");
+    doc.text("ITEMS", 6, yPos);
     
     doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
-    doc.text(new Date(order.created_at).toLocaleDateString("en-IN"), 60, 124);
+    
+    yPos += 5;
+    order.items.forEach((item, index) => {
+      const itemText = `${index + 1}. ${item.name} x${item.quantity}`;
+      doc.text(itemText, 6, yPos);
+      yPos += 5;
+    });
+
+    // Order info box
+    yPos += 3;
+    doc.setFillColor(248, 248, 248);
+    doc.rect(6, yPos, 88, 18, "F");
+    
+    doc.setDrawColor(goldColor[0], goldColor[1], goldColor[2]);
+    doc.rect(6, yPos, 88, 18, "S");
+    
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(6);
+    doc.text("ORDER #", 10, yPos + 6);
+    
+    doc.setTextColor(goldColor[0], goldColor[1], goldColor[2]);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.text(order.order_number, 10, yPos + 12);
+    
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(6);
+    doc.setFont("helvetica", "normal");
+    doc.text("DATE", 60, yPos + 6);
+    
+    doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
+    doc.setFontSize(7);
+    doc.text(new Date(order.created_at).toLocaleDateString("en-IN"), 60, yPos + 12);
 
     // Footer
+    yPos += 26;
     doc.setTextColor(goldColor[0], goldColor[1], goldColor[2]);
-    doc.setFontSize(6);
-    doc.text("Handle with care • Fragile contents", 50, 140, { align: "center" });
+    doc.setFontSize(5);
+    doc.text("Handle with care • Fragile contents", 50, yPos, { align: "center" });
 
     doc.save(`shipping-label-${order.order_number}.pdf`);
 
