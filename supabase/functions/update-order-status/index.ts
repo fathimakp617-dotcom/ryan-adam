@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-admin-email, x-admin-token",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 interface UpdateStatusRequest {
@@ -11,6 +11,8 @@ interface UpdateStatusRequest {
   new_status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
   tracking_number?: string;
   tracking_url?: string;
+  admin_email: string;
+  admin_token: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -31,12 +33,12 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Configured admin emails:", adminEmails.length);
 
-    // Check for admin session from custom password-based auth
-    const adminEmail = req.headers.get("x-admin-email");
-    const adminToken = req.headers.get("x-admin-token");
+    // Get admin credentials from request body
+    const body: UpdateStatusRequest = await req.json();
+    const { admin_email, admin_token, order_id, new_status, tracking_number, tracking_url } = body;
 
-    if (!adminEmail || !adminToken) {
-      console.log("Missing admin credentials");
+    if (!admin_email || !admin_token) {
+      console.log("Missing admin credentials in body");
       return new Response(
         JSON.stringify({ error: "Access denied" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -44,17 +46,15 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Verify admin email is in allowed list
-    if (!adminEmails.includes(adminEmail.toLowerCase())) {
-      console.log(`Admin email not in allowed list: ${adminEmail}`);
+    if (!adminEmails.includes(admin_email.toLowerCase())) {
+      console.log(`Admin email not in allowed list: ${admin_email}`);
       return new Response(
         JSON.stringify({ error: "Access denied. Admin privileges required." }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`Admin access granted for: ${adminEmail}`);
-
-    const { order_id, new_status, tracking_number, tracking_url }: UpdateStatusRequest = await req.json();
+    console.log(`Admin access granted for: ${admin_email}`);
 
     if (!order_id || !new_status) {
       return new Response(

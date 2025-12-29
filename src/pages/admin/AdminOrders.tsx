@@ -98,9 +98,9 @@ const AdminOrders = () => {
       const session = JSON.parse(sessionData);
       
       const { data, error } = await supabase.functions.invoke('get-admin-orders', {
-        headers: {
-          'x-admin-email': session.email,
-          'x-admin-token': session.session_token,
+        body: {
+          admin_email: session.email,
+          admin_token: session.session_token,
         }
       });
       
@@ -162,11 +162,9 @@ const AdminOrders = () => {
       const session = JSON.parse(sessionData);
       
       const { data, error } = await supabase.functions.invoke('update-order-status', {
-        headers: {
-          'x-admin-email': session.email,
-          'x-admin-token': session.session_token,
-        },
         body: {
+          admin_email: session.email,
+          admin_token: session.session_token,
           order_id: selectedOrder.id,
           new_status: newStatus,
           tracking_number: trackingNumber || undefined,
