@@ -16,6 +16,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signInWithEmailOtp: (email: string) => Promise<{ error: Error | null }>;
+  sendPasswordResetOtp: (email: string) => Promise<{ error: Error | null }>;
   verifyEmailOtp: (email: string, token: string) => Promise<{ error: Error | null }>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
@@ -118,6 +119,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error };
   };
 
+  const sendPasswordResetOtp = async (email: string) => {
+    try {
+      // Use custom edge function for 6-digit password reset OTP via Resend
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/send-password-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return { error: new Error(errorData.error || "Failed to send OTP") };
+      }
+
+      return { error: null };
+    } catch (err: any) {
+      console.error("Error sending password reset OTP:", err);
+      return { error: new Error(err.message || "Failed to send OTP") };
+    }
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
   };
@@ -164,6 +189,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         signIn,
         signInWithGoogle,
         signInWithEmailOtp,
+        sendPasswordResetOtp,
         verifyEmailOtp,
         resetPassword,
         updatePassword,
