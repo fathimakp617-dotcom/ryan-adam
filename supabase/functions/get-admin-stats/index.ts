@@ -62,6 +62,13 @@ serve(async (req) => {
       filteredOrders = filteredOrders.filter(o => new Date(o.created_at) <= toDate);
     }
 
+    // Helper to calculate revenue (exclude cancelled orders)
+    const calculateRevenue = (orders: any[]) => {
+      return orders
+        .filter(o => o.order_status !== "cancelled")
+        .reduce((sum, o) => sum + (o.total || 0), 0);
+    };
+
     // Calculate stats for filtered orders
     const stats = {
       total: filteredOrders.length,
@@ -70,22 +77,44 @@ serve(async (req) => {
       shipped: filteredOrders.filter(o => o.order_status === "shipped").length,
       delivered: filteredOrders.filter(o => o.order_status === "delivered").length,
       cancelled: filteredOrders.filter(o => o.order_status === "cancelled").length,
-      totalRevenue: filteredOrders
-        .filter(o => o.order_status !== "cancelled")
-        .reduce((sum, o) => sum + (o.total || 0), 0),
+      totalRevenue: calculateRevenue(filteredOrders),
+    };
+
+    // Payment method breakdown for filtered orders
+    const codOrders = filteredOrders.filter(o => o.payment_method === "cod" || o.payment_method === "COD");
+    const onlineOrders = filteredOrders.filter(o => o.payment_method !== "cod" && o.payment_method !== "COD");
+    
+    const paymentBreakdown = {
+      cod: {
+        orders: codOrders.length,
+        revenue: calculateRevenue(codOrders),
+        pending: codOrders.filter(o => o.order_status === "pending").length,
+        delivered: codOrders.filter(o => o.order_status === "delivered").length,
+      },
+      online: {
+        orders: onlineOrders.length,
+        revenue: calculateRevenue(onlineOrders),
+        pending: onlineOrders.filter(o => o.order_status === "pending").length,
+        delivered: onlineOrders.filter(o => o.order_status === "delivered").length,
+      },
     };
 
     // Calculate all-time stats (without date filter)
+    const allCodOrders = (allOrders || []).filter(o => o.payment_method === "cod" || o.payment_method === "COD");
+    const allOnlineOrders = (allOrders || []).filter(o => o.payment_method !== "cod" && o.payment_method !== "COD");
+    
     const allTimeStats = {
       total: allOrders?.length || 0,
-      totalRevenue: allOrders
-        ?.filter(o => o.order_status !== "cancelled")
-        .reduce((sum, o) => sum + (o.total || 0), 0) || 0,
+      totalRevenue: calculateRevenue(allOrders || []),
+      codRevenue: calculateRevenue(allCodOrders),
+      onlineRevenue: calculateRevenue(allOnlineOrders),
+      codOrders: allCodOrders.length,
+      onlineOrders: allOnlineOrders.length,
     };
 
     // Get monthly breakdown for the current year
     const currentYear = new Date().getFullYear();
-    const monthlyRevenue: { month: string; revenue: number; orders: number }[] = [];
+    const monthlyRevenue: { month: string; revenue: number; orders: number; cod: number; online: number }[] = [];
     
     for (let month = 0; month < 12; month++) {
       const monthStart = new Date(currentYear, month, 1);
@@ -96,14 +125,15 @@ serve(async (req) => {
         return orderDate >= monthStart && orderDate <= monthEnd;
       });
       
-      const revenue = monthOrders
-        .filter(o => o.order_status !== "cancelled")
-        .reduce((sum, o) => sum + (o.total || 0), 0);
+      const monthCodOrders = monthOrders.filter(o => o.payment_method === "cod" || o.payment_method === "COD");
+      const monthOnlineOrders = monthOrders.filter(o => o.payment_method !== "cod" && o.payment_method !== "COD");
       
       monthlyRevenue.push({
         month: monthStart.toLocaleString('en-US', { month: 'short' }),
-        revenue,
+        revenue: calculateRevenue(monthOrders),
         orders: monthOrders.length,
+        cod: calculateRevenue(monthCodOrders),
+        online: calculateRevenue(monthOnlineOrders),
       });
     }
 
@@ -115,6 +145,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({ 
       stats, 
       allTimeStats,
+      paymentBreakdown,
       monthlyRevenue,
       recentOrders,
       dateRange: { from: dateFrom, to: dateTo }
