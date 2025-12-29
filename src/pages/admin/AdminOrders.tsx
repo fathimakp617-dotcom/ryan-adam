@@ -80,7 +80,48 @@ const AdminOrders = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+
+    // Subscribe to real-time order updates
+    const channel = supabase
+      .channel('admin-orders-list-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'orders'
+        },
+        (payload) => {
+          console.log('New order received:', payload);
+          // Add new order to the list
+          setOrders(prev => [payload.new as any, ...prev]);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders'
+        },
+        (payload) => {
+          console.log('Order updated:', payload);
+          // Update the order in the list
+          setOrders(prev => prev.map(order => 
+            order.id === payload.new.id ? payload.new as any : order
+          ));
+          // Also update selected order if it's the one being updated
+          if (selectedOrder?.id === payload.new.id) {
+            setSelectedOrder(payload.new as any);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedOrder?.id]);
 
   useEffect(() => {
     filterOrders();

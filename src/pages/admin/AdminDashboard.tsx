@@ -30,6 +30,28 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchStats();
+
+    // Subscribe to real-time order updates
+    const channel = supabase
+      .channel('admin-orders-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders'
+        },
+        (payload) => {
+          console.log('Order change detected:', payload);
+          // Refetch stats when any order changes
+          fetchStats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchStats = async () => {
