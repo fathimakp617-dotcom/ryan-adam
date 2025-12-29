@@ -80,7 +80,10 @@ const AdminOrders = () => {
 
   useEffect(() => {
     fetchOrders();
+  }, []);
 
+  // Separate effect for real-time updates
+  useEffect(() => {
     // Subscribe to real-time order updates
     const channel = supabase
       .channel('admin-orders-list-realtime')
@@ -110,10 +113,6 @@ const AdminOrders = () => {
           setOrders(prev => prev.map(order => 
             order.id === payload.new.id ? payload.new as any : order
           ));
-          // Also update selected order if it's the one being updated
-          if (selectedOrder?.id === payload.new.id) {
-            setSelectedOrder(payload.new as any);
-          }
         }
       )
       .subscribe();
@@ -121,7 +120,7 @@ const AdminOrders = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [selectedOrder?.id]);
+  }, []);
 
   useEffect(() => {
     filterOrders();
