@@ -46,7 +46,7 @@ const handler = async (req: Request): Promise<Response> => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    console.log("Generating 6-digit OTP for password reset:", email);
+    console.log("Generating OTP for password reset:", email);
 
     // Generate magic link using admin API - this creates a token we can extract
     const { data, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
@@ -65,10 +65,10 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Extract the OTP from the link properties and take first 6 digits
-    const fullOtp = data?.properties?.email_otp;
+    // Extract the OTP from the link properties - use full OTP (8 digits)
+    const emailOtp = data?.properties?.email_otp;
     
-    if (!fullOtp) {
+    if (!emailOtp) {
       console.error("No OTP found in generated link data:", data);
       return new Response(
         JSON.stringify({ error: "Failed to generate OTP code" }),
@@ -76,11 +76,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // The OTP from Supabase - we'll use it as-is since Supabase generates 6-digit by default
-    // If it's longer, the user will enter the first 6 digits which will work for verification
-    const emailOtp = fullOtp.substring(0, 6);
-
-    console.log("6-digit OTP generated successfully, sending email via Resend");
+    console.log("OTP generated successfully, sending email via Resend. OTP length:", emailOtp.length);
 
     // Send branded email via Resend with the 6-digit OTP
     const emailResponse = await resend.emails.send({

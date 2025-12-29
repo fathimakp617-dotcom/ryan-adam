@@ -23,7 +23,6 @@ const passwordSchema = z
   .regex(/[a-z]/, "Password must contain at least one lowercase letter")
   .regex(/[!@#$%^&*(),.?":{}|<>]/, "Password must contain at least one special character (!@#$%^&*)");
 const otpSchema = z.string().length(8, "OTP must be 8 digits").regex(/^\d+$/, "OTP must contain only numbers");
-const otp6Schema = z.string().length(6, "OTP must be 6 digits").regex(/^\d+$/, "OTP must contain only numbers");
 const phoneSchema = z.string().min(10, "Phone number must be at least 10 digits").max(15, "Phone number too long").regex(/^[+]?[\d\s-]+$/, "Invalid phone number format");
 
 type AuthMode = "login" | "signup" | "signup-verify" | "forgot" | "forgot-verify" | "reset" | "email-otp" | "email-otp-verify";
@@ -173,7 +172,7 @@ const Auth = () => {
   const validateForgotOtpForm = () => {
     const newErrors: Record<string, string> = {};
 
-    const otpResult = otp6Schema.safeParse(formData.forgotOtp);
+    const otpResult = otpSchema.safeParse(formData.forgotOtp);
     if (!otpResult.success) {
       newErrors.forgotOtp = otpResult.error.errors[0].message;
     }
@@ -371,7 +370,7 @@ const Auth = () => {
       }
       toast({
         title: "OTP Sent!",
-        description: "Check your email for the 6-digit verification code.",
+        description: "Check your email for the 8-digit verification code.",
       });
       setFormData(prev => ({ ...prev, forgotOtp: "" }));
       setMode("forgot-verify");
@@ -550,7 +549,7 @@ const Auth = () => {
       case "signup": return "Join RAYN ADAM for exclusive offers";
       case "signup-verify": return `Enter the 8-digit code sent to ${formData.email}`;
       case "forgot": return "Enter your email to receive a verification code";
-      case "forgot-verify": return `Enter the 6-digit code sent to ${formData.email}`;
+      case "forgot-verify": return `Enter the 8-digit code sent to ${formData.email}`;
       case "reset": return "Enter your new password";
       case "email-otp": return "Enter your email to receive a verification code";
       case "email-otp-verify": return `Enter the 8-digit code sent to ${formData.otpEmail}`;
@@ -1089,20 +1088,22 @@ const Auth = () => {
                     <div className="flex justify-center overflow-x-auto pb-2">
                       <div className="bg-background/50 border border-border/50 rounded-2xl p-4 md:p-6">
                         <InputOTP
-                          maxLength={6}
+                          maxLength={8}
                           value={formData.forgotOtp}
                           onChange={(value) => {
                             setFormData((prev) => ({ ...prev, forgotOtp: value }));
                             setErrors((prev) => ({ ...prev, forgotOtp: "" }));
                           }}
                         >
-                          <InputOTPGroup className="gap-2 md:gap-3">
-                            <InputOTPSlot index={0} className="w-11 h-13 md:w-12 md:h-14 text-xl font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={1} className="w-11 h-13 md:w-12 md:h-14 text-xl font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={2} className="w-11 h-13 md:w-12 md:h-14 text-xl font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={3} className="w-11 h-13 md:w-12 md:h-14 text-xl font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={4} className="w-11 h-13 md:w-12 md:h-14 text-xl font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={5} className="w-11 h-13 md:w-12 md:h-14 text-xl font-bold border-border/50 bg-background rounded-lg" />
+                          <InputOTPGroup className="gap-1.5 md:gap-2">
+                            <InputOTPSlot index={0} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={1} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={2} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={3} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={4} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={5} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={6} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={7} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
                           </InputOTPGroup>
                         </InputOTP>
                       </div>
@@ -1115,7 +1116,7 @@ const Auth = () => {
                   <Button
                     type="submit"
                     className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-medium text-base shadow-lg shadow-primary/20"
-                    disabled={isSubmitting || formData.forgotOtp.length !== 6}
+                    disabled={isSubmitting || formData.forgotOtp.length !== 8}
                   >
                     {isSubmitting ? (
                       <span className="flex items-center gap-2">
