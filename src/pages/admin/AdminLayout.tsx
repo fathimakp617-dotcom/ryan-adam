@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Outlet, useNavigate, Link, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import {
   Sidebar,
@@ -16,75 +17,115 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Package, LayoutDashboard, LogOut, ArrowLeft, Shield, Loader2 } from "lucide-react";
+import { Package, LayoutDashboard, LogOut, ArrowLeft, Mail, Lock, Loader2, Shield } from "lucide-react";
 import { motion } from "framer-motion";
 
+const ADMIN_SESSION_KEY = "rayn_admin_session";
+
+interface AdminSession {
+  token: string;
+  email: string;
+  expiry: number;
+}
+
 const AdminLayout = () => {
-  const { user, session, isLoading: authLoading, signOut } = useAuth();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [isCheckingAdmin, setIsCheckingAdmin] = useState(true);
+  const [adminSession, setAdminSession] = useState<AdminSession | null>(null);
+  const [isChecking, setIsChecking] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
 
   useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (!session?.access_token) {
-        setIsAdmin(false);
-        setIsCheckingAdmin(false);
-        return;
-      }
+    checkExistingSession();
+  }, []);
 
-      try {
-        const { data, error } = await supabase.functions.invoke("check-user-admin", {
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        });
-
-        if (error) {
-          console.error("Error checking admin status:", error);
-          setIsAdmin(false);
+  const checkExistingSession = () => {
+    try {
+      const stored = localStorage.getItem(ADMIN_SESSION_KEY);
+      if (stored) {
+        const session: AdminSession = JSON.parse(stored);
+        if (session.expiry > Date.now()) {
+          setAdminSession(session);
         } else {
-          setIsAdmin(data?.isAdmin === true);
+          localStorage.removeItem(ADMIN_SESSION_KEY);
         }
-      } catch (err) {
-        console.error("Failed to check admin:", err);
-        setIsAdmin(false);
-      } finally {
-        setIsCheckingAdmin(false);
       }
-    };
-
-    if (!authLoading) {
-      if (user && session) {
-        checkAdminStatus();
-      } else {
-        setIsAdmin(false);
-        setIsCheckingAdmin(false);
-      }
+    } catch (error) {
+      localStorage.removeItem(ADMIN_SESSION_KEY);
     }
-  }, [user, session, authLoading]);
+    setIsChecking(false);
+  };
 
-  const handleLogout = async () => {
-    await signOut();
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email.trim() || !password.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter both email and password",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("verify-admin-password", {
+        body: { email: email.trim(), password },
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        const session: AdminSession = {
+          token: data.session_token,
+          email: data.email,
+          expiry: data.session_expiry,
+        };
+        localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(session));
+        setAdminSession(session);
+        toast({
+          title: "Welcome, Admin",
+          description: "You have successfully logged in",
+        });
+      } else {
+        throw new Error(data.error || "Login failed");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Login Failed",
+        description: error.message || "Invalid credentials",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem(ADMIN_SESSION_KEY);
+    setAdminSession(null);
+    setEmail("");
+    setPassword("");
     navigate("/");
   };
 
-  // Show loading while checking auth or admin status
-  if (authLoading || isCheckingAdmin) {
+  if (isChecking) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+          <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-muted-foreground">Verifying access...</p>
         </div>
       </div>
     );
   }
 
-  // Not logged in - redirect to auth
-  if (!user) {
+  // Show login screen if not authenticated
+  if (!adminSession) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <motion.div
@@ -92,48 +133,77 @@ const AdminLayout = () => {
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-md"
         >
-          <div className="bg-card border border-border rounded-2xl p-8 shadow-lg text-center">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Shield className="w-8 h-8 text-primary" />
+          <div className="bg-card border border-border rounded-2xl p-8 shadow-lg">
+            {/* Header */}
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Shield className="w-8 h-8 text-primary" />
+              </div>
+              <h1 className="text-2xl font-heading font-bold text-foreground">Admin Access</h1>
+              <p className="text-muted-foreground text-sm mt-2">
+                Enter your admin credentials to continue
+              </p>
             </div>
-            <h1 className="text-2xl font-heading font-bold text-foreground mb-2">Admin Access</h1>
-            <p className="text-muted-foreground mb-6">
-              Please log in to access the admin panel
-            </p>
-            <Button onClick={() => navigate("/auth")} className="w-full mb-4">
-              Go to Login
-            </Button>
-            <Button variant="outline" onClick={() => navigate("/")} className="w-full">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Return to Store
-            </Button>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
 
-  // Logged in but not admin
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-md"
-        >
-          <div className="bg-card border border-border rounded-2xl p-8 shadow-lg text-center">
-            <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Shield className="w-8 h-8 text-destructive" />
+            <form onSubmit={handleLogin} className="space-y-5">
+              <div>
+                <Label htmlFor="admin_email">Admin Email</Label>
+                <div className="relative mt-1">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="admin_email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
+                    placeholder="admin@example.com"
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="admin_password">Password</Label>
+                <div className="relative mt-1">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="admin_password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10"
+                    placeholder="••••••••"
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+
+              <Button 
+                type="submit" 
+                className="w-full"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Logging in...
+                  </>
+                ) : (
+                  "Login"
+                )}
+              </Button>
+            </form>
+
+            <div className="mt-8 pt-6 border-t border-border text-center">
+              <Button
+                variant="link"
+                className="text-muted-foreground text-sm"
+                onClick={() => navigate("/")}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Return to Store
+              </Button>
             </div>
-            <h1 className="text-2xl font-heading font-bold text-foreground mb-2">Access Denied</h1>
-            <p className="text-muted-foreground mb-6">
-              You don't have admin privileges. Contact an administrator if you believe this is an error.
-            </p>
-            <Button variant="outline" onClick={() => navigate("/")} className="w-full">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Return to Store
-            </Button>
           </div>
         </motion.div>
       </div>
@@ -194,7 +264,7 @@ const AdminLayout = () => {
             {/* Bottom Actions */}
             <div className="mt-auto px-4 py-4 border-t border-border">
               <div className="text-sm text-muted-foreground mb-3 truncate">
-                {user.email}
+                {adminSession.email}
               </div>
               <Button 
                 variant="outline" 
