@@ -10,9 +10,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Download, Search, Loader2, Users, Mail, RefreshCw } from "lucide-react";
+import { Download, Search, Loader2, Users, Mail, RefreshCw, Trash2, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface CustomerEmail {
   email: string;
@@ -26,6 +36,8 @@ const AdminCustomers = () => {
   const [customers, setCustomers] = useState<CustomerEmail[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [deleteCustomerEmail, setDeleteCustomerEmail] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -101,6 +113,47 @@ const AdminCustomers = () => {
       title: "Export Complete",
       description: `${filteredCustomers.length} customer emails exported to CSV`,
     });
+  };
+
+  const handleDeleteCustomer = async (email: string) => {
+    setIsDeleting(true);
+    try {
+      const stored = localStorage.getItem("rayn_admin_session");
+      if (!stored) {
+        throw new Error("Admin session not found");
+      }
+
+      const session = JSON.parse(stored);
+      
+      const { data, error } = await supabase.functions.invoke("delete-customer-orders", {
+        body: {
+          admin_email: session.email,
+          admin_token: session.token,
+          customer_email: email,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Customer Deleted",
+        description: data.message || "Customer and orders deleted successfully",
+      });
+
+      // Remove from local state
+      setCustomers(customers.filter(c => c.email !== email));
+      setDeleteCustomerEmail(null);
+
+    } catch (error: any) {
+      console.error("Error deleting customer:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete customer",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -211,12 +264,13 @@ const AdminCustomers = () => {
               <TableHead className="text-center">Orders</TableHead>
               <TableHead className="text-right">Total Spent</TableHead>
               <TableHead className="text-right">Last Order</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredCustomers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   {searchTerm ? "No customers found matching your search" : "No customer data available"}
                 </TableCell>
               </TableRow>
@@ -236,6 +290,17 @@ const AdminCustomers = () => {
                   <TableCell className="text-right text-muted-foreground">
                     {formatDate(customer.lastOrderDate)}
                   </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDeleteCustomerEmail(customer.email)}
+                      title="Delete customer and orders"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -252,6 +317,40 @@ const AdminCustomers = () => {
           <li>• Customer emails are extracted from order data</li>
         </ul>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteCustomerEmail} onOpenChange={() => setDeleteCustomerEmail(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Delete Customer
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <strong>{deleteCustomerEmail}</strong>? 
+              This will permanently delete all orders associated with this customer. 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteCustomerEmail && handleDeleteCustomer(deleteCustomerEmail)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete Customer"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </motion.div>
   );
 };

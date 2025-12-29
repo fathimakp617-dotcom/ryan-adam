@@ -53,3 +53,9 @@ verify_jwt = false
 
 [functions.manage-affiliate]
 verify_jwt = false
+
+[functions.delete-admin-order]
+verify_jwt = false
+
+[functions.delete-customer-orders]
+verify_jwt = false
