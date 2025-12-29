@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.send-password-otp]
 verify_jwt = false
+
+[functions.cancel-order]
+verify_jwt = false
