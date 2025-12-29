@@ -12,7 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Package, IndianRupee, Clock, CheckCircle, Users, TrendingUp, Calendar, RefreshCw, BarChart3 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Package, IndianRupee, Clock, CheckCircle, Users, TrendingUp, Calendar, RefreshCw, BarChart3, CreditCard, Banknote, Wallet } from "lucide-react";
 
 interface OrderStats {
   total: number;
@@ -24,10 +25,36 @@ interface OrderStats {
   totalRevenue: number;
 }
 
+interface PaymentBreakdown {
+  cod: {
+    orders: number;
+    revenue: number;
+    pending: number;
+    delivered: number;
+  };
+  online: {
+    orders: number;
+    revenue: number;
+    pending: number;
+    delivered: number;
+  };
+}
+
 interface MonthlyRevenue {
   month: string;
   revenue: number;
   orders: number;
+  cod: number;
+  online: number;
+}
+
+interface AllTimeStats {
+  total: number;
+  totalRevenue: number;
+  codRevenue: number;
+  onlineRevenue: number;
+  codOrders: number;
+  onlineOrders: number;
 }
 
 const AdminDashboard = () => {
@@ -40,19 +67,30 @@ const AdminDashboard = () => {
     cancelled: 0,
     totalRevenue: 0,
   });
-  const [allTimeStats, setAllTimeStats] = useState({ total: 0, totalRevenue: 0 });
+  const [allTimeStats, setAllTimeStats] = useState<AllTimeStats>({
+    total: 0,
+    totalRevenue: 0,
+    codRevenue: 0,
+    onlineRevenue: 0,
+    codOrders: 0,
+    onlineOrders: 0,
+  });
+  const [paymentBreakdown, setPaymentBreakdown] = useState<PaymentBreakdown>({
+    cod: { orders: 0, revenue: 0, pending: 0, delivered: 0 },
+    online: { orders: 0, revenue: 0, pending: 0, delivered: 0 },
+  });
   const [monthlyRevenue, setMonthlyRevenue] = useState<MonthlyRevenue[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [dateFilter, setDateFilter] = useState("all");
   const [customDateFrom, setCustomDateFrom] = useState("");
   const [customDateTo, setCustomDateTo] = useState("");
+  const [revenueView, setRevenueView] = useState<"all" | "cod" | "online">("all");
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchStats();
 
-    // Subscribe to real-time order updates
     const channel = supabase
       .channel('admin-orders-realtime')
       .on(
@@ -62,10 +100,7 @@ const AdminDashboard = () => {
           schema: 'public',
           table: 'orders'
         },
-        (payload) => {
-          console.log('Order change detected:', payload);
-          fetchStats();
-        }
+        () => fetchStats()
       )
       .subscribe();
 
@@ -74,7 +109,6 @@ const AdminDashboard = () => {
     };
   }, []);
 
-  // Refetch when date filter changes
   useEffect(() => {
     if (dateFilter !== "custom") {
       fetchStats();
@@ -121,9 +155,6 @@ const AdminDashboard = () => {
         dateFrom = customDateFrom || undefined;
         dateTo = customDateTo || undefined;
         break;
-      default:
-        // "all" - no date filter
-        break;
     }
 
     return { dateFrom, dateTo };
@@ -132,9 +163,7 @@ const AdminDashboard = () => {
   const fetchStats = async () => {
     try {
       const sessionData = localStorage.getItem("rayn_admin_session");
-      if (!sessionData) {
-        throw new Error("No admin session found");
-      }
+      if (!sessionData) throw new Error("No admin session found");
       
       const session = JSON.parse(sessionData);
       const { dateFrom, dateTo } = getDateRange();
@@ -152,7 +181,8 @@ const AdminDashboard = () => {
       
       if (data) {
         setStats(data.stats);
-        setAllTimeStats(data.allTimeStats || { total: 0, totalRevenue: 0 });
+        setAllTimeStats(data.allTimeStats || { total: 0, totalRevenue: 0, codRevenue: 0, onlineRevenue: 0, codOrders: 0, onlineOrders: 0 });
+        setPaymentBreakdown(data.paymentBreakdown || { cod: { orders: 0, revenue: 0, pending: 0, delivered: 0 }, online: { orders: 0, revenue: 0, pending: 0, delivered: 0 } });
         setMonthlyRevenue(data.monthlyRevenue || []);
         setRecentOrders(data.recentOrders || []);
       }
@@ -164,9 +194,7 @@ const AdminDashboard = () => {
   };
 
   const handleCustomDateApply = () => {
-    if (customDateFrom || customDateTo) {
-      fetchStats();
-    }
+    if (customDateFrom || customDateTo) fetchStats();
   };
 
   const formatCurrency = (amount: number) => {
@@ -178,75 +206,29 @@ const AdminDashboard = () => {
   };
 
   const navigateToFilteredOrders = (status?: string) => {
-    if (status) {
-      navigate(`/admin/orders?status=${status}`);
-    } else {
-      navigate("/admin/orders");
-    }
+    navigate(status ? `/admin/orders?status=${status}` : "/admin/orders");
   };
 
   const getFilterLabel = () => {
-    switch (dateFilter) {
-      case "today": return "Today";
-      case "yesterday": return "Yesterday";
-      case "last7days": return "Last 7 Days";
-      case "thisMonth": return "This Month";
-      case "lastMonth": return "Last Month";
-      case "thisYear": return "This Year";
-      case "custom": return "Custom Range";
-      default: return "All Time";
-    }
+    const labels: Record<string, string> = {
+      today: "Today",
+      yesterday: "Yesterday",
+      last7days: "Last 7 Days",
+      thisMonth: "This Month",
+      lastMonth: "Last Month",
+      thisYear: "This Year",
+      custom: "Custom Range",
+    };
+    return labels[dateFilter] || "All Time";
   };
 
-  const statCards = [
-    {
-      title: "Orders",
-      value: stats.total,
-      subtitle: dateFilter !== "all" ? `${getFilterLabel()}` : "All Time",
-      icon: Package,
-      color: "text-primary",
-      bgColor: "bg-primary/10",
-      onClick: () => navigateToFilteredOrders(),
-    },
-    {
-      title: "Revenue",
-      value: formatCurrency(stats.totalRevenue),
-      subtitle: dateFilter !== "all" ? `${getFilterLabel()}` : "All Time",
-      icon: IndianRupee,
-      color: "text-green-500",
-      bgColor: "bg-green-500/10",
-      onClick: () => navigateToFilteredOrders(),
-    },
-    {
-      title: "Pending",
-      value: stats.pending,
-      subtitle: "Needs attention",
-      icon: Clock,
-      color: "text-yellow-500",
-      bgColor: "bg-yellow-500/10",
-      onClick: () => navigateToFilteredOrders("pending"),
-    },
-    {
-      title: "Delivered",
-      value: stats.delivered,
-      subtitle: "Completed",
-      icon: CheckCircle,
-      color: "text-green-500",
-      bgColor: "bg-green-500/10",
-      onClick: () => navigateToFilteredOrders("delivered"),
-    },
-  ];
+  const getRevenueByView = (month: MonthlyRevenue) => {
+    if (revenueView === "cod") return month.cod;
+    if (revenueView === "online") return month.online;
+    return month.revenue;
+  };
 
-  const statusBreakdown = [
-    { status: "pending", label: "Pending", count: stats.pending, color: "yellow" },
-    { status: "processing", label: "Processing", count: stats.processing, color: "blue" },
-    { status: "shipped", label: "Shipped", count: stats.shipped, color: "purple" },
-    { status: "delivered", label: "Delivered", count: stats.delivered, color: "green" },
-    { status: "cancelled", label: "Cancelled", count: stats.cancelled, color: "red" },
-  ];
-
-  // Find max revenue for chart scaling
-  const maxRevenue = Math.max(...monthlyRevenue.map(m => m.revenue), 1);
+  const maxRevenue = Math.max(...monthlyRevenue.map(m => getRevenueByView(m)), 1);
 
   if (isLoading) {
     return (
@@ -319,9 +301,7 @@ const AdminDashboard = () => {
                     />
                   </div>
                 </div>
-                <Button onClick={handleCustomDateApply} size="sm">
-                  Apply
-                </Button>
+                <Button onClick={handleCustomDateApply} size="sm">Apply</Button>
               </>
             )}
 
@@ -339,17 +319,88 @@ const AdminDashboard = () => {
               </Button>
             )}
           </div>
+        </CardContent>
+      </Card>
 
-          {/* All-time comparison when filtered */}
-          {dateFilter !== "all" && (
-            <div className="mt-4 pt-4 border-t border-border flex gap-6 text-sm">
-              <div>
-                <span className="text-muted-foreground">All-time Orders: </span>
-                <span className="font-semibold text-foreground">{allTimeStats.total}</span>
+      {/* Revenue Breakdown by Payment Method */}
+      <Card className="bg-card border-border">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wallet className="h-5 w-5" />
+            Revenue by Payment Method
+            <span className="text-sm font-normal text-muted-foreground ml-2">({getFilterLabel()})</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Total Revenue */}
+            <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-5 border border-primary/20">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-primary/20 rounded-lg">
+                  <IndianRupee className="h-5 w-5 text-primary" />
+                </div>
+                <span className="text-sm font-medium text-muted-foreground">Total Revenue</span>
               </div>
-              <div>
-                <span className="text-muted-foreground">All-time Revenue: </span>
-                <span className="font-semibold text-green-500">{formatCurrency(allTimeStats.totalRevenue)}</span>
+              <p className="text-3xl font-bold text-foreground">{formatCurrency(stats.totalRevenue)}</p>
+              <p className="text-sm text-muted-foreground mt-2">{stats.total} orders</p>
+            </div>
+
+            {/* COD Revenue */}
+            <div className="bg-gradient-to-br from-orange-500/10 to-orange-500/5 rounded-xl p-5 border border-orange-500/20">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-orange-500/20 rounded-lg">
+                  <Banknote className="h-5 w-5 text-orange-500" />
+                </div>
+                <span className="text-sm font-medium text-muted-foreground">COD Revenue</span>
+              </div>
+              <p className="text-3xl font-bold text-foreground">{formatCurrency(paymentBreakdown.cod.revenue)}</p>
+              <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
+                <span>{paymentBreakdown.cod.orders} orders</span>
+                <span className="text-yellow-500">{paymentBreakdown.cod.pending} pending</span>
+              </div>
+            </div>
+
+            {/* Online Revenue */}
+            <div className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 rounded-xl p-5 border border-blue-500/20">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-blue-500/20 rounded-lg">
+                  <CreditCard className="h-5 w-5 text-blue-500" />
+                </div>
+                <span className="text-sm font-medium text-muted-foreground">Online Revenue</span>
+              </div>
+              <p className="text-3xl font-bold text-foreground">{formatCurrency(paymentBreakdown.online.revenue)}</p>
+              <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
+                <span>{paymentBreakdown.online.orders} orders</span>
+                <span className="text-green-500">{paymentBreakdown.online.delivered} delivered</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Revenue Percentage Bar */}
+          {stats.totalRevenue > 0 && (
+            <div className="mt-6">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-muted-foreground">Payment Split</span>
+                <div className="flex gap-4">
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 bg-orange-500 rounded-full"></span>
+                    COD {((paymentBreakdown.cod.revenue / stats.totalRevenue) * 100).toFixed(1)}%
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 bg-blue-500 rounded-full"></span>
+                    Online {((paymentBreakdown.online.revenue / stats.totalRevenue) * 100).toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+              <div className="h-3 bg-muted rounded-full overflow-hidden flex">
+                <div 
+                  className="bg-orange-500 h-full transition-all duration-300"
+                  style={{ width: `${(paymentBreakdown.cod.revenue / stats.totalRevenue) * 100}%` }}
+                />
+                <div 
+                  className="bg-blue-500 h-full transition-all duration-300"
+                  style={{ width: `${(paymentBreakdown.online.revenue / stats.totalRevenue) * 100}%` }}
+                />
               </div>
             </div>
           )}
@@ -358,21 +409,16 @@ const AdminDashboard = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((stat, index) => (
-          <motion.div
-            key={stat.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <Card 
-              className="bg-card border-border cursor-pointer hover:shadow-lg hover:border-primary/30 transition-all duration-200"
-              onClick={stat.onClick}
-            >
+        {[
+          { title: "Orders", value: stats.total, subtitle: getFilterLabel(), icon: Package, color: "text-primary", bgColor: "bg-primary/10", onClick: () => navigateToFilteredOrders() },
+          { title: "Revenue", value: formatCurrency(stats.totalRevenue), subtitle: getFilterLabel(), icon: IndianRupee, color: "text-green-500", bgColor: "bg-green-500/10", onClick: () => navigateToFilteredOrders() },
+          { title: "Pending", value: stats.pending, subtitle: "Needs attention", icon: Clock, color: "text-yellow-500", bgColor: "bg-yellow-500/10", onClick: () => navigateToFilteredOrders("pending") },
+          { title: "Delivered", value: stats.delivered, subtitle: "Completed", icon: CheckCircle, color: "text-green-500", bgColor: "bg-green-500/10", onClick: () => navigateToFilteredOrders("delivered") },
+        ].map((stat, index) => (
+          <motion.div key={stat.title} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }}>
+            <Card className="bg-card border-border cursor-pointer hover:shadow-lg hover:border-primary/30 transition-all duration-200" onClick={stat.onClick}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {stat.title}
-                </CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
                 <div className={`p-2 rounded-lg ${stat.bgColor}`}>
                   <stat.icon className={`h-4 w-4 ${stat.color}`} />
                 </div>
@@ -386,53 +432,65 @@ const AdminDashboard = () => {
         ))}
       </div>
 
-      {/* Monthly Revenue Chart */}
+      {/* Monthly Revenue Chart with Tabs */}
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Monthly Revenue ({new Date().getFullYear()})
-          </CardTitle>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Monthly Revenue ({new Date().getFullYear()})
+            </CardTitle>
+            <Tabs value={revenueView} onValueChange={(v) => setRevenueView(v as "all" | "cod" | "online")}>
+              <TabsList className="grid grid-cols-3 w-[240px]">
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="cod">COD</TabsTrigger>
+                <TabsTrigger value="online">Online</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex items-end gap-2 h-48">
-            {monthlyRevenue.map((month, index) => (
-              <div key={month.month} className="flex-1 flex flex-col items-center gap-1">
-                <div className="w-full flex flex-col items-center">
-                  <span className="text-xs text-muted-foreground mb-1">
-                    {month.revenue > 0 ? formatCurrency(month.revenue) : ""}
-                  </span>
-                  <div 
-                    className="w-full bg-primary/20 hover:bg-primary/30 transition-colors rounded-t cursor-pointer relative group"
-                    style={{ 
-                      height: `${Math.max((month.revenue / maxRevenue) * 140, 4)}px`,
-                    }}
-                  >
+            {monthlyRevenue.map((month) => {
+              const value = getRevenueByView(month);
+              return (
+                <div key={month.month} className="flex-1 flex flex-col items-center gap-1">
+                  <div className="w-full flex flex-col items-center">
+                    <span className="text-xs text-muted-foreground mb-1">
+                      {value > 0 ? formatCurrency(value) : ""}
+                    </span>
                     <div 
-                      className="absolute inset-0 bg-primary rounded-t"
-                      style={{ 
-                        height: `${Math.max((month.revenue / maxRevenue) * 100, month.revenue > 0 ? 10 : 0)}%`,
-                      }}
-                    />
-                    {/* Tooltip */}
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-foreground text-background text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                      {month.orders} orders
+                      className={`w-full rounded-t cursor-pointer relative group transition-colors ${
+                        revenueView === "cod" ? "bg-orange-500/20 hover:bg-orange-500/30" :
+                        revenueView === "online" ? "bg-blue-500/20 hover:bg-blue-500/30" :
+                        "bg-primary/20 hover:bg-primary/30"
+                      }`}
+                      style={{ height: `${Math.max((value / maxRevenue) * 140, 4)}px` }}
+                    >
+                      <div 
+                        className={`absolute inset-0 rounded-t ${
+                          revenueView === "cod" ? "bg-orange-500" :
+                          revenueView === "online" ? "bg-blue-500" :
+                          "bg-primary"
+                        }`}
+                        style={{ height: `${Math.max((value / maxRevenue) * 100, value > 0 ? 10 : 0)}%` }}
+                      />
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-foreground text-background text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                        {month.orders} orders
+                      </div>
                     </div>
                   </div>
+                  <span className="text-xs text-muted-foreground">{month.month}</span>
                 </div>
-                <span className="text-xs text-muted-foreground">{month.month}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </CardContent>
       </Card>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card 
-          className="bg-card border-border cursor-pointer hover:shadow-lg hover:border-primary/30 transition-all duration-200"
-          onClick={() => navigate("/admin/customers")}
-        >
+        <Card className="bg-card border-border cursor-pointer hover:shadow-lg hover:border-primary/30 transition-all duration-200" onClick={() => navigate("/admin/customers")}>
           <CardContent className="flex items-center gap-4 p-6">
             <div className="p-3 rounded-lg bg-primary/10">
               <Users className="h-6 w-6 text-primary" />
@@ -443,10 +501,7 @@ const AdminDashboard = () => {
             </div>
           </CardContent>
         </Card>
-        <Card 
-          className="bg-card border-border cursor-pointer hover:shadow-lg hover:border-primary/30 transition-all duration-200"
-          onClick={() => navigate("/admin/orders")}
-        >
+        <Card className="bg-card border-border cursor-pointer hover:shadow-lg hover:border-primary/30 transition-all duration-200" onClick={() => navigate("/admin/orders")}>
           <CardContent className="flex items-center gap-4 p-6">
             <div className="p-3 rounded-lg bg-blue-500/10">
               <TrendingUp className="h-6 w-6 text-blue-500" />
@@ -466,13 +521,19 @@ const AdminDashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {statusBreakdown.map((item) => (
+            {[
+              { status: "pending", label: "Pending", count: stats.pending, bgColor: "bg-yellow-500/10", textColor: "text-yellow-500" },
+              { status: "processing", label: "Processing", count: stats.processing, bgColor: "bg-blue-500/10", textColor: "text-blue-500" },
+              { status: "shipped", label: "Shipped", count: stats.shipped, bgColor: "bg-purple-500/10", textColor: "text-purple-500" },
+              { status: "delivered", label: "Delivered", count: stats.delivered, bgColor: "bg-green-500/10", textColor: "text-green-500" },
+              { status: "cancelled", label: "Cancelled", count: stats.cancelled, bgColor: "bg-red-500/10", textColor: "text-red-500" },
+            ].map((item) => (
               <div 
                 key={item.status}
                 onClick={() => navigateToFilteredOrders(item.status)}
-                className={`text-center p-4 bg-${item.color}-500/10 rounded-lg cursor-pointer hover:ring-2 hover:ring-${item.color}-500/30 transition-all duration-200`}
+                className={`text-center p-4 ${item.bgColor} rounded-lg cursor-pointer hover:ring-2 hover:ring-border transition-all duration-200`}
               >
-                <div className={`text-2xl font-bold text-${item.color}-500`}>{item.count}</div>
+                <div className={`text-2xl font-bold ${item.textColor}`}>{item.count}</div>
                 <div className="text-sm text-muted-foreground">{item.label}</div>
               </div>
             ))}
@@ -484,12 +545,7 @@ const AdminDashboard = () => {
       <Card className="bg-card border-border">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Recent Orders</CardTitle>
-          <Link 
-            to="/admin/orders" 
-            className="text-sm text-primary hover:underline"
-          >
-            View All
-          </Link>
+          <Link to="/admin/orders" className="text-sm text-primary hover:underline">View All</Link>
         </CardHeader>
         <CardContent>
           {recentOrders.length === 0 ? (
@@ -502,9 +558,18 @@ const AdminDashboard = () => {
                   onClick={() => navigate("/admin/orders")}
                   className="flex items-center justify-between p-4 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
                 >
-                  <div>
-                    <p className="font-medium text-foreground">{order.order_number}</p>
-                    <p className="text-sm text-muted-foreground">{order.customer_name}</p>
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${order.payment_method === "cod" || order.payment_method === "COD" ? "bg-orange-500/10" : "bg-blue-500/10"}`}>
+                      {order.payment_method === "cod" || order.payment_method === "COD" ? (
+                        <Banknote className="h-4 w-4 text-orange-500" />
+                      ) : (
+                        <CreditCard className="h-4 w-4 text-blue-500" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">{order.order_number}</p>
+                      <p className="text-sm text-muted-foreground">{order.customer_name}</p>
+                    </div>
                   </div>
                   <div className="text-right">
                     <p className="font-medium text-foreground">{formatCurrency(order.total)}</p>
@@ -522,6 +587,16 @@ const AdminDashboard = () => {
               ))}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Reminder Note */}
+      <Card className="bg-amber-500/10 border-amber-500/20">
+        <CardContent className="p-4 flex items-center gap-3">
+          <CreditCard className="h-5 w-5 text-amber-500" />
+          <p className="text-sm text-amber-700 dark:text-amber-300">
+            <strong>Reminder:</strong> Razorpay integration pending. Let me know when you're ready to set it up!
+          </p>
         </CardContent>
       </Card>
     </div>
