@@ -17,7 +17,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Package, LayoutDashboard, LogOut, ArrowLeft, Mail, Lock, Loader2, Shield } from "lucide-react";
+import { Package, LayoutDashboard, LogOut, ArrowLeft, Mail, Lock, Loader2, Shield, Users } from "lucide-react";
 import { motion } from "framer-motion";
 
 const ADMIN_SESSION_KEY = "rayn_admin_session";
@@ -214,6 +214,7 @@ const AdminLayout = () => {
   const menuItems = [
     { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
     { title: "Orders", url: "/admin/orders", icon: Package },
+    { title: "Customers", url: "/admin/customers", icon: Users },
   ];
 
   const isActive = (path: string) => {
