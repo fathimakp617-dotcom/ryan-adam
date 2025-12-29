@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, IndianRupee, Clock, CheckCircle } from "lucide-react";
+import { Package, IndianRupee, Clock, CheckCircle, Users, TrendingUp } from "lucide-react";
 
 interface OrderStats {
   total: number;
@@ -27,6 +27,7 @@ const AdminDashboard = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchStats();
@@ -92,6 +93,14 @@ const AdminDashboard = () => {
     }).format(amount);
   };
 
+  const navigateToFilteredOrders = (status?: string) => {
+    if (status) {
+      navigate(`/admin/orders?status=${status}`);
+    } else {
+      navigate("/admin/orders");
+    }
+  };
+
   const statCards = [
     {
       title: "Total Orders",
@@ -99,6 +108,7 @@ const AdminDashboard = () => {
       icon: Package,
       color: "text-primary",
       bgColor: "bg-primary/10",
+      onClick: () => navigateToFilteredOrders(),
     },
     {
       title: "Total Revenue",
@@ -106,6 +116,7 @@ const AdminDashboard = () => {
       icon: IndianRupee,
       color: "text-green-500",
       bgColor: "bg-green-500/10",
+      onClick: () => navigateToFilteredOrders(),
     },
     {
       title: "Pending Orders",
@@ -113,6 +124,7 @@ const AdminDashboard = () => {
       icon: Clock,
       color: "text-yellow-500",
       bgColor: "bg-yellow-500/10",
+      onClick: () => navigateToFilteredOrders("pending"),
     },
     {
       title: "Delivered",
@@ -120,7 +132,16 @@ const AdminDashboard = () => {
       icon: CheckCircle,
       color: "text-green-500",
       bgColor: "bg-green-500/10",
+      onClick: () => navigateToFilteredOrders("delivered"),
     },
+  ];
+
+  const statusBreakdown = [
+    { status: "pending", label: "Pending", count: stats.pending, color: "yellow" },
+    { status: "processing", label: "Processing", count: stats.processing, color: "blue" },
+    { status: "shipped", label: "Shipped", count: stats.shipped, color: "purple" },
+    { status: "delivered", label: "Delivered", count: stats.delivered, color: "green" },
+    { status: "cancelled", label: "Cancelled", count: stats.cancelled, color: "red" },
   ];
 
   if (isLoading) {
@@ -147,7 +168,10 @@ const AdminDashboard = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <Card className="bg-card border-border">
+            <Card 
+              className="bg-card border-border cursor-pointer hover:shadow-lg hover:border-primary/30 transition-all duration-200"
+              onClick={stat.onClick}
+            >
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   {stat.title}
@@ -164,6 +188,38 @@ const AdminDashboard = () => {
         ))}
       </div>
 
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card 
+          className="bg-card border-border cursor-pointer hover:shadow-lg hover:border-primary/30 transition-all duration-200"
+          onClick={() => navigate("/admin/customers")}
+        >
+          <CardContent className="flex items-center gap-4 p-6">
+            <div className="p-3 rounded-lg bg-primary/10">
+              <Users className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground">View Customers</h3>
+              <p className="text-sm text-muted-foreground">Export customer emails for marketing</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card 
+          className="bg-card border-border cursor-pointer hover:shadow-lg hover:border-primary/30 transition-all duration-200"
+          onClick={() => navigate("/admin/orders")}
+        >
+          <CardContent className="flex items-center gap-4 p-6">
+            <div className="p-3 rounded-lg bg-blue-500/10">
+              <TrendingUp className="h-6 w-6 text-blue-500" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground">Manage Orders</h3>
+              <p className="text-sm text-muted-foreground">Update status, download shipping labels</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Order Status Breakdown */}
       <Card className="bg-card border-border">
         <CardHeader>
@@ -171,26 +227,16 @@ const AdminDashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="text-center p-4 bg-yellow-500/10 rounded-lg">
-              <div className="text-2xl font-bold text-yellow-500">{stats.pending}</div>
-              <div className="text-sm text-muted-foreground">Pending</div>
-            </div>
-            <div className="text-center p-4 bg-blue-500/10 rounded-lg">
-              <div className="text-2xl font-bold text-blue-500">{stats.processing}</div>
-              <div className="text-sm text-muted-foreground">Processing</div>
-            </div>
-            <div className="text-center p-4 bg-purple-500/10 rounded-lg">
-              <div className="text-2xl font-bold text-purple-500">{stats.shipped}</div>
-              <div className="text-sm text-muted-foreground">Shipped</div>
-            </div>
-            <div className="text-center p-4 bg-green-500/10 rounded-lg">
-              <div className="text-2xl font-bold text-green-500">{stats.delivered}</div>
-              <div className="text-sm text-muted-foreground">Delivered</div>
-            </div>
-            <div className="text-center p-4 bg-red-500/10 rounded-lg">
-              <div className="text-2xl font-bold text-red-500">{stats.cancelled}</div>
-              <div className="text-sm text-muted-foreground">Cancelled</div>
-            </div>
+            {statusBreakdown.map((item) => (
+              <div 
+                key={item.status}
+                onClick={() => navigateToFilteredOrders(item.status)}
+                className={`text-center p-4 bg-${item.color}-500/10 rounded-lg cursor-pointer hover:ring-2 hover:ring-${item.color}-500/30 transition-all duration-200`}
+              >
+                <div className={`text-2xl font-bold text-${item.color}-500`}>{item.count}</div>
+                <div className="text-sm text-muted-foreground">{item.label}</div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -214,7 +260,8 @@ const AdminDashboard = () => {
               {recentOrders.map((order) => (
                 <div 
                   key={order.id} 
-                  className="flex items-center justify-between p-4 bg-muted/30 rounded-lg"
+                  onClick={() => navigate("/admin/orders")}
+                  className="flex items-center justify-between p-4 bg-muted/30 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
                 >
                   <div>
                     <p className="font-medium text-foreground">{order.order_number}</p>
