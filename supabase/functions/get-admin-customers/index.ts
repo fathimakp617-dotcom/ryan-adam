@@ -7,7 +7,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -21,7 +20,7 @@ serve(async (req) => {
       throw new Error("Missing Supabase configuration");
     }
 
-    const { admin_email, admin_token } = await req.json();
+    const { admin_email } = await req.json();
 
     // Verify admin access
     const allowedEmails = adminEmailsEnv.split(",").map((e) => e.trim().toLowerCase());
@@ -35,57 +34,21 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Fetch all orders to extract unique customer emails
-    const { data: orders, error: ordersError } = await supabase
-      .from("orders")
-      .select("customer_email, customer_name, total, created_at")
-      .order("created_at", { ascending: false });
+    // Fetch registered users from auth.users table
+    const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
 
-    if (ordersError) {
-      console.error("Error fetching orders:", ordersError);
-      throw ordersError;
+    if (authError) {
+      console.error("Error fetching users:", authError);
+      throw authError;
     }
 
-    console.log(`Found ${orders?.length || 0} orders`);
+    // Map to simple customer data with email and registration date
+    const customers = authUsers.users.map((user) => ({
+      email: user.email || "No email",
+      created_at: user.created_at,
+    })).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-    // Aggregate customer data
-    const customerMap = new Map<string, {
-      email: string;
-      name: string;
-      orderCount: number;
-      totalSpent: number;
-      lastOrderDate: string;
-    }>();
-
-    orders?.forEach((order) => {
-      const email = order.customer_email.toLowerCase();
-      const existing = customerMap.get(email);
-
-      if (existing) {
-        existing.orderCount += 1;
-        existing.totalSpent += Number(order.total) || 0;
-        // Keep the most recent order date
-        if (new Date(order.created_at) > new Date(existing.lastOrderDate)) {
-          existing.lastOrderDate = order.created_at;
-          existing.name = order.customer_name || existing.name;
-        }
-      } else {
-        customerMap.set(email, {
-          email: order.customer_email,
-          name: order.customer_name || "Unknown",
-          orderCount: 1,
-          totalSpent: Number(order.total) || 0,
-          lastOrderDate: order.created_at,
-        });
-      }
-    });
-
-    // Convert map to array and sort by order count (most orders first)
-    const customers = Array.from(customerMap.values()).sort(
-      (a, b) => b.orderCount - a.orderCount
-    );
-
-    console.log(`Found ${customers.length} unique customers`);
+    console.log(`Found ${customers.length} registered customers`);
 
     return new Response(
       JSON.stringify({ customers }),
