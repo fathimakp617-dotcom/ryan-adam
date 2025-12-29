@@ -47,3 +47,9 @@ verify_jwt = false
 
 [functions.get-admin-customers]
 verify_jwt = false
+
+[functions.get-admin-affiliates]
+verify_jwt = false
+
+[functions.manage-affiliate]
+verify_jwt = false
