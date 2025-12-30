@@ -26,6 +26,7 @@ interface AdminSession {
   token: string;
   email: string;
   expiry: number;
+  role?: string;
 }
 
 const AdminLayout = () => {
@@ -81,10 +82,26 @@ const AdminLayout = () => {
       if (error) throw error;
 
       if (data.success) {
+        // Check if user is a shipping user - redirect them to shipping dashboard
+        if (data.role === "shipping") {
+          toast({
+            title: "Shipping Account",
+            description: "Redirecting to shipping dashboard...",
+          });
+          navigate("/shipping");
+          return;
+        }
+        
+        // Only allow admin role to access admin dashboard
+        if (data.role !== "admin") {
+          throw new Error("Admin access required");
+        }
+
         const session: AdminSession = {
           token: data.session_token,
           email: data.email,
           expiry: data.session_expiry,
+          role: data.role,
         };
         // Use sessionStorage - admin session ends when browser closes
         sessionStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(session));
