@@ -11,6 +11,12 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -25,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RefreshCw, Search, Filter, Activity, Loader2, CalendarIcon, Download, X } from "lucide-react";
+import { RefreshCw, Search, Filter, Activity, Loader2, CalendarIcon, Download, X, Clock, Mail, Shield, Package, Info } from "lucide-react";
 import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -50,6 +56,8 @@ const AdminActivityLogs = () => {
   const [actionFilter, setActionFilter] = useState<string>("all");
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const { toast } = useToast();
 
   const fetchLogs = async () => {
@@ -373,7 +381,14 @@ const AdminActivityLogs = () => {
                 </TableHeader>
                 <TableBody>
                   {filteredLogs.map((log) => (
-                    <TableRow key={log.id}>
+                    <TableRow 
+                      key={log.id} 
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => {
+                        setSelectedLog(log);
+                        setShowDetailsDialog(true);
+                      }}
+                    >
                       <TableCell className="whitespace-nowrap">
                         <div className="text-sm">
                           {format(new Date(log.created_at), "MMM d, yyyy")}
@@ -411,6 +426,103 @@ const AdminActivityLogs = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Activity Log Details Dialog */}
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              Activity Details
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedLog && (
+            <div className="space-y-4">
+              {/* Timestamp */}
+              <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                <Clock className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium">Date & Time</p>
+                  <p className="text-sm text-muted-foreground">
+                    {format(new Date(selectedLog.created_at), "EEEE, MMMM d, yyyy")}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {format(new Date(selectedLog.created_at), "h:mm:ss a")}
+                  </p>
+                </div>
+              </div>
+
+              {/* Actor */}
+              <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                <Mail className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium">Actor</p>
+                  <p className="text-sm text-muted-foreground">{selectedLog.actor_email}</p>
+                  <Badge variant={getRoleBadgeVariant(selectedLog.actor_role)} className="mt-1">
+                    <Shield className="h-3 w-3 mr-1" />
+                    {selectedLog.actor_role}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Action */}
+              <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                <Activity className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium">Action Type</p>
+                  <Badge variant={getActionBadgeVariant(selectedLog.action_type)} className="mt-1">
+                    {selectedLog.action_type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Order Info (if applicable) */}
+              {selectedLog.order_number && (
+                <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                  <Package className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium">Order</p>
+                    <p className="text-sm font-mono text-muted-foreground">{selectedLog.order_number}</p>
+                    {selectedLog.order_id && (
+                      <p className="text-xs text-muted-foreground mt-1">ID: {selectedLog.order_id}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Details */}
+              {selectedLog.action_details && Object.keys(selectedLog.action_details).length > 0 && (
+                <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                  <Info className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium mb-2">Details</p>
+                    <div className="space-y-2">
+                      {Object.entries(selectedLog.action_details).map(([key, value]) => (
+                        <div key={key} className="flex justify-between items-start gap-4">
+                          <span className="text-sm text-muted-foreground capitalize">
+                            {key.replace(/_/g, " ")}:
+                          </span>
+                          <span className="text-sm font-medium text-right break-all">
+                            {typeof value === "object" ? JSON.stringify(value) : String(value)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Log ID */}
+              <div className="pt-2 border-t">
+                <p className="text-xs text-muted-foreground">
+                  Log ID: <span className="font-mono">{selectedLog.id}</span>
+                </p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
