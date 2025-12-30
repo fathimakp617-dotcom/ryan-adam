@@ -38,7 +38,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { RefreshCw, Users, Shield, Truck, Loader2, Mail, Clock, Plus, Key, Trash2, Power } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { 
+  RefreshCw, Users, Shield, Truck, Loader2, Mail, Clock, Plus, Key, Trash2, 
+  Power, Ban, CheckCircle, Send, Eye, Calendar, User, Bell
+} from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
@@ -53,6 +58,22 @@ interface StaffMember {
   loginCount?: number;
   source?: "database" | "environment";
   is_protected?: boolean;
+}
+
+interface StaffNotification {
+  id: string;
+  staff_email: string;
+  notification_type: string;
+  subject: string;
+  recipients: string[];
+  sent_at: string;
+  sent_by: string;
+  order_number?: string;
+  details?: {
+    staff_role?: string;
+    sent_count?: number;
+    total_recipients?: number;
+  };
 }
 
 interface StaffStats {
@@ -87,6 +108,12 @@ const AdminStaff = () => {
   // Delete confirmation
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [staffToDelete, setStaffToDelete] = useState<StaffMember | null>(null);
+
+  // Staff detail dialog
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [detailStaff, setDetailStaff] = useState<StaffMember | null>(null);
+  const [notifications, setNotifications] = useState<StaffNotification[]>([]);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
   
   const { toast } = useToast();
 
@@ -120,6 +147,34 @@ const AdminStaff = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const fetchNotifications = async (staffEmail: string) => {
+    setIsLoadingNotifications(true);
+    try {
+      const adminEmail = getAdminEmail();
+      const { data, error } = await supabase.functions.invoke("manage-staff", {
+        body: { action: "get_notifications", admin_email: adminEmail, staff_email: staffEmail },
+      });
+
+      if (error) throw error;
+      setNotifications(data.notifications || []);
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch email history",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingNotifications(false);
+    }
+  };
+
+  const handleViewStaffDetails = (member: StaffMember) => {
+    setDetailStaff(member);
+    setShowDetailDialog(true);
+    fetchNotifications(member.email);
   };
 
   useEffect(() => {
@@ -232,8 +287,8 @@ const AdminStaff = () => {
       if (data.error) throw new Error(data.error);
 
       toast({
-        title: data.is_active ? "Staff Activated" : "Staff Deactivated",
-        description: `${member.email} has been ${data.is_active ? "activated" : "deactivated"}`,
+        title: data.is_active ? "Staff Unblocked" : "Staff Blocked",
+        description: `${member.email} has been ${data.is_active ? "unblocked" : "blocked"}`,
       });
 
       fetchStaff();
@@ -279,6 +334,21 @@ const AdminStaff = () => {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const getNotificationTypeLabel = (type: string) => {
+    switch (type) {
+      case "account_created":
+        return { label: "Account Created", color: "bg-green-500/10 text-green-600 border-green-500/30" };
+      case "password_changed":
+        return { label: "Password Changed", color: "bg-blue-500/10 text-blue-600 border-blue-500/30" };
+      case "account_blocked":
+        return { label: "Account Blocked", color: "bg-red-500/10 text-red-600 border-red-500/30" };
+      case "account_unblocked":
+        return { label: "Account Unblocked", color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30" };
+      default:
+        return { label: type, color: "bg-muted text-muted-foreground" };
     }
   };
 
@@ -394,7 +464,11 @@ const AdminStaff = () => {
                 </TableHeader>
                 <TableBody>
                   {staff.map((member) => (
-                    <TableRow key={member.id} className={!member.is_active ? "opacity-50" : ""}>
+                    <TableRow 
+                      key={member.id} 
+                      className={`${!member.is_active ? "opacity-50" : ""} cursor-pointer hover:bg-muted/50`}
+                      onClick={() => handleViewStaffDetails(member)}
+                    >
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Mail className="h-4 w-4 text-muted-foreground" />
@@ -425,9 +499,17 @@ const AdminStaff = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={member.is_active ? "default" : "outline"}>
-                          {member.is_active ? "Active" : "Inactive"}
-                        </Badge>
+                        {member.is_active ? (
+                          <Badge className="bg-green-500/10 text-green-600 border-green-500/30 flex items-center gap-1 w-fit">
+                            <CheckCircle className="h-3 w-3" />
+                            Active
+                          </Badge>
+                        ) : (
+                          <Badge variant="destructive" className="flex items-center gap-1 w-fit">
+                            <Ban className="h-3 w-3" />
+                            Blocked
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         {member.lastLogin ? (
@@ -442,13 +524,21 @@ const AdminStaff = () => {
                       <TableCell>
                         <span className="font-mono">{member.loginCount || 0}</span>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         {member.is_protected ? (
                           <span className="text-xs text-muted-foreground italic">Protected</span>
                         ) : member.source === "environment" ? (
                           <span className="text-xs text-muted-foreground italic">System managed</span>
                         ) : (
                           <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleViewStaffDetails(member)}
+                              title="View Details"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
                             <Button
                               variant="ghost"
                               size="icon"
@@ -464,9 +554,13 @@ const AdminStaff = () => {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleToggleActive(member)}
-                              title={member.is_active ? "Deactivate" : "Activate"}
+                              title={member.is_active ? "Block Access" : "Unblock Access"}
                             >
-                              <Power className={`h-4 w-4 ${member.is_active ? "text-green-500" : "text-muted-foreground"}`} />
+                              {member.is_active ? (
+                                <Ban className="h-4 w-4 text-destructive" />
+                              ) : (
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                              )}
                             </Button>
                             <Button
                               variant="ghost"
@@ -611,6 +705,149 @@ const AdminStaff = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Staff Detail Dialog */}
+      <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
+        <DialogContent className="max-w-2xl max-h-[85vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Staff Details
+            </DialogTitle>
+            <DialogDescription>
+              View staff information and email notification history
+            </DialogDescription>
+          </DialogHeader>
+          
+          {detailStaff && (
+            <div className="space-y-6">
+              {/* Staff Info */}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+                <div>
+                  <p className="text-sm text-muted-foreground">Email</p>
+                  <p className="font-medium flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    {detailStaff.email}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Role</p>
+                  <Badge
+                    variant={detailStaff.role === "admin" ? "default" : "secondary"}
+                    className="mt-1"
+                  >
+                    {detailStaff.role === "admin" ? (
+                      <Shield className="h-3 w-3 mr-1" />
+                    ) : (
+                      <Truck className="h-3 w-3 mr-1" />
+                    )}
+                    {detailStaff.role}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  {detailStaff.is_active ? (
+                    <Badge className="bg-green-500/10 text-green-600 border-green-500/30 mt-1">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Active
+                    </Badge>
+                  ) : (
+                    <Badge variant="destructive" className="mt-1">
+                      <Ban className="h-3 w-3 mr-1" />
+                      Blocked
+                    </Badge>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Login Count</p>
+                  <p className="font-medium font-mono">{detailStaff.loginCount || 0}</p>
+                </div>
+                {detailStaff.lastLogin && (
+                  <div className="col-span-2">
+                    <p className="text-sm text-muted-foreground">Last Login</p>
+                    <p className="font-medium flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      {format(new Date(detailStaff.lastLogin), "PPpp")}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* Email History */}
+              <div>
+                <h3 className="font-semibold flex items-center gap-2 mb-4">
+                  <Bell className="h-4 w-4" />
+                  Email Notification History
+                </h3>
+                
+                {isLoadingNotifications ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : notifications.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Send className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>No email notifications sent yet</p>
+                  </div>
+                ) : (
+                  <ScrollArea className="h-[300px] pr-4">
+                    <div className="space-y-3">
+                      {notifications.map((notification) => {
+                        const typeInfo = getNotificationTypeLabel(notification.notification_type);
+                        return (
+                          <div
+                            key={notification.id}
+                            className="p-4 bg-card border rounded-lg space-y-2"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <Badge variant="outline" className={typeInfo.color}>
+                                {typeInfo.label}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {format(new Date(notification.sent_at), "MMM d, yyyy h:mm a")}
+                              </span>
+                            </div>
+                            <p className="text-sm font-medium">{notification.subject}</p>
+                            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <User className="h-3 w-3" />
+                                Sent by: {notification.sent_by}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Send className="h-3 w-3" />
+                                Recipients: {notification.recipients.length}
+                              </span>
+                              {notification.details?.sent_count !== undefined && (
+                                <span className="flex items-center gap-1">
+                                  <CheckCircle className="h-3 w-3 text-green-500" />
+                                  Delivered: {notification.details.sent_count}/{notification.details.total_recipients}
+                                </span>
+                              )}
+                            </div>
+                            {notification.recipients.length > 0 && (
+                              <details className="text-xs">
+                                <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                                  View recipients
+                                </summary>
+                                <div className="mt-2 p-2 bg-muted/50 rounded text-muted-foreground">
+                                  {notification.recipients.join(", ")}
+                                </div>
+                              </details>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </ScrollArea>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
