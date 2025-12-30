@@ -228,6 +228,30 @@ const ShippingOrders = () => {
     setTrackingUrl(order.tracking_url || "");
   };
 
+  // Get allowed next statuses based on current status (sequential only)
+  const getAllowedStatuses = (currentStatus: string) => {
+    const statusOrder = ["pending", "processing", "shipped", "delivered"];
+    const currentIndex = statusOrder.indexOf(currentStatus);
+    
+    // If cancelled or not found, no changes allowed
+    if (currentStatus === "cancelled" || currentIndex === -1) {
+      return [];
+    }
+    
+    // Allow current status and next status only
+    const allowed = [currentStatus];
+    if (currentIndex < statusOrder.length - 1) {
+      allowed.push(statusOrder[currentIndex + 1]);
+    }
+    
+    // Also allow cancellation from pending or processing only
+    if (currentStatus === "pending" || currentStatus === "processing") {
+      allowed.push("cancelled");
+    }
+    
+    return allowed;
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -403,16 +427,19 @@ const ShippingOrders = () => {
               <div className="space-y-4">
                 <div>
                   <Label>Order Status</Label>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Status must follow: Pending → Processing → Shipped → Delivered
+                  </p>
                   <Select value={newStatus} onValueChange={setNewStatus}>
                     <SelectTrigger className="mt-1">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="processing">Processing</SelectItem>
-                      <SelectItem value="shipped">Shipped</SelectItem>
-                      <SelectItem value="delivered">Delivered</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      {getAllowedStatuses(selectedOrder.order_status).map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
