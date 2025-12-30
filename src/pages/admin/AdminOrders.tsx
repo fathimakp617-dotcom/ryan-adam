@@ -29,6 +29,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Eye, Search, RefreshCw, Truck, Package, CheckCircle, X, Clock, Loader2, Download, FileText, Calendar, Trash2, AlertTriangle } from "lucide-react";
 import jsPDF from "jspdf";
+import OrderViewDialog from "@/components/OrderViewDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -93,6 +94,7 @@ const AdminOrders = () => {
   const [trackingUrl, setTrackingUrl] = useState("");
   const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [viewOrder, setViewOrder] = useState<Order | null>(null);
   const { toast } = useToast();
 
   // Initialize status filter from URL params
@@ -740,6 +742,14 @@ const AdminOrders = () => {
                         <Button 
                           variant="ghost" 
                           size="sm"
+                          onClick={() => setViewOrder(order)}
+                          title="View order details"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
                           onClick={() => generateShippingLabelPDF(order)}
                           title="Download shipping label"
                         >
@@ -749,9 +759,10 @@ const AdminOrders = () => {
                           variant="ghost" 
                           size="sm"
                           onClick={() => handleViewOrder(order)}
-                          title="View order details"
+                          title="Edit order"
+                          disabled={isOrderLocked(order.order_status)}
                         >
-                          <Eye className="h-4 w-4" />
+                          <Truck className="h-4 w-4" />
                         </Button>
                         <Button 
                           variant="ghost" 
@@ -967,6 +978,13 @@ const AdminOrders = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* View Order Dialog */}
+      <OrderViewDialog 
+        order={viewOrder} 
+        open={!!viewOrder} 
+        onOpenChange={(open) => !open && setViewOrder(null)} 
+      />
     </div>
   );
 };

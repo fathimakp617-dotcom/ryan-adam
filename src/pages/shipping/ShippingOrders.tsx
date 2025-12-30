@@ -36,9 +36,11 @@ import {
   Phone,
   Mail,
   FileText,
-  Loader2
+  Loader2,
+  Eye
 } from "lucide-react";
 import { generateShippingLabelPDF } from "@/lib/generateInvoicePDF";
+import OrderViewDialog from "@/components/OrderViewDialog";
 
 interface Order {
   id: string;
@@ -47,13 +49,19 @@ interface Order {
   customer_email: string;
   customer_phone: string | null;
   order_status: string;
+  payment_status: string;
   payment_method: string;
+  subtotal: number;
+  discount?: number | null;
+  shipping?: number | null;
   total: number;
   created_at: string;
   shipping_address: any;
   items: any;
   tracking_number: string | null;
   tracking_url: string | null;
+  coupon_code?: string | null;
+  affiliate_code?: string | null;
 }
 
 const SHIPPING_SESSION_KEY = "rayn_shipping_session";
@@ -69,6 +77,7 @@ const ShippingOrders = () => {
   const [trackingNumber, setTrackingNumber] = useState("");
   const [trackingUrl, setTrackingUrl] = useState("");
   const [newStatus, setNewStatus] = useState("");
+  const [viewOrder, setViewOrder] = useState<Order | null>(null);
   const { toast } = useToast();
 
   const getSessionCredentials = () => {
@@ -391,6 +400,14 @@ const ShippingOrders = () => {
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
                             <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setViewOrder(order)}
+                              title="View order details"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleGenerateLabel(order)}
@@ -523,6 +540,13 @@ const ShippingOrders = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* View Order Dialog */}
+      <OrderViewDialog 
+        order={viewOrder} 
+        open={!!viewOrder} 
+        onOpenChange={(open) => !open && setViewOrder(null)} 
+      />
     </div>
   );
 };
