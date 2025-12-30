@@ -47,10 +47,12 @@ interface StaffMember {
   email: string;
   role: "admin" | "shipping";
   is_active: boolean;
-  created_at: string;
+  created_at: string | null;
   created_by?: string;
   lastLogin?: string;
   loginCount?: number;
+  source?: "database" | "environment";
+  is_protected?: boolean;
 }
 
 interface StaffStats {
@@ -383,10 +385,10 @@ const AdminStaff = () => {
                   <TableRow>
                     <TableHead>Email</TableHead>
                     <TableHead>Role</TableHead>
+                    <TableHead>Source</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Last Login</TableHead>
                     <TableHead>Logins</TableHead>
-                    <TableHead>Created</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -397,6 +399,11 @@ const AdminStaff = () => {
                         <div className="flex items-center gap-2">
                           <Mail className="h-4 w-4 text-muted-foreground" />
                           <span className="font-medium">{member.email}</span>
+                          {member.is_protected && (
+                            <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/30">
+                              Main Admin
+                            </Badge>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -410,6 +417,11 @@ const AdminStaff = () => {
                             <Truck className="h-3 w-3" />
                           )}
                           {member.role}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={member.source === "environment" ? "outline" : "secondary"} className="text-xs">
+                          {member.source === "environment" ? "System" : "Database"}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -430,45 +442,46 @@ const AdminStaff = () => {
                       <TableCell>
                         <span className="font-mono">{member.loginCount || 0}</span>
                       </TableCell>
-                      <TableCell>
-                        <span className="text-sm text-muted-foreground">
-                          {format(new Date(member.created_at), "MMM d, yyyy")}
-                        </span>
-                      </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setSelectedStaff(member);
-                              setShowPasswordDialog(true);
-                            }}
-                            title="Change Password"
-                          >
-                            <Key className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleToggleActive(member)}
-                            title={member.is_active ? "Deactivate" : "Activate"}
-                          >
-                            <Power className={`h-4 w-4 ${member.is_active ? "text-green-500" : "text-muted-foreground"}`} />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setStaffToDelete(member);
-                              setShowDeleteDialog(true);
-                            }}
-                            title="Delete"
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        {member.is_protected ? (
+                          <span className="text-xs text-muted-foreground italic">Protected</span>
+                        ) : member.source === "environment" ? (
+                          <span className="text-xs text-muted-foreground italic">System managed</span>
+                        ) : (
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setSelectedStaff(member);
+                                setShowPasswordDialog(true);
+                              }}
+                              title="Change Password"
+                            >
+                              <Key className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleToggleActive(member)}
+                              title={member.is_active ? "Deactivate" : "Activate"}
+                            >
+                              <Power className={`h-4 w-4 ${member.is_active ? "text-green-500" : "text-muted-foreground"}`} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setStaffToDelete(member);
+                                setShowDeleteDialog(true);
+                              }}
+                              title="Delete"
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

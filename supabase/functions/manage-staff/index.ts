@@ -52,6 +52,13 @@ serve(async (req) => {
 
     switch (action) {
       case "list": {
+        const shippingEmailsEnv = Deno.env.get("SHIPPING_EMAILS") || "";
+        const mainAdmin = "anfaslenova@gmail.com"; // Protected main admin
+        
+        // Parse environment emails
+        const envAdmins = adminEmailsEnv.split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+        const envShipping = shippingEmailsEnv.split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+
         // Get staff from database
         const { data: dbStaff, error } = await supabase
           .from("staff_members")
@@ -81,22 +88,72 @@ serve(async (req) => {
           }
         }
 
-        // Enrich staff with login stats
-        const enrichedStaff = (dbStaff || []).map((member) => ({
+        // Track emails already in database
+        const dbEmails = new Set((dbStaff || []).map((s) => s.email.toLowerCase()));
+
+        // Create env-based staff entries (not in database)
+        const envStaff: any[] = [];
+        
+        // Add env admins not in database
+        for (const email of envAdmins) {
+          if (!dbEmails.has(email)) {
+            envStaff.push({
+              id: `env-admin-${email}`,
+              email,
+              role: "admin",
+              is_active: true,
+              created_at: null,
+              created_by: "System (Environment)",
+              source: "environment",
+              is_protected: email === mainAdmin,
+              lastLogin: loginStats.get(email)?.lastLogin,
+              loginCount: loginStats.get(email)?.loginCount || 0,
+            });
+          }
+        }
+
+        // Add env shipping not in database
+        for (const email of envShipping) {
+          if (!dbEmails.has(email) && !envAdmins.includes(email)) {
+            envStaff.push({
+              id: `env-shipping-${email}`,
+              email,
+              role: "shipping",
+              is_active: true,
+              created_at: null,
+              created_by: "System (Environment)",
+              source: "environment",
+              is_protected: false,
+              lastLogin: loginStats.get(email)?.lastLogin,
+              loginCount: loginStats.get(email)?.loginCount || 0,
+            });
+          }
+        }
+
+        // Enrich database staff with login stats and protection status
+        const enrichedDbStaff = (dbStaff || []).map((member) => ({
           ...member,
+          source: "database",
+          is_protected: member.email.toLowerCase() === mainAdmin,
           lastLogin: loginStats.get(member.email.toLowerCase())?.lastLogin,
           loginCount: loginStats.get(member.email.toLowerCase())?.loginCount || 0,
         }));
 
+        // Combine: env staff first (main admin at top), then database staff
+        const allStaff = [
+          ...envStaff.sort((a, b) => (a.is_protected ? -1 : 1)),
+          ...enrichedDbStaff,
+        ];
+
         const stats = {
-          totalStaff: enrichedStaff.length,
-          adminCount: enrichedStaff.filter((s) => s.role === "admin").length,
-          shippingCount: enrichedStaff.filter((s) => s.role === "shipping").length,
-          activeCount: enrichedStaff.filter((s) => s.is_active).length,
+          totalStaff: allStaff.length,
+          adminCount: allStaff.filter((s) => s.role === "admin").length,
+          shippingCount: allStaff.filter((s) => s.role === "shipping").length,
+          activeCount: allStaff.filter((s) => s.is_active).length,
         };
 
         return new Response(
-          JSON.stringify({ staff: enrichedStaff, stats }),
+          JSON.stringify({ staff: allStaff, stats }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
