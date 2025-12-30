@@ -247,3 +247,128 @@ export const downloadInvoicePDF = (data: InvoiceData): void => {
   const doc = generateInvoicePDF(data);
   doc.save(`invoice-${data.orderNumber}.pdf`);
 };
+
+// Shipping Label PDF - 4x6 inches (288 x 432 points)
+interface ShippingLabelOrder {
+  order_number: string;
+  customer_name: string;
+  customer_phone?: string | null;
+  shipping_address: {
+    address?: string;
+    city?: string;
+    state?: string;
+    pincode?: string;
+  };
+  items?: any[];
+}
+
+export const generateShippingLabelPDF = (order: ShippingLabelOrder): void => {
+  const doc = new jsPDF({
+    orientation: "portrait",
+    unit: "pt",
+    format: [288, 432], // 4x6 inches
+  });
+
+  const pageWidth = 288;
+  const pageHeight = 432;
+
+  // Colors
+  const darkColor: [number, number, number] = [26, 26, 26];
+  const goldColor: [number, number, number] = [201, 169, 98];
+
+  // Header
+  doc.setFillColor(...darkColor);
+  doc.rect(0, 0, pageWidth, 50, "F");
+
+  doc.setTextColor(...goldColor);
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "bold");
+  doc.text("RAYN ADAM", pageWidth / 2, 25, { align: "center" });
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.text("LUXURY PERFUMES", pageWidth / 2, 40, { align: "center" });
+
+  // Order Number
+  doc.setFillColor(248, 248, 248);
+  doc.rect(0, 50, pageWidth, 35, "F");
+
+  doc.setTextColor(...darkColor);
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  doc.text("ORDER #", 15, 70);
+  doc.setFontSize(14);
+  doc.text(order.order_number, 75, 70);
+
+  // Ship To Section
+  let yPos = 100;
+
+  doc.setTextColor(136, 136, 136);
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  doc.text("SHIP TO:", 15, yPos);
+
+  yPos += 20;
+  doc.setTextColor(...darkColor);
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "bold");
+  doc.text(order.customer_name.toUpperCase(), 15, yPos, { maxWidth: pageWidth - 30 });
+
+  yPos += 25;
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "normal");
+
+  const address = order.shipping_address;
+  if (address?.address) {
+    const addressLines = doc.splitTextToSize(address.address, pageWidth - 30);
+    doc.text(addressLines, 15, yPos);
+    yPos += addressLines.length * 14;
+  }
+
+  if (address?.city || address?.state) {
+    doc.text(`${address.city || ""}, ${address.state || ""}`, 15, yPos);
+    yPos += 16;
+  }
+
+  if (address?.pincode) {
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text(`PIN: ${address.pincode}`, 15, yPos);
+    yPos += 20;
+  }
+
+  if (order.customer_phone) {
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Phone: ${order.customer_phone}`, 15, yPos);
+    yPos += 20;
+  }
+
+  // Items count
+  yPos += 10;
+  doc.setDrawColor(200, 200, 200);
+  doc.line(15, yPos, pageWidth - 15, yPos);
+  yPos += 15;
+
+  const itemCount = order.items?.length || 0;
+  doc.setFontSize(10);
+  doc.setTextColor(136, 136, 136);
+  doc.text(`ITEMS: ${itemCount}`, 15, yPos);
+
+  // From section at bottom
+  const fromY = pageHeight - 60;
+  doc.setDrawColor(200, 200, 200);
+  doc.line(15, fromY - 10, pageWidth - 15, fromY - 10);
+
+  doc.setTextColor(136, 136, 136);
+  doc.setFontSize(8);
+  doc.text("FROM:", 15, fromY);
+
+  doc.setTextColor(...darkColor);
+  doc.setFontSize(9);
+  doc.text("Rayn Adam Perfumes", 15, fromY + 12);
+  doc.text("contact@raynadamperfume.com", 15, fromY + 24);
+
+  // Save
+  doc.save(`shipping-label-${order.order_number}.pdf`);
+};

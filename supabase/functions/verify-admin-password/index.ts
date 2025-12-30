@@ -13,8 +13,10 @@ serve(async (req) => {
   try {
     const adminPassword = Deno.env.get("ADMIN_PASSWORD");
     const adminEmailsRaw = Deno.env.get("ADMIN_EMAILS") || "";
+    const shippingEmailsRaw = Deno.env.get("SHIPPING_EMAILS") || "";
     
     const adminEmails = adminEmailsRaw.split(",").map(e => e.trim().toLowerCase()).filter(e => e);
+    const shippingEmails = shippingEmailsRaw.split(",").map(e => e.trim().toLowerCase()).filter(e => e);
 
     if (!adminPassword) {
       console.error("ADMIN_PASSWORD not configured");
@@ -35,16 +37,25 @@ serve(async (req) => {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Check if email is in admin list
-    if (!adminEmails.includes(normalizedEmail)) {
-      console.log(`Admin login denied for: ${normalizedEmail}`);
+    // Determine role based on email list
+    let role: "admin" | "shipping" | null = null;
+    
+    if (adminEmails.includes(normalizedEmail)) {
+      role = "admin";
+    } else if (shippingEmails.includes(normalizedEmail)) {
+      role = "shipping";
+    }
+
+    // Check if email is in either list
+    if (!role) {
+      console.log(`Login denied for: ${normalizedEmail} - not in any access list`);
       return new Response(
         JSON.stringify({ error: "Invalid credentials" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Verify password
+    // Verify password (same password for both roles)
     if (password !== adminPassword) {
       console.log(`Invalid password attempt for: ${normalizedEmail}`);
       return new Response(
@@ -59,7 +70,7 @@ serve(async (req) => {
     const sessionToken = Array.from(array).map(b => b.toString(16).padStart(2, "0")).join("");
     const sessionExpiry = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
 
-    console.log(`Admin login successful for: ${normalizedEmail}`);
+    console.log(`${role.toUpperCase()} login successful for: ${normalizedEmail}`);
 
     return new Response(
       JSON.stringify({ 
@@ -68,6 +79,7 @@ serve(async (req) => {
         session_token: sessionToken,
         session_expiry: sessionExpiry,
         email: normalizedEmail,
+        role: role,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
