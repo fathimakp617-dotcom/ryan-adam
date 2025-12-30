@@ -154,6 +154,27 @@ serve(async (req) => {
 
         console.log(`Staff member added: ${email} as ${role} by ${admin_email}`);
 
+        // Send email notification (fire and forget)
+        try {
+          await fetch(`${supabaseUrl}/functions/v1/send-staff-notification`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${serviceRoleKey}`,
+            },
+            body: JSON.stringify({
+              type: "account_created",
+              staff_email: email.toLowerCase().trim(),
+              staff_role: role,
+              created_by: admin_email,
+              temporary_password: password,
+            }),
+          });
+          console.log("Staff notification email sent");
+        } catch (emailError) {
+          console.error("Failed to send staff notification:", emailError);
+        }
+
         return new Response(
           JSON.stringify({ success: true, staff: data }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -177,6 +198,13 @@ serve(async (req) => {
 
         const passwordHash = await hashPassword(password);
 
+        // Get staff member info for notification
+        const { data: staffMember } = await supabase
+          .from("staff_members")
+          .select("email, role")
+          .eq("id", staff_id)
+          .single();
+
         const { error } = await supabase
           .from("staff_members")
           .update({ password_hash: passwordHash })
@@ -185,6 +213,28 @@ serve(async (req) => {
         if (error) throw error;
 
         console.log(`Password updated for staff ${staff_id} by ${admin_email}`);
+
+        // Send password change notification (fire and forget)
+        if (staffMember) {
+          try {
+            await fetch(`${supabaseUrl}/functions/v1/send-staff-notification`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${serviceRoleKey}`,
+              },
+              body: JSON.stringify({
+                type: "password_changed",
+                staff_email: staffMember.email,
+                staff_role: staffMember.role,
+                created_by: admin_email,
+              }),
+            });
+            console.log("Password change notification email sent");
+          } catch (emailError) {
+            console.error("Failed to send password change notification:", emailError);
+          }
+        }
 
         return new Response(
           JSON.stringify({ success: true }),
