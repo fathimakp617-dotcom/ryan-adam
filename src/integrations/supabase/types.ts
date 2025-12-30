@@ -337,6 +337,42 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_notifications: {
+        Row: {
+          details: Json | null
+          id: string
+          notification_type: string
+          order_number: string | null
+          recipients: string[]
+          sent_at: string
+          sent_by: string | null
+          staff_email: string
+          subject: string
+        }
+        Insert: {
+          details?: Json | null
+          id?: string
+          notification_type: string
+          order_number?: string | null
+          recipients: string[]
+          sent_at?: string
+          sent_by?: string | null
+          staff_email: string
+          subject: string
+        }
+        Update: {
+          details?: Json | null
+          id?: string
+          notification_type?: string
+          order_number?: string | null
+          recipients?: string[]
+          sent_at?: string
+          sent_by?: string | null
+          staff_email?: string
+          subject?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

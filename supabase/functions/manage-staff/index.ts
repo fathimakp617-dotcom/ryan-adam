@@ -21,11 +21,12 @@ serve(async (req) => {
   }
 
   try {
-    const { action, admin_email, email, role, password, staff_id } = await req.json();
+    const { action, admin_email, email, role, password, staff_id, staff_email } = await req.json();
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const adminEmailsEnv = Deno.env.get("ADMIN_EMAILS") || "";
+    const mainAdmin = "anfaslenova@gmail.com";
 
     // Verify admin access
     const authorizedAdmins = adminEmailsEnv.split(",").map((e) => e.trim().toLowerCase());
@@ -53,7 +54,6 @@ serve(async (req) => {
     switch (action) {
       case "list": {
         const shippingEmailsEnv = Deno.env.get("SHIPPING_EMAILS") || "";
-        const mainAdmin = "anfaslenova@gmail.com"; // Protected main admin
         
         // Parse environment emails
         const envAdmins = adminEmailsEnv.split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
@@ -158,6 +158,30 @@ serve(async (req) => {
         );
       }
 
+      case "get_notifications": {
+        if (!staff_email) {
+          return new Response(
+            JSON.stringify({ error: "Staff email is required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Get notifications for this staff member
+        const { data: notifications, error } = await supabase
+          .from("staff_notifications")
+          .select("*")
+          .eq("staff_email", staff_email.toLowerCase())
+          .order("sent_at", { ascending: false })
+          .limit(50);
+
+        if (error) throw error;
+
+        return new Response(
+          JSON.stringify({ notifications: notifications || [] }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       case "add": {
         if (!email || !role || !password) {
           return new Response(
@@ -258,7 +282,7 @@ serve(async (req) => {
         // Get staff member info for notification
         const { data: staffMember } = await supabase
           .from("staff_members")
-          .select("email, role")
+          .select("email, role, is_active")
           .eq("id", staff_id)
           .single();
 
@@ -271,8 +295,8 @@ serve(async (req) => {
 
         console.log(`Password updated for staff ${staff_id} by ${admin_email}`);
 
-        // Send password change notification (fire and forget)
-        if (staffMember) {
+        // Send password change notification (only if staff is active)
+        if (staffMember && staffMember.is_active) {
           try {
             await fetch(`${supabaseUrl}/functions/v1/send-staff-notification`, {
               method: "POST",
@@ -310,7 +334,7 @@ serve(async (req) => {
         // Get current status
         const { data: current } = await supabase
           .from("staff_members")
-          .select("is_active")
+          .select("email, role, is_active")
           .eq("id", staff_id)
           .single();
 
@@ -321,17 +345,47 @@ serve(async (req) => {
           );
         }
 
+        // Check if trying to block main admin
+        if (current.email.toLowerCase() === mainAdmin) {
+          return new Response(
+            JSON.stringify({ error: "Cannot block the main admin account" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const newStatus = !current.is_active;
+
         const { error } = await supabase
           .from("staff_members")
-          .update({ is_active: !current.is_active })
+          .update({ is_active: newStatus })
           .eq("id", staff_id);
 
         if (error) throw error;
 
-        console.log(`Staff ${staff_id} active status toggled by ${admin_email}`);
+        console.log(`Staff ${staff_id} (${current.email}) ${newStatus ? "unblocked" : "blocked"} by ${admin_email}`);
+
+        // Send block/unblock notification to main admin only (not to the blocked staff)
+        try {
+          await fetch(`${supabaseUrl}/functions/v1/send-staff-notification`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${serviceRoleKey}`,
+            },
+            body: JSON.stringify({
+              type: newStatus ? "account_unblocked" : "account_blocked",
+              staff_email: current.email,
+              staff_role: current.role,
+              created_by: admin_email,
+            }),
+          });
+          console.log(`Staff ${newStatus ? "unblock" : "block"} notification sent`);
+        } catch (emailError) {
+          console.error("Failed to send notification:", emailError);
+        }
 
         return new Response(
-          JSON.stringify({ success: true, is_active: !current.is_active }),
+          JSON.stringify({ success: true, is_active: newStatus }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -341,6 +395,20 @@ serve(async (req) => {
           return new Response(
             JSON.stringify({ error: "Staff ID is required" }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Check if trying to delete main admin
+        const { data: staffToDelete } = await supabase
+          .from("staff_members")
+          .select("email")
+          .eq("id", staff_id)
+          .single();
+
+        if (staffToDelete && staffToDelete.email.toLowerCase() === mainAdmin) {
+          return new Response(
+            JSON.stringify({ error: "Cannot delete the main admin account" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
 
