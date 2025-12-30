@@ -47,10 +47,10 @@ const AdminActivityLogs = () => {
       const adminSession = sessionStorage.getItem("rayn_admin_session");
       if (!adminSession) return;
       
-      const { email } = JSON.parse(adminSession);
+      const { email, token } = JSON.parse(adminSession);
       
       const { data, error } = await supabase.functions.invoke("get-activity-logs", {
-        body: { adminEmail: email, limit: 500 },
+        body: { admin_email: email, admin_token: token, limit: 500 },
       });
 
       if (error) throw error;
