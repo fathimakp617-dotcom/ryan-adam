@@ -202,6 +202,29 @@ const Auth = () => {
 
     setIsSubmitting(true);
     try {
+      // First check if the email is an admin or shipping email
+      const { data: staffCheck } = await supabase.functions.invoke('check-staff-email', {
+        body: { email: formData.email }
+      });
+
+      if (staffCheck?.is_admin) {
+        toast({
+          title: "Admin Account Detected",
+          description: "Redirecting you to the admin login page.",
+        });
+        navigate("/admin");
+        return;
+      }
+
+      if (staffCheck?.is_shipping) {
+        toast({
+          title: "Shipping Account Detected",
+          description: "Redirecting you to the shipping login page.",
+        });
+        navigate("/shipping");
+        return;
+      }
+
       const { error } = await signIn(formData.email, formData.password, rememberMe);
       if (error) {
         if (error.message.includes("Invalid login credentials")) {

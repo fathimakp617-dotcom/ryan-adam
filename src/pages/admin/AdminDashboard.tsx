@@ -13,7 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, IndianRupee, Clock, CheckCircle, Users, TrendingUp, Calendar, RefreshCw, BarChart3, CreditCard, Banknote, Wallet } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Package, IndianRupee, Clock, CheckCircle, Users, TrendingUp, Calendar, RefreshCw, BarChart3, CreditCard, Banknote, Wallet, Activity, LogIn, Truck } from "lucide-react";
 
 interface OrderStats {
   total: number;
@@ -57,6 +58,17 @@ interface AllTimeStats {
   onlineOrders: number;
 }
 
+interface ActivityLog {
+  id: string;
+  actor_email: string;
+  actor_role: "admin" | "shipping";
+  action_type: string;
+  action_details: Record<string, unknown>;
+  order_id?: string;
+  order_number?: string;
+  created_at: string;
+}
+
 const AdminDashboard = () => {
   const [stats, setStats] = useState<OrderStats>({
     total: 0,
@@ -82,6 +94,8 @@ const AdminDashboard = () => {
   const [monthlyRevenue, setMonthlyRevenue] = useState<MonthlyRevenue[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
   const [dateFilter, setDateFilter] = useState("all");
   const [customDateFrom, setCustomDateFrom] = useState("");
   const [customDateTo, setCustomDateTo] = useState("");
@@ -90,6 +104,7 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchStats();
+    fetchActivityLogs();
 
     const channel = supabase
       .channel('admin-orders-realtime')
@@ -100,7 +115,10 @@ const AdminDashboard = () => {
           schema: 'public',
           table: 'orders'
         },
-        () => fetchStats()
+        () => {
+          fetchStats();
+          fetchActivityLogs();
+        }
       )
       .subscribe();
 
@@ -190,6 +208,34 @@ const AdminDashboard = () => {
       console.error("Error fetching stats:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchActivityLogs = async () => {
+    setIsLoadingLogs(true);
+    try {
+      const sessionData = localStorage.getItem("rayn_admin_session");
+      if (!sessionData) return;
+      
+      const session = JSON.parse(sessionData);
+      
+      const { data, error } = await supabase.functions.invoke('get-activity-logs', {
+        body: {
+          admin_email: session.email,
+          admin_token: session.token,
+          limit: 50,
+        }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.logs) {
+        setActivityLogs(data.logs);
+      }
+    } catch (error) {
+      console.error("Error fetching activity logs:", error);
+    } finally {
+      setIsLoadingLogs(false);
     }
   };
 
@@ -586,6 +632,99 @@ const AdminDashboard = () => {
                 </div>
               ))}
             </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Activity Log */}
+      <Card className="bg-card border-border">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            Activity Log
+          </CardTitle>
+          <Button variant="ghost" size="sm" onClick={fetchActivityLogs} disabled={isLoadingLogs}>
+            <RefreshCw className={`h-4 w-4 ${isLoadingLogs ? 'animate-spin' : ''}`} />
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {activityLogs.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">No activity recorded yet</p>
+          ) : (
+            <ScrollArea className="h-[400px]">
+              <div className="space-y-3">
+                {activityLogs.map((log) => {
+                  const isLogin = log.action_type === "login";
+                  const isOrderUpdate = log.action_type === "order_status_update";
+                  const details = log.action_details as Record<string, unknown>;
+                  
+                  return (
+                    <div 
+                      key={log.id} 
+                      className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg border border-border/50"
+                    >
+                      <div className={`p-2 rounded-lg ${
+                        isLogin 
+                          ? 'bg-green-500/10' 
+                          : log.actor_role === 'admin' 
+                            ? 'bg-primary/10' 
+                            : 'bg-purple-500/10'
+                      }`}>
+                        {isLogin ? (
+                          <LogIn className={`h-4 w-4 ${log.actor_role === 'admin' ? 'text-green-500' : 'text-purple-500'}`} />
+                        ) : (
+                          <Truck className={`h-4 w-4 ${log.actor_role === 'admin' ? 'text-primary' : 'text-purple-500'}`} />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-foreground text-sm">
+                            {log.actor_email}
+                          </span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            log.actor_role === 'admin' 
+                              ? 'bg-primary/10 text-primary' 
+                              : 'bg-purple-500/10 text-purple-500'
+                          }`}>
+                            {log.actor_role}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {isLogin && (
+                            <>Logged in</>
+                          )}
+                          {isOrderUpdate && (
+                            <>
+                              Updated order <span className="font-medium text-foreground">{log.order_number}</span>
+                              {details?.old_status && details?.new_status && (
+                                <> from <span className="text-yellow-500">{String(details.old_status)}</span> to <span className="text-green-500">{String(details.new_status)}</span></>
+                              )}
+                            </>
+                          )}
+                          {!isLogin && !isOrderUpdate && (
+                            <>{log.action_type}</>
+                          )}
+                        </p>
+                        {isOrderUpdate && details?.customer_name && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Customer: {String(details.customer_name)}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(log.created_at).toLocaleString('en-IN', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </ScrollArea>
           )}
         </CardContent>
       </Card>

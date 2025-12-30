@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,6 +12,8 @@ serve(async (req) => {
   }
 
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const adminPassword = Deno.env.get("ADMIN_PASSWORD");
     const adminEmailsRaw = Deno.env.get("ADMIN_EMAILS") || "";
     const shippingEmailsRaw = Deno.env.get("SHIPPING_EMAILS") || "";
@@ -71,6 +74,24 @@ serve(async (req) => {
     const sessionExpiry = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
 
     console.log(`${role.toUpperCase()} login successful for: ${normalizedEmail}`);
+
+    // Log the login activity
+    try {
+      const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+      await supabaseClient.from("activity_logs").insert({
+        actor_email: normalizedEmail,
+        actor_role: role,
+        action_type: "login",
+        action_details: {
+          login_time: new Date().toISOString(),
+          session_expiry: new Date(sessionExpiry).toISOString(),
+        },
+      });
+      console.log(`Activity logged: ${role} login for ${normalizedEmail}`);
+    } catch (logError) {
+      console.error("Failed to log activity:", logError);
+      // Don't fail login if activity logging fails
+    }
 
     return new Response(
       JSON.stringify({ 

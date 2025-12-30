@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action_details: Json | null
+          action_type: string
+          actor_email: string
+          actor_role: string
+          created_at: string
+          id: string
+          order_id: string | null
+          order_number: string | null
+        }
+        Insert: {
+          action_details?: Json | null
+          action_type: string
+          actor_email: string
+          actor_role: string
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          order_number?: string | null
+        }
+        Update: {
+          action_details?: Json | null
+          action_type?: string
+          actor_email?: string
+          actor_role?: string
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          order_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_otps: {
         Row: {
           created_at: string
