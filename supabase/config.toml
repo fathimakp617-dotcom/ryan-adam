@@ -62,3 +62,9 @@ verify_jwt = false
 
 [functions.check-rate-limit]
 verify_jwt = false
+
+[functions.get-activity-logs]
+verify_jwt = false
+
+[functions.check-staff-email]
+verify_jwt = false

@@ -60,7 +60,10 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log(`Access granted for: ${admin_email}`);
+    // Determine actor role
+    const actorRole = adminEmails.includes(admin_email.toLowerCase()) ? "admin" : "shipping";
+
+    console.log(`Access granted for: ${admin_email} (${actorRole})`);
 
     if (!order_id || !new_status) {
       return new Response(
@@ -126,6 +129,29 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log(`Order ${order.order_number} status updated to ${new_status}`);
+
+    // Log the activity
+    try {
+      await supabaseClient.from("activity_logs").insert({
+        actor_email: admin_email.toLowerCase(),
+        actor_role: actorRole,
+        action_type: "order_status_update",
+        action_details: {
+          old_status: oldStatus,
+          new_status: new_status,
+          tracking_number: tracking_number || order.tracking_number,
+          tracking_url: tracking_url || order.tracking_url,
+          customer_name: order.customer_name,
+          customer_email: order.customer_email,
+        },
+        order_id: order_id,
+        order_number: order.order_number,
+      });
+      console.log(`Activity logged: order status update by ${admin_email}`);
+    } catch (logError) {
+      console.error("Failed to log activity:", logError);
+      // Don't fail the update if activity logging fails
+    }
 
     // Send customer notification email for status changes (except pending)
     if (new_status !== "pending" && new_status !== oldStatus) {
