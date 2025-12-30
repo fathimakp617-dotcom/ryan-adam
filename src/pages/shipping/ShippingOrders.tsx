@@ -330,6 +330,7 @@ const ShippingOrders = () => {
                   <TableRow>
                     <TableHead>Order</TableHead>
                     <TableHead>Customer</TableHead>
+                    <TableHead>Products</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Payment</TableHead>
                     <TableHead>Total</TableHead>
@@ -338,51 +339,81 @@ const ShippingOrders = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredOrders.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-medium">{order.order_number}</TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{order.customer_name}</p>
-                          <p className="text-xs text-muted-foreground">{order.customer_email}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={getStatusColor(order.order_status)}>
-                          {order.order_status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">
-                          {order.payment_method === "cod" ? "COD" : "Online"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{formatCurrency(order.total)}</TableCell>
-                      <TableCell className="text-sm">{formatDate(order.created_at)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleGenerateLabel(order)}
-                            title="Generate Shipping Label"
-                          >
-                            <FileText className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => openUpdateDialog(order)}
-                            disabled={order.order_status === "cancelled"}
-                            className="bg-blue-600 hover:bg-blue-700"
-                          >
-                            <Truck className="h-4 w-4 mr-1" />
-                            Update
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {filteredOrders.map((order) => {
+                    const isCancelled = order.order_status === "cancelled";
+                    const isDelivered = order.order_status === "delivered";
+                    const isLocked = isCancelled || isDelivered;
+                    const items = Array.isArray(order.items) ? order.items : [];
+                    
+                    return (
+                      <TableRow key={order.id} className={isCancelled ? "opacity-60" : ""}>
+                        <TableCell className={`font-medium ${isCancelled ? "line-through" : ""}`}>
+                          {order.order_number}
+                        </TableCell>
+                        <TableCell>
+                          <div className={isCancelled ? "line-through" : ""}>
+                            <p className="font-medium">{order.customer_name}</p>
+                            <p className="text-xs text-muted-foreground">{order.customer_email}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className={`text-sm space-y-0.5 ${isCancelled ? "line-through" : ""}`}>
+                            {items.length > 0 ? (
+                              items.slice(0, 2).map((item: any, idx: number) => (
+                                <div key={idx} className="text-xs">
+                                  {item.name || item.product_name || "Product"} × {item.quantity || 1}
+                                </div>
+                              ))
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                            {items.length > 2 && (
+                              <div className="text-xs text-muted-foreground">
+                                +{items.length - 2} more
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={getStatusColor(order.order_status)}>
+                            {order.order_status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className={isCancelled ? "line-through" : ""}>
+                            {order.payment_method === "cod" ? "COD" : "Online"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className={isCancelled ? "line-through" : ""}>
+                          {formatCurrency(order.total)}
+                        </TableCell>
+                        <TableCell className="text-sm">{formatDate(order.created_at)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleGenerateLabel(order)}
+                              title="Generate Shipping Label"
+                            >
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => openUpdateDialog(order)}
+                              disabled={isLocked}
+                              className="bg-blue-600 hover:bg-blue-700"
+                              title={isLocked ? `Cannot update ${order.order_status} orders` : "Update order"}
+                            >
+                              <Truck className="h-4 w-4 mr-1" />
+                              Update
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
