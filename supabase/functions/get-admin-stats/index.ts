@@ -15,7 +15,10 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const adminEmailsRaw = Deno.env.get("ADMIN_EMAILS") || "";
+    const shippingEmailsRaw = Deno.env.get("SHIPPING_EMAILS") || "";
     const adminEmails = adminEmailsRaw.split(",").map(e => e.trim().toLowerCase()).filter(e => e);
+    const shippingEmails = shippingEmailsRaw.split(",").map(e => e.trim().toLowerCase()).filter(e => e);
+    const allowedEmails = [...adminEmails, ...shippingEmails];
 
     // Get admin credentials and filters from request body
     const body = await req.json().catch(() => ({}));
@@ -31,15 +34,15 @@ serve(async (req) => {
       });
     }
 
-    // Verify admin email is in allowed list
-    if (!adminEmails.includes(adminEmail.toLowerCase())) {
-      console.log(`Admin email not in allowed list: ${adminEmail}`);
+    // Verify email is in allowed list (admin or shipping)
+    if (!allowedEmails.includes(adminEmail.toLowerCase())) {
+      console.log(`Email not in allowed list: ${adminEmail}`);
       return new Response(JSON.stringify({ error: "Access denied" }), { 
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } 
       });
     }
 
-    console.log(`Admin access granted for: ${adminEmail}`);
+    console.log(`Access granted for: ${adminEmail}`);
     console.log(`Date filter: ${dateFrom} to ${dateTo}`);
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);

@@ -24,37 +24,43 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const adminEmailsRaw = Deno.env.get("ADMIN_EMAILS") || "";
+    const shippingEmailsRaw = Deno.env.get("SHIPPING_EMAILS") || "";
     
-    // Parse admin emails (comma-separated)
+    // Parse admin and shipping emails (comma-separated)
     const adminEmails = adminEmailsRaw
       .split(",")
       .map((email) => email.trim().toLowerCase())
       .filter((email) => email.length > 0);
+    const shippingEmails = shippingEmailsRaw
+      .split(",")
+      .map((email) => email.trim().toLowerCase())
+      .filter((email) => email.length > 0);
+    const allowedEmails = [...adminEmails, ...shippingEmails];
 
-    console.log("Configured admin emails:", adminEmails.length);
+    console.log("Configured allowed emails:", allowedEmails.length);
 
     // Get admin credentials from request body
     const body: UpdateStatusRequest = await req.json();
     const { admin_email, admin_token, order_id, new_status, tracking_number, tracking_url } = body;
 
     if (!admin_email || !admin_token) {
-      console.log("Missing admin credentials in body");
+      console.log("Missing credentials in body");
       return new Response(
         JSON.stringify({ error: "Access denied" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Verify admin email is in allowed list
-    if (!adminEmails.includes(admin_email.toLowerCase())) {
-      console.log(`Admin email not in allowed list: ${admin_email}`);
+    // Verify email is in allowed list (admin or shipping)
+    if (!allowedEmails.includes(admin_email.toLowerCase())) {
+      console.log(`Email not in allowed list: ${admin_email}`);
       return new Response(
-        JSON.stringify({ error: "Access denied. Admin privileges required." }),
+        JSON.stringify({ error: "Access denied. Privileges required." }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`Admin access granted for: ${admin_email}`);
+    console.log(`Access granted for: ${admin_email}`);
 
     if (!order_id || !new_status) {
       return new Response(
