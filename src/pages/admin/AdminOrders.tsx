@@ -344,6 +344,44 @@ const AdminOrders = () => {
     setIsModalOpen(true);
   };
 
+  // Get allowed next statuses based on current status (sequential only)
+  const getAllowedStatuses = (currentStatus: string) => {
+    const statusOrder = ["pending", "processing", "shipped", "delivered"];
+    const currentIndex = statusOrder.indexOf(currentStatus);
+    
+    // If delivered or cancelled, no changes allowed
+    if (currentStatus === "delivered" || currentStatus === "cancelled" || currentIndex === -1) {
+      return [];
+    }
+    
+    // Allow current status and next status only
+    const allowed = [currentStatus];
+    if (currentIndex < statusOrder.length - 1) {
+      allowed.push(statusOrder[currentIndex + 1]);
+    }
+    
+    // Also allow cancellation from pending or processing only
+    if (currentStatus === "pending" || currentStatus === "processing") {
+      allowed.push("cancelled");
+    }
+    
+    return allowed;
+  };
+
+  // Check if order can be edited (not delivered or cancelled)
+  const isOrderLocked = (status: string) => {
+    return status === "delivered" || status === "cancelled";
+  };
+
+  // Get product summary for table display
+  const getProductSummary = (items: OrderItem[]) => {
+    if (items.length === 1) {
+      return `${items[0].name} (×${items[0].quantity})`;
+    }
+    const totalQty = items.reduce((sum, item) => sum + item.quantity, 0);
+    return `${items.length} products (×${totalQty})`;
+  };
+
   const handleUpdateStatus = async (newStatus: string) => {
     if (!selectedOrder) return;
 
@@ -638,6 +676,7 @@ const AdminOrders = () => {
             <TableRow className="bg-muted/50">
               <TableHead>Order</TableHead>
               <TableHead>Customer</TableHead>
+              <TableHead>Products</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Total</TableHead>
               <TableHead>Status</TableHead>
@@ -648,68 +687,86 @@ const AdminOrders = () => {
           <TableBody>
             {filteredOrders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                   No orders found
                 </TableCell>
               </TableRow>
             ) : (
-              filteredOrders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell className="font-medium">{order.order_number}</TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{order.customer_name}</p>
-                      <p className="text-sm text-muted-foreground">{order.customer_email}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-sm">{formatDate(order.created_at)}</TableCell>
-                  <TableCell className="font-medium">{formatCurrency(order.total)}</TableCell>
-                  <TableCell>
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(order.order_status)}`}>
-                      {getStatusIcon(order.order_status)}
-                      {order.order_status}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      order.payment_status === 'paid' 
-                        ? 'bg-green-500/10 text-green-500' 
-                        : 'bg-yellow-500/10 text-yellow-500'
-                    }`}>
-                      {order.payment_status}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => generateShippingLabelPDF(order)}
-                        title="Download shipping label"
-                      >
-                        <FileText className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleViewOrder(order)}
-                        title="View order details"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => setDeleteOrderId(order.id)}
-                        title="Delete order"
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+              filteredOrders.map((order) => {
+                const isCancelled = order.order_status === "cancelled";
+                return (
+                  <TableRow key={order.id} className={isCancelled ? "opacity-60" : ""}>
+                    <TableCell className={`font-medium ${isCancelled ? "line-through" : ""}`}>
+                      {order.order_number}
+                    </TableCell>
+                    <TableCell>
+                      <div className={isCancelled ? "line-through" : ""}>
+                        <p className="font-medium">{order.customer_name}</p>
+                        <p className="text-sm text-muted-foreground">{order.customer_email}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className={`text-sm ${isCancelled ? "line-through" : ""}`}>
+                        {order.items.map((item, idx) => (
+                          <p key={idx} className="text-muted-foreground">
+                            {item.name} <span className="text-foreground font-medium">×{item.quantity}</span>
+                          </p>
+                        ))}
+                      </div>
+                    </TableCell>
+                    <TableCell className={`text-sm ${isCancelled ? "line-through" : ""}`}>
+                      {formatDate(order.created_at)}
+                    </TableCell>
+                    <TableCell className={`font-medium ${isCancelled ? "line-through" : ""}`}>
+                      {formatCurrency(order.total)}
+                    </TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(order.order_status)}`}>
+                        {getStatusIcon(order.order_status)}
+                        {order.order_status}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        order.payment_status === 'paid' 
+                          ? 'bg-green-500/10 text-green-500' 
+                          : 'bg-yellow-500/10 text-yellow-500'
+                      }`}>
+                        {order.payment_status}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => generateShippingLabelPDF(order)}
+                          title="Download shipping label"
+                        >
+                          <FileText className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleViewOrder(order)}
+                          title="View order details"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => setDeleteOrderId(order.id)}
+                          title="Delete order"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
@@ -726,19 +783,34 @@ const AdminOrders = () => {
             <div className="space-y-6">
               {/* Status Update */}
               <div className="p-4 bg-muted/30 rounded-lg">
-                {selectedOrder.order_status === "cancelled" ? (
-                  <div className="flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                    <AlertTriangle className="h-5 w-5 text-red-500" />
+                {isOrderLocked(selectedOrder.order_status) ? (
+                  <div className={`flex items-center gap-3 p-3 border rounded-lg ${
+                    selectedOrder.order_status === "cancelled" 
+                      ? "bg-red-500/10 border-red-500/20" 
+                      : "bg-green-500/10 border-green-500/20"
+                  }`}>
+                    {selectedOrder.order_status === "cancelled" ? (
+                      <AlertTriangle className="h-5 w-5 text-red-500" />
+                    ) : (
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    )}
                     <div>
-                      <p className="font-medium text-red-500">Order Cancelled</p>
-                      <p className="text-sm text-muted-foreground">This order has been cancelled and cannot be edited.</p>
+                      <p className={`font-medium ${selectedOrder.order_status === "cancelled" ? "text-red-500" : "text-green-500"}`}>
+                        Order {selectedOrder.order_status === "cancelled" ? "Cancelled" : "Delivered"}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        This order has been {selectedOrder.order_status} and cannot be modified.
+                      </p>
                     </div>
                   </div>
                 ) : (
                   <>
-                    <Label className="text-sm font-medium mb-3 block">Update Status</Label>
+                    <Label className="text-sm font-medium mb-1 block">Update Status</Label>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Status must follow: Pending → Processing → Shipped → Delivered
+                    </p>
                     <div className="flex flex-wrap gap-2">
-                      {["pending", "processing", "shipped", "delivered", "cancelled"].map((status) => (
+                      {getAllowedStatuses(selectedOrder.order_status).map((status) => (
                         <Button
                           key={status}
                           variant={selectedOrder.order_status === status ? "default" : "outline"}
@@ -757,7 +829,7 @@ const AdminOrders = () => {
                       ))}
                     </div>
 
-                    {/* Tracking Info (show for shipped) */}
+                    {/* Tracking Info (show for shipped or processing) */}
                     {(selectedOrder.order_status === "shipped" || selectedOrder.order_status === "processing") && (
                       <div className="mt-4 space-y-3">
                         <div>
