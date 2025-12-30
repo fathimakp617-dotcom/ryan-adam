@@ -71,3 +71,6 @@ verify_jwt = false
 
 [functions.get-staff-list]
 verify_jwt = false
+
+[functions.manage-staff]
+verify_jwt = false

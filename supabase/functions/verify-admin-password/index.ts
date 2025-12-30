@@ -6,6 +6,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Simple password hashing using Web Crypto API
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -21,14 +30,6 @@ serve(async (req) => {
     const adminEmails = adminEmailsRaw.split(",").map(e => e.trim().toLowerCase()).filter(e => e);
     const shippingEmails = shippingEmailsRaw.split(",").map(e => e.trim().toLowerCase()).filter(e => e);
 
-    if (!adminPassword) {
-      console.error("ADMIN_PASSWORD not configured");
-      return new Response(
-        JSON.stringify({ error: "Admin access not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     const { email, password } = await req.json();
     
     if (!email || !password) {
@@ -39,6 +40,80 @@ serve(async (req) => {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
+    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+
+    // First, check database staff_members table
+    const { data: dbStaff } = await supabaseClient
+      .from("staff_members")
+      .select("id, email, role, password_hash, is_active")
+      .eq("email", normalizedEmail)
+      .maybeSingle();
+
+    if (dbStaff) {
+      // Staff member found in database
+      if (!dbStaff.is_active) {
+        console.log(`Login denied for: ${normalizedEmail} - account deactivated`);
+        return new Response(
+          JSON.stringify({ error: "Account is deactivated" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Verify password hash
+      const passwordHash = await hashPassword(password);
+      if (passwordHash !== dbStaff.password_hash) {
+        console.log(`Invalid password attempt for DB staff: ${normalizedEmail}`);
+        return new Response(
+          JSON.stringify({ error: "Invalid credentials" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Generate session token
+      const array = new Uint8Array(32);
+      crypto.getRandomValues(array);
+      const sessionToken = Array.from(array).map(b => b.toString(16).padStart(2, "0")).join("");
+      const sessionExpiry = Date.now() + 24 * 60 * 60 * 1000;
+
+      console.log(`${dbStaff.role.toUpperCase()} login successful for DB staff: ${normalizedEmail}`);
+
+      // Log the login activity
+      try {
+        await supabaseClient.from("activity_logs").insert({
+          actor_email: normalizedEmail,
+          actor_role: dbStaff.role,
+          action_type: "login",
+          action_details: {
+            login_time: new Date().toISOString(),
+            session_expiry: new Date(sessionExpiry).toISOString(),
+            source: "database",
+          },
+        });
+      } catch (logError) {
+        console.error("Failed to log activity:", logError);
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: "Login successful",
+          session_token: sessionToken,
+          session_expiry: sessionExpiry,
+          email: normalizedEmail,
+          role: dbStaff.role,
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Fallback to environment variable based authentication
+    if (!adminPassword) {
+      console.error("ADMIN_PASSWORD not configured and user not in database");
+      return new Response(
+        JSON.stringify({ error: "Invalid credentials" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Determine role based on email list
     let role: "admin" | "shipping" | null = null;
@@ -58,7 +133,7 @@ serve(async (req) => {
       );
     }
 
-    // Verify password (same password for both roles)
+    // Verify password (same password for both roles from env)
     if (password !== adminPassword) {
       console.log(`Invalid password attempt for: ${normalizedEmail}`);
       return new Response(
@@ -77,7 +152,6 @@ serve(async (req) => {
 
     // Log the login activity
     try {
-      const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
       await supabaseClient.from("activity_logs").insert({
         actor_email: normalizedEmail,
         actor_role: role,
@@ -85,12 +159,12 @@ serve(async (req) => {
         action_details: {
           login_time: new Date().toISOString(),
           session_expiry: new Date(sessionExpiry).toISOString(),
+          source: "environment",
         },
       });
       console.log(`Activity logged: ${role} login for ${normalizedEmail}`);
     } catch (logError) {
       console.error("Failed to log activity:", logError);
-      // Don't fail login if activity logging fails
     }
 
     return new Response(
