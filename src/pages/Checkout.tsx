@@ -83,13 +83,9 @@ const Checkout = () => {
   };
 
   const handleCODOrder = async () => {
-    // For COD orders with shipping charge, collect shipping via Razorpay first
-    if (shipping > 0) {
-      await handleCODShippingPayment();
-    } else {
-      // Free shipping - proceed directly with COD order
-      await createCODOrder();
-    }
+    // For now, allow all COD orders without shipping prepayment
+    // TODO: Enable Razorpay shipping prepayment when ready
+    await createCODOrder(false);
   };
 
   const createCODOrder = async (shippingPaid = false) => {
