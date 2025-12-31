@@ -25,34 +25,34 @@ const Account = lazy(() => import("./pages/Account"));
 const Terms = lazy(() => import("./pages/Terms"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
-// Lazy load admin pages (rarely visited)
+// Admin pages - eager load child routes for instant switching
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
-const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
-const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
-const AdminCustomers = lazy(() => import("./pages/admin/AdminCustomers"));
-const AdminAffiliates = lazy(() => import("./pages/admin/AdminAffiliates"));
-const AdminActivityLogs = lazy(() => import("./pages/admin/AdminActivityLogs"));
-const AdminStaff = lazy(() => import("./pages/admin/AdminStaff"));
-const AdminAccount = lazy(() => import("./pages/admin/AdminAccount"));
-const AdminCoupons = lazy(() => import("./pages/admin/AdminCoupons"));
-const AdminReturns = lazy(() => import("./pages/admin/AdminReturns"));
-const AdminExpenses = lazy(() => import("./pages/admin/AdminExpenses"));
-const AdminShopOrders = lazy(() => import("./pages/admin/AdminShopOrders"));
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminOrders from "./pages/admin/AdminOrders";
+import AdminCustomers from "./pages/admin/AdminCustomers";
+import AdminAffiliates from "./pages/admin/AdminAffiliates";
+import AdminActivityLogs from "./pages/admin/AdminActivityLogs";
+import AdminStaff from "./pages/admin/AdminStaff";
+import AdminAccount from "./pages/admin/AdminAccount";
+import AdminCoupons from "./pages/admin/AdminCoupons";
+import AdminReturns from "./pages/admin/AdminReturns";
+import AdminExpenses from "./pages/admin/AdminExpenses";
+import AdminShopOrders from "./pages/admin/AdminShopOrders";
 
-// Lazy load shipping pages
+// Shipping pages - eager load child routes for instant switching
 const ShippingLayout = lazy(() => import("./pages/shipping/ShippingLayout"));
-const ShippingDashboard = lazy(() => import("./pages/shipping/ShippingDashboard"));
-const ShippingOrders = lazy(() => import("./pages/shipping/ShippingOrders"));
-const ShippingAccount = lazy(() => import("./pages/shipping/ShippingAccount"));
-const ShippingReturns = lazy(() => import("./pages/shipping/ShippingReturns"));
-const ShippingShopOrders = lazy(() => import("./pages/shipping/ShippingShopOrders"));
+import ShippingDashboard from "./pages/shipping/ShippingDashboard";
+import ShippingOrders from "./pages/shipping/ShippingOrders";
+import ShippingAccount from "./pages/shipping/ShippingAccount";
+import ShippingReturns from "./pages/shipping/ShippingReturns";
+import ShippingShopOrders from "./pages/shipping/ShippingShopOrders";
 
-// Lazy load route staff pages
+// Route staff pages - eager load child routes for instant switching
 const RouteStaffLayout = lazy(() => import("./pages/routes/RouteStaffLayout"));
-const RouteStaffDashboard = lazy(() => import("./pages/routes/RouteStaffDashboard"));
-const RouteShopOrders = lazy(() => import("./pages/routes/RouteShopOrders"));
-const RouteMyRoute = lazy(() => import("./pages/routes/RouteMyRoute"));
-const RouteAccount = lazy(() => import("./pages/routes/RouteAccount"));
+import RouteStaffDashboard from "./pages/routes/RouteStaffDashboard";
+import RouteShopOrders from "./pages/routes/RouteShopOrders";
+import RouteMyRoute from "./pages/routes/RouteMyRoute";
+import RouteAccount from "./pages/routes/RouteAccount";
 
 // Minimal loading fallback
 const PageLoader = () => (

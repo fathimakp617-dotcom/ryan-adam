@@ -273,7 +273,7 @@ const AdminLayout = () => {
                       <SidebarMenuButton asChild>
                         <Link
                           to={item.url}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
+                          className={`flex items-center gap-3 px-3 py-2 rounded-md ${
                             isActive(item.url)
                               ? "bg-primary/10 text-primary"
                               : "text-muted-foreground hover:bg-muted hover:text-foreground"
