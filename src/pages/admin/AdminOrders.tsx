@@ -27,7 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, Search, RefreshCw, Truck, Package, CheckCircle, X, Clock, Loader2, Download, FileText, Calendar, Trash2, AlertTriangle } from "lucide-react";
+import { Eye, Search, RefreshCw, Truck, Package, CheckCircle, X, Clock, Loader2, Download, FileText, Calendar, Trash2, AlertTriangle, ChevronRight, Check } from "lucide-react";
 import jsPDF from "jspdf";
 import OrderViewDialog from "@/components/OrderViewDialog";
 import {
@@ -834,27 +834,79 @@ const AdminOrders = () => {
                   <>
                     <Label className="text-sm font-medium mb-1 block">Update Status</Label>
                     <p className="text-xs text-muted-foreground mb-3">
-                      Status must follow: Pending → Processing → Shipped → Delivered
+                      Click a status or use the arrow to progress
                     </p>
-                    <div className="flex flex-wrap gap-2">
-                      {getAllowedStatuses(selectedOrder.order_status).map((status) => (
-                        <Button
-                          key={status}
-                          variant={selectedOrder.order_status === status ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => handleUpdateStatus(status)}
-                          disabled={isUpdating || selectedOrder.order_status === status}
-                          className="capitalize"
-                        >
-                          {isUpdating ? (
-                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                          ) : (
-                            getStatusIcon(status)
-                          )}
-                          <span className="ml-1">{status}</span>
-                        </Button>
-                      ))}
+                    
+                    {/* Status Stepper */}
+                    <div className="flex items-center justify-between bg-muted/30 rounded-lg p-3">
+                      {["pending", "processing", "shipped", "delivered"].map((status, index, arr) => {
+                        const currentIndex = arr.indexOf(selectedOrder.order_status);
+                        const statusIndex = arr.indexOf(status);
+                        const isCompleted = statusIndex < currentIndex;
+                        const isCurrent = status === selectedOrder.order_status;
+                        const isNext = statusIndex === currentIndex + 1;
+                        const canSelect = statusIndex <= currentIndex + 1 && statusIndex >= currentIndex;
+                        
+                        return (
+                          <div key={status} className="flex items-center">
+                            <button
+                              type="button"
+                              onClick={() => canSelect && handleUpdateStatus(status)}
+                              disabled={!canSelect || isUpdating || isCurrent}
+                              className={`
+                                flex flex-col items-center gap-1 px-2 py-1 rounded-md transition-all
+                                ${canSelect && !isCurrent ? "cursor-pointer hover:bg-muted" : ""}
+                                ${!canSelect ? "cursor-not-allowed opacity-40" : ""}
+                                ${isCurrent ? "ring-2 ring-blue-500 bg-blue-500/10" : ""}
+                              `}
+                            >
+                              <div className={`
+                                w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-all
+                                ${isCompleted ? "bg-green-500 text-white" : ""}
+                                ${isCurrent ? "bg-blue-600 text-white scale-110" : ""}
+                                ${!isCompleted && !isCurrent ? "bg-muted border-2 border-muted-foreground/20 text-muted-foreground" : ""}
+                              `}>
+                                {isCompleted ? <Check className="h-4 w-4" /> : isUpdating && isNext ? <Loader2 className="h-4 w-4 animate-spin" /> : index + 1}
+                              </div>
+                              <span className={`text-[10px] font-medium capitalize ${isCurrent ? "text-blue-600" : ""}`}>
+                                {status}
+                              </span>
+                            </button>
+                            
+                            {index < arr.length - 1 && (
+                              <div className="flex items-center mx-1">
+                                {isNext ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUpdateStatus(arr[index + 1])}
+                                    disabled={isUpdating}
+                                    className="p-1 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors animate-pulse disabled:opacity-50"
+                                    title={`Move to ${arr[index + 1]}`}
+                                  >
+                                    <ChevronRight className="h-4 w-4" />
+                                  </button>
+                                ) : (
+                                  <ChevronRight className={`h-4 w-4 ${isCompleted ? "text-green-500" : "text-muted-foreground/30"}`} />
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
+                    
+                    {/* Cancel Option */}
+                    {(selectedOrder.order_status === "pending" || selectedOrder.order_status === "processing") && (
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateStatus("cancelled")}
+                        disabled={isUpdating}
+                        className="mt-3 w-full flex items-center justify-center gap-2 py-2 px-3 rounded-md border border-muted-foreground/20 text-muted-foreground hover:border-red-300 hover:text-red-500 transition-all disabled:opacity-50"
+                      >
+                        <X className="h-4 w-4" />
+                        <span className="text-sm">Cancel Order</span>
+                      </button>
+                    )}
 
                     {/* Tracking Info (show for shipped or processing) */}
                     {(selectedOrder.order_status === "shipped" || selectedOrder.order_status === "processing") && (
