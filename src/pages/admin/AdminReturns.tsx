@@ -83,34 +83,51 @@ const AdminReturns = () => {
     setFilteredReturns(filtered);
   };
 
-  const handleUpdateReturnStatus = async (orderId: string, newStatus: string) => {
+  const handleUpdateReturnStatus = async (orderId: string, newReturnStatus: string) => {
     setIsUpdating(true);
     try {
-      const sessionData = localStorage.getItem("rayn_admin_session");
+      const sessionData = sessionStorage.getItem("rayn_admin_session") || localStorage.getItem("rayn_admin_session");
       if (!sessionData) throw new Error("No admin session found");
       
       const session = JSON.parse(sessionData);
       
-      const { error } = await supabase.functions.invoke('update-order-status', {
+      // Use the Supabase client to update return_status directly
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      
+      // First verify admin access
+      const { data: accessData, error: accessError } = await supabase.functions.invoke('check-admin-access', {
         body: {
           admin_email: session.email,
           admin_token: session.token,
-          order_id: orderId,
-          return_status: newStatus,
         },
       });
+      
+      if (accessError || !accessData?.authorized) {
+        throw new Error("Access denied");
+      }
+      
+      // Update return status directly in the database
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({ 
+          return_status: newReturnStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
 
       toast({
         title: "Updated",
-        description: `Return status updated to ${newStatus}`,
+        description: `Return status updated to ${newReturnStatus}`,
       });
 
       // Invalidate cache to refetch
       invalidateOrders();
       setSelectedReturn(null);
     } catch (error: any) {
+      console.error("Error updating return status:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to update status",
