@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, memo } from "react";
+import { useState, useEffect, memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,35 +44,15 @@ import {
 } from "lucide-react";
 import { generateShippingLabelPDF } from "@/lib/generateInvoicePDF";
 import OrderViewDialog from "@/components/OrderViewDialog";
-
-interface Order {
-  id: string;
-  order_number: string;
-  customer_name: string;
-  customer_email: string;
-  customer_phone: string | null;
-  order_status: string;
-  payment_status: string;
-  payment_method: string;
-  subtotal: number;
-  discount?: number | null;
-  shipping?: number | null;
-  total: number;
-  created_at: string;
-  shipping_address: any;
-  items: any;
-  tracking_number: string | null;
-  tracking_url: string | null;
-  coupon_code?: string | null;
-  affiliate_code?: string | null;
-}
+import { useShippingOrders, useInvalidateAdminData, type Order } from "@/hooks/useAdminData";
 
 const SHIPPING_SESSION_KEY = "rayn_shipping_session";
 
 const ShippingOrders = () => {
+  const { data: cachedOrders = [], isLoading, error } = useShippingOrders();
+  const { invalidateShippingOrders } = useInvalidateAdminData();
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -83,6 +63,17 @@ const ShippingOrders = () => {
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
   const { toast } = useToast();
 
+  // Sync cached orders to local state
+  useEffect(() => {
+    if (cachedOrders.length > 0) {
+      setOrders(cachedOrders);
+    }
+  }, [cachedOrders]);
+
+  if (error) {
+    toast({ title: "Error", description: "Failed to fetch orders", variant: "destructive" });
+  }
+
   const getSessionCredentials = () => {
     const stored = sessionStorage.getItem(SHIPPING_SESSION_KEY);
     if (stored) {
@@ -92,40 +83,9 @@ const ShippingOrders = () => {
     return null;
   };
 
-  const fetchOrders = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const credentials = getSessionCredentials();
-      if (!credentials) return;
-
-      const { data, error } = await supabase.functions.invoke("get-admin-orders", {
-        body: { 
-          admin_email: credentials.email,
-          admin_token: credentials.token
-        },
-      });
-
-      if (error) throw error;
-
-      if (data?.orders) {
-        setOrders(data.orders);
-        setFilteredOrders(data.orders);
-      }
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch orders",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [toast]);
-
-  useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
+  const fetchOrders = () => {
+    invalidateShippingOrders();
+  };
 
   useEffect(() => {
     let filtered = orders;
@@ -469,7 +429,7 @@ const ShippingOrders = () => {
                   <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
                   <div>
                     {selectedOrder.shipping_address?.address}, {selectedOrder.shipping_address?.city}<br />
-                    {selectedOrder.shipping_address?.state} - {selectedOrder.shipping_address?.pincode}
+                    {selectedOrder.shipping_address?.state} - {selectedOrder.shipping_address?.zipCode}
                   </div>
                 </div>
               </div>
