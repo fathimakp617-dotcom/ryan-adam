@@ -36,6 +36,8 @@ interface OrderConfirmationRequest {
   total: number;
   shipping_address: ShippingAddress;
   payment_method: string;
+  coupon_code?: string;
+  affiliate_code?: string;
 }
 
 const formatCurrency = (amount: number): string => {
@@ -83,7 +85,7 @@ ${order.items.map(item => `${item.name} x${item.quantity} - ${formatCurrency(ite
 
 --------------------------------
 Subtotal: ${formatCurrency(order.subtotal)}
-${order.discount > 0 ? `Discount: -${formatCurrency(order.discount)}` : ''}
+${order.discount > 0 ? `Discount${order.coupon_code ? ` (${order.coupon_code})` : order.affiliate_code ? ` (${order.affiliate_code})` : ''}: -${formatCurrency(order.discount)}` : ''}
 Shipping: ${order.shipping === 0 ? 'FREE' : formatCurrency(order.shipping)}
 --------------------------------
 TOTAL: ${formatCurrency(order.total)}
@@ -203,7 +205,7 @@ For questions: support@raynadamperfume.com
                     ${order.discount > 0 ? `
                     <tr>
                       <td style="padding: 10px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #22c55e;">
-                        Discount
+                        Discount ${order.coupon_code ? `<span style="color: #888; font-size: 12px;">(${order.coupon_code})</span>` : order.affiliate_code ? `<span style="color: #888; font-size: 12px;">(${order.affiliate_code})</span>` : ''}
                       </td>
                       <td style="padding: 10px 0; text-align: right; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #22c55e;">
                         -${formatCurrency(order.discount)}

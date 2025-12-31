@@ -80,6 +80,7 @@ interface Order {
   return_reason: string | null;
   return_details: string | null;
   return_requested_at: string | null;
+  cash_received: boolean;
 }
 
 const AdminOrders = () => {
@@ -450,6 +451,53 @@ const AdminOrders = () => {
     }
   };
 
+  const handleToggleCashReceived = async (order: Order) => {
+    try {
+      const sessionData = localStorage.getItem("rayn_admin_session");
+      if (!sessionData) {
+        throw new Error("No admin session found");
+      }
+      
+      const session = JSON.parse(sessionData);
+      const newCashReceived = !order.cash_received;
+      
+      const { data, error } = await supabase.functions.invoke('mark-cash-received', {
+        body: {
+          admin_email: session.email,
+          admin_token: session.token,
+          order_id: order.id,
+          cash_received: newCashReceived,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: newCashReceived ? "Cash Received" : "Cash Pending",
+        description: `Order ${order.order_number} updated`,
+      });
+
+      // Update local state
+      setOrders(orders.map(o => 
+        o.id === order.id 
+          ? { 
+              ...o, 
+              cash_received: newCashReceived,
+              payment_status: newCashReceived ? 'paid' : (o.payment_status === 'paid' ? 'pending' : o.payment_status),
+            } 
+          : o
+      ));
+
+    } catch (error: any) {
+      console.error("Error updating cash received:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update order",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDeleteOrder = async (orderId: string) => {
     setIsDeleting(true);
     try {
@@ -745,16 +793,40 @@ const AdminOrders = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        order.payment_status === 'paid' 
-                          ? 'bg-green-500/10 text-green-500' 
-                          : 'bg-yellow-500/10 text-yellow-500'
-                      }`}>
-                        {order.payment_status}
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          order.payment_status === 'paid' 
+                            ? 'bg-green-500/10 text-green-500' 
+                            : order.payment_status === 'shipping_paid'
+                            ? 'bg-blue-500/10 text-blue-500'
+                            : 'bg-yellow-500/10 text-yellow-500'
+                        }`}>
+                          {order.payment_status === 'shipping_paid' ? 'Shipping Paid' : order.payment_status}
+                        </span>
+                        {order.payment_method === 'cod' && (
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            order.cash_received 
+                              ? 'bg-green-500/10 text-green-500' 
+                              : 'bg-orange-500/10 text-orange-500'
+                          }`}>
+                            {order.cash_received ? '💵 Received' : '💵 Pending'}
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
+                        {order.payment_method === 'cod' && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleToggleCashReceived(order)}
+                            title={order.cash_received ? "Mark cash as pending" : "Mark cash as received"}
+                            className={order.cash_received ? "text-green-500 hover:text-green-600" : "text-orange-500 hover:text-orange-600"}
+                          >
+                            {order.cash_received ? <Check className="h-4 w-4" /> : <span className="text-sm">💵</span>}
+                          </Button>
+                        )}
                         <Button 
                           variant="ghost" 
                           size="sm"
