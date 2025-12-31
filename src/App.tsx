@@ -17,6 +17,7 @@ import Wishlist from "./pages/Wishlist";
 import Checkout from "./pages/Checkout";
 import Auth from "./pages/Auth";
 import Account from "./pages/Account";
+import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -55,6 +56,7 @@ const App = () => (
                     <Route path="/checkout" element={<Checkout />} />
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/account" element={<Account />} />
+                    <Route path="/terms" element={<Terms />} />
                     <Route path="/admin" element={<AdminLayout />}>
                       <Route index element={<AdminDashboard />} />
                       <Route path="orders" element={<AdminOrders />} />
