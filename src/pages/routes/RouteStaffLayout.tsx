@@ -72,7 +72,7 @@ const RouteStaffLayout = () => {
         body: { email: email.toLowerCase(), password },
       });
 
-      if (error || !data?.valid) {
+      if (error || !data?.success) {
         throw new Error(data?.error || "Invalid credentials");
       }
 
@@ -83,9 +83,9 @@ const RouteStaffLayout = () => {
       }
 
       const session: RouteSession = {
-        token: data.token,
+        token: data.session_token,
         email: email.toLowerCase(),
-        expiry: Date.now() + 24 * 60 * 60 * 1000,
+        expiry: data.session_expiry || Date.now() + 24 * 60 * 60 * 1000,
         name: data.name,
       };
 
