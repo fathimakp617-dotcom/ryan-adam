@@ -1,4 +1,4 @@
-import { useEffect, useState, memo } from "react";
+import { useEffect, useState, memo, useRef } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -101,19 +101,20 @@ const AdminDashboard = () => {
   const [customDateTo, setCustomDateTo] = useState("");
   const [revenueView, setRevenueView] = useState<"all" | "cod" | "online">("all");
   const navigate = useNavigate();
+  const hasMountedRef = useRef(false);
 
   useEffect(() => {
     fetchStats();
     fetchActivityLogs();
 
     const channel = supabase
-      .channel('admin-orders-realtime')
+      .channel("admin-orders-realtime")
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: '*',
-          schema: 'public',
-          table: 'orders'
+          event: "*",
+          schema: "public",
+          table: "orders",
         },
         () => {
           fetchStats();
@@ -125,12 +126,20 @@ const AdminDashboard = () => {
     return () => {
       supabase.removeChannel(channel);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
+    // Avoid duplicate initial fetch (the mount effect above already fetches once)
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+
     if (dateFilter !== "custom") {
       fetchStats();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateFilter]);
 
   const getDateRange = () => {
