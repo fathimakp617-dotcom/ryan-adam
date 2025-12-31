@@ -37,7 +37,10 @@ import {
   Mail,
   FileText,
   Loader2,
-  Eye
+  Eye,
+  ChevronRight,
+  Check,
+  X
 } from "lucide-react";
 import { generateShippingLabelPDF } from "@/lib/generateInvoicePDF";
 import OrderViewDialog from "@/components/OrderViewDialog";
@@ -471,25 +474,89 @@ const ShippingOrders = () => {
                 </div>
               </div>
 
-              {/* Status Update */}
+              {/* Status Stepper */}
               <div className="space-y-4">
                 <div>
                   <Label>Order Status</Label>
-                  <p className="text-xs text-muted-foreground mb-1">
-                    Status must follow: Pending → Processing → Shipped → Delivered
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Click a status or use the arrow to progress
                   </p>
-                  <Select value={newStatus} onValueChange={setNewStatus}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getAllowedStatuses(selectedOrder.order_status).map((status) => (
-                        <SelectItem key={status} value={status}>
-                          {status.charAt(0).toUpperCase() + status.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  
+                  {/* Status Steps */}
+                  <div className="flex items-center justify-between bg-muted/30 rounded-lg p-3">
+                    {["pending", "processing", "shipped", "delivered"].map((status, index, arr) => {
+                      const currentIndex = arr.indexOf(selectedOrder.order_status);
+                      const statusIndex = arr.indexOf(status);
+                      const isCompleted = statusIndex < currentIndex;
+                      const isCurrent = status === selectedOrder.order_status;
+                      const isNext = statusIndex === currentIndex + 1;
+                      const isSelected = status === newStatus;
+                      const canSelect = statusIndex <= currentIndex + 1 && statusIndex >= currentIndex;
+                      
+                      return (
+                        <div key={status} className="flex items-center">
+                          <button
+                            type="button"
+                            onClick={() => canSelect && setNewStatus(status)}
+                            disabled={!canSelect}
+                            className={`
+                              flex flex-col items-center gap-1 px-2 py-1 rounded-md transition-all
+                              ${canSelect ? "cursor-pointer hover:bg-muted" : "cursor-not-allowed opacity-40"}
+                              ${isSelected ? "ring-2 ring-blue-500 bg-blue-500/10" : ""}
+                            `}
+                          >
+                            <div className={`
+                              w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-all
+                              ${isCompleted ? "bg-green-500 text-white" : ""}
+                              ${isCurrent && !isSelected ? "bg-blue-500 text-white" : ""}
+                              ${isSelected ? "bg-blue-600 text-white scale-110" : ""}
+                              ${!isCompleted && !isCurrent && !isSelected ? "bg-muted border-2 border-muted-foreground/20 text-muted-foreground" : ""}
+                            `}>
+                              {isCompleted ? <Check className="h-4 w-4" /> : index + 1}
+                            </div>
+                            <span className={`text-[10px] font-medium capitalize ${isSelected ? "text-blue-600" : ""}`}>
+                              {status}
+                            </span>
+                          </button>
+                          
+                          {index < arr.length - 1 && (
+                            <div className="flex items-center mx-1">
+                              {isNext && !isSelected ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setNewStatus(status)}
+                                  className="p-1 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors animate-pulse"
+                                  title={`Move to ${arr[index + 1]}`}
+                                >
+                                  <ChevronRight className="h-4 w-4" />
+                                </button>
+                              ) : (
+                                <ChevronRight className={`h-4 w-4 ${isCompleted ? "text-green-500" : "text-muted-foreground/30"}`} />
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Cancel Option */}
+                  {(selectedOrder.order_status === "pending" || selectedOrder.order_status === "processing") && (
+                    <button
+                      type="button"
+                      onClick={() => setNewStatus("cancelled")}
+                      className={`
+                        mt-3 w-full flex items-center justify-center gap-2 py-2 px-3 rounded-md border transition-all
+                        ${newStatus === "cancelled" 
+                          ? "border-red-500 bg-red-500/10 text-red-600" 
+                          : "border-muted-foreground/20 text-muted-foreground hover:border-red-300 hover:text-red-500"
+                        }
+                      `}
+                    >
+                      <X className="h-4 w-4" />
+                      <span className="text-sm">Cancel Order</span>
+                    </button>
+                  )}
                 </div>
 
                 <div>
