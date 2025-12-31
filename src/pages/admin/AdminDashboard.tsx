@@ -189,7 +189,7 @@ const AdminDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const sessionData = localStorage.getItem("rayn_admin_session");
+      const sessionData = sessionStorage.getItem("rayn_admin_session");
       if (!sessionData) throw new Error("No admin session found");
       
       const session = JSON.parse(sessionData);
@@ -223,7 +223,7 @@ const AdminDashboard = () => {
   const fetchActivityLogs = async () => {
     setIsLoadingLogs(true);
     try {
-      const sessionData = localStorage.getItem("rayn_admin_session");
+      const sessionData = sessionStorage.getItem("rayn_admin_session");
       if (!sessionData) return;
       
       const session = JSON.parse(sessionData);

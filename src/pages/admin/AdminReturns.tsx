@@ -86,7 +86,7 @@ const AdminReturns = () => {
   const handleUpdateReturnStatus = async (orderId: string, newReturnStatus: string) => {
     setIsUpdating(true);
     try {
-      const sessionData = sessionStorage.getItem("rayn_admin_session") || localStorage.getItem("rayn_admin_session");
+      const sessionData = sessionStorage.getItem("rayn_admin_session");
       if (!sessionData) throw new Error("No admin session found");
       
       const session = JSON.parse(sessionData);

@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 // Helper to get admin session
 const getAdminSession = () => {
-  const stored = sessionStorage.getItem("rayn_admin_session") || localStorage.getItem("rayn_admin_session");
+  const stored = sessionStorage.getItem("rayn_admin_session");
   if (!stored) return null;
   return JSON.parse(stored);
 };

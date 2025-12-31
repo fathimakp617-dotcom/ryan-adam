@@ -95,7 +95,7 @@ const AdminAffiliates = () => {
 
     setIsSubmitting(true);
     try {
-      const stored = localStorage.getItem("rayn_admin_session");
+      const stored = sessionStorage.getItem("rayn_admin_session");
       if (!stored) throw new Error("Admin session not found");
 
       const session = JSON.parse(stored);
@@ -138,7 +138,7 @@ const AdminAffiliates = () => {
 
     setIsSubmitting(true);
     try {
-      const stored = localStorage.getItem("rayn_admin_session");
+      const stored = sessionStorage.getItem("rayn_admin_session");
       if (!stored) throw new Error("Admin session not found");
 
       const session = JSON.parse(stored);
@@ -174,7 +174,7 @@ const AdminAffiliates = () => {
 
     setIsSubmitting(true);
     try {
-      const stored = localStorage.getItem("rayn_admin_session");
+      const stored = sessionStorage.getItem("rayn_admin_session");
       if (!stored) throw new Error("Admin session not found");
 
       const session = JSON.parse(stored);
@@ -209,7 +209,7 @@ const AdminAffiliates = () => {
 
   const handleToggleActive = async (affiliate: Affiliate) => {
     try {
-      const stored = localStorage.getItem("rayn_admin_session");
+      const stored = sessionStorage.getItem("rayn_admin_session");
       if (!stored) throw new Error("Admin session not found");
 
       const session = JSON.parse(stored);
@@ -237,7 +237,7 @@ const AdminAffiliates = () => {
     if (!confirm("Are you sure you want to delete this affiliate?")) return;
 
     try {
-      const stored = localStorage.getItem("rayn_admin_session");
+      const stored = sessionStorage.getItem("rayn_admin_session");
       if (!stored) throw new Error("Admin session not found");
 
       const session = JSON.parse(stored);

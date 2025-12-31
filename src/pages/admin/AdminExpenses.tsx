@@ -85,7 +85,7 @@ const AdminExpenses = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const sessionData = localStorage.getItem("rayn_admin_session");
+      const sessionData = sessionStorage.getItem("rayn_admin_session");
       if (!sessionData) throw new Error("No admin session found");
       
       const session = JSON.parse(sessionData);
@@ -119,7 +119,7 @@ const AdminExpenses = () => {
     setIsSaving(true);
 
     try {
-      const sessionData = localStorage.getItem("rayn_admin_session");
+      const sessionData = sessionStorage.getItem("rayn_admin_session");
       if (!sessionData) throw new Error("No admin session found");
       
       const session = JSON.parse(sessionData);
@@ -168,7 +168,7 @@ const AdminExpenses = () => {
 
   const handleDelete = async (expenseId: string) => {
     try {
-      const sessionData = localStorage.getItem("rayn_admin_session");
+      const sessionData = sessionStorage.getItem("rayn_admin_session");
       if (!sessionData) throw new Error("No admin session found");
       
       const session = JSON.parse(sessionData);
