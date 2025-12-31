@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -31,7 +32,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Ticket, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Ticket, Loader2, Gift, Users } from "lucide-react";
 import { format } from "date-fns";
 
 interface Coupon {
@@ -45,6 +46,10 @@ interface Coupon {
   expires_at: string | null;
   is_active: boolean;
   created_at: string;
+  coupon_type?: string | null;
+  is_bogo?: boolean | null;
+  user_id?: string | null;
+  user_email?: string;
 }
 
 interface CouponFormData {
@@ -69,12 +74,15 @@ const initialFormData: CouponFormData = {
 
 const AdminCoupons = () => {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [loyaltyCoupons, setLoyaltyCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loyaltyLoading, setLoyaltyLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null);
   const [formData, setFormData] = useState<CouponFormData>(initialFormData);
+  const [activeTab, setActiveTab] = useState("regular");
   const { toast } = useToast();
 
   const fetchCoupons = async () => {
@@ -96,8 +104,28 @@ const AdminCoupons = () => {
     }
   };
 
+  const fetchLoyaltyCoupons = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-coupons", {
+        body: { action: "list_loyalty" },
+      });
+
+      if (error) throw error;
+      setLoyaltyCoupons(data.coupons || []);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to fetch loyalty coupons",
+        variant: "destructive",
+      });
+    } finally {
+      setLoyaltyLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchCoupons();
+    fetchLoyaltyCoupons();
   }, []);
 
   const handleOpenCreate = () => {
@@ -201,7 +229,11 @@ const AdminCoupons = () => {
       });
 
       setDeleteDialogOpen(false);
-      fetchCoupons();
+      if (selectedCoupon.coupon_type === 'loyalty') {
+        fetchLoyaltyCoupons();
+      } else {
+        fetchCoupons();
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -221,7 +253,11 @@ const AdminCoupons = () => {
       });
 
       if (error) throw error;
-      fetchCoupons();
+      if (coupon.coupon_type === 'loyalty') {
+        fetchLoyaltyCoupons();
+      } else {
+        fetchCoupons();
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -232,6 +268,9 @@ const AdminCoupons = () => {
   };
 
   const formatDiscount = (coupon: Coupon) => {
+    if (coupon.is_bogo) {
+      return "Buy 1 Get 1";
+    }
     if (coupon.discount_percent) {
       return `${coupon.discount_percent}%`;
     }
@@ -244,6 +283,18 @@ const AdminCoupons = () => {
   const isExpired = (expiresAt: string | null) => {
     if (!expiresAt) return false;
     return new Date(expiresAt) < new Date();
+  };
+
+  const isFullyUsed = (coupon: Coupon) => {
+    if (!coupon.max_uses) return false;
+    return (coupon.current_uses || 0) >= coupon.max_uses;
+  };
+
+  const getCouponStatus = (coupon: Coupon) => {
+    if (isFullyUsed(coupon)) return { label: "Used", variant: "secondary" as const };
+    if (isExpired(coupon.expires_at)) return { label: "Expired", variant: "secondary" as const };
+    if (!coupon.is_active) return { label: "Inactive", variant: "secondary" as const };
+    return { label: "Active", variant: "default" as const };
   };
 
   if (loading) {
@@ -259,7 +310,7 @@ const AdminCoupons = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Coupons</h1>
-          <p className="text-muted-foreground">Manage discount codes and promotions</p>
+          <p className="text-muted-foreground">Manage discount codes and loyalty rewards</p>
         </div>
         <Button onClick={handleOpenCreate}>
           <Plus className="h-4 w-4 mr-2" />
@@ -267,88 +318,191 @@ const AdminCoupons = () => {
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Ticket className="h-5 w-5" />
-            All Coupons ({coupons.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {coupons.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Ticket className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No coupons created yet</p>
-              <Button variant="outline" className="mt-4" onClick={handleOpenCreate}>
-                Create your first coupon
-              </Button>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Discount</TableHead>
-                  <TableHead>Min Order</TableHead>
-                  <TableHead>Uses</TableHead>
-                  <TableHead>Expires</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {coupons.map((coupon) => (
-                  <TableRow key={coupon.id}>
-                    <TableCell className="font-mono font-bold">{coupon.code}</TableCell>
-                    <TableCell>{formatDiscount(coupon)}</TableCell>
-                    <TableCell>₹{coupon.min_order_amount || 0}</TableCell>
-                    <TableCell>
-                      {coupon.current_uses || 0}
-                      {coupon.max_uses ? ` / ${coupon.max_uses}` : ""}
-                    </TableCell>
-                    <TableCell>
-                      {coupon.expires_at ? (
-                        <span className={isExpired(coupon.expires_at) ? "text-destructive" : ""}>
-                          {format(new Date(coupon.expires_at), "MMM d, yyyy")}
-                        </span>
-                      ) : (
-                        "Never"
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={coupon.is_active && !isExpired(coupon.expires_at) ? "default" : "secondary"}
-                      >
-                        {isExpired(coupon.expires_at) ? "Expired" : coupon.is_active ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Switch
-                          checked={coupon.is_active}
-                          onCheckedChange={() => handleToggleActive(coupon)}
-                          disabled={isExpired(coupon.expires_at)}
-                        />
-                        <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(coupon)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-destructive"
-                          onClick={() => handleOpenDelete(coupon)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="regular" className="flex items-center gap-2">
+            <Ticket className="h-4 w-4" />
+            Regular Coupons
+          </TabsTrigger>
+          <TabsTrigger value="loyalty" className="flex items-center gap-2">
+            <Gift className="h-4 w-4" />
+            Loyalty Rewards
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="regular" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Ticket className="h-5 w-5" />
+                All Coupons ({coupons.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {coupons.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Ticket className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No coupons created yet</p>
+                  <Button variant="outline" className="mt-4" onClick={handleOpenCreate}>
+                    Create your first coupon
+                  </Button>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Code</TableHead>
+                      <TableHead>Discount</TableHead>
+                      <TableHead>Min Order</TableHead>
+                      <TableHead>Uses</TableHead>
+                      <TableHead>Expires</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {coupons.map((coupon) => (
+                      <TableRow key={coupon.id}>
+                        <TableCell className="font-mono font-bold">{coupon.code}</TableCell>
+                        <TableCell>{formatDiscount(coupon)}</TableCell>
+                        <TableCell>₹{coupon.min_order_amount || 0}</TableCell>
+                        <TableCell>
+                          {coupon.current_uses || 0}
+                          {coupon.max_uses ? ` / ${coupon.max_uses}` : ""}
+                        </TableCell>
+                        <TableCell>
+                          {coupon.expires_at ? (
+                            <span className={isExpired(coupon.expires_at) ? "text-destructive" : ""}>
+                              {format(new Date(coupon.expires_at), "MMM d, yyyy")}
+                            </span>
+                          ) : (
+                            "Never"
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getCouponStatus(coupon).variant}>
+                            {getCouponStatus(coupon).label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Switch
+                              checked={coupon.is_active}
+                              onCheckedChange={() => handleToggleActive(coupon)}
+                              disabled={isExpired(coupon.expires_at)}
+                            />
+                            <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(coupon)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive"
+                              onClick={() => handleOpenDelete(coupon)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="loyalty" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Gift className="h-5 w-5" />
+                Loyalty Rewards ({loyaltyCoupons.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loyaltyLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : loyaltyCoupons.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Gift className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No loyalty coupons generated yet</p>
+                  <p className="text-sm mt-2">Loyalty coupons are automatically generated after customer orders</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Code</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Reward Type</TableHead>
+                      <TableHead>Uses</TableHead>
+                      <TableHead>Expires</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {loyaltyCoupons.map((coupon) => (
+                      <TableRow key={coupon.id}>
+                        <TableCell className="font-mono font-bold">{coupon.code}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">{coupon.user_email}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {formatDiscount(coupon)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {coupon.current_uses || 0} / {coupon.max_uses || 1}
+                        </TableCell>
+                        <TableCell>
+                          {coupon.expires_at ? (
+                            <span className={isExpired(coupon.expires_at) ? "text-destructive" : ""}>
+                              {format(new Date(coupon.expires_at), "MMM d, yyyy")}
+                            </span>
+                          ) : (
+                            "Never"
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getCouponStatus(coupon).variant}>
+                            {getCouponStatus(coupon).label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Switch
+                              checked={coupon.is_active}
+                              onCheckedChange={() => handleToggleActive(coupon)}
+                              disabled={isExpired(coupon.expires_at) || isFullyUsed(coupon)}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive"
+                              onClick={() => handleOpenDelete(coupon)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
