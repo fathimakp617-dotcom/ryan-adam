@@ -70,10 +70,10 @@ const Hero = memo(() => {
       <AnimatePresence mode="wait">
         <motion.div
           key={currentSlide}
-          initial={{ opacity: 0, scale: 1.05 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 0.4 }}
           className="absolute inset-0"
         >
           <img
@@ -97,20 +97,15 @@ const Hero = memo(() => {
         <div className="max-w-2xl">
           {/* Left Content */}
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
             className="space-y-6 sm:space-y-8"
           >
             <div className="space-y-3 sm:space-y-4">
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="text-xs sm:text-sm tracking-[0.3em] sm:tracking-[0.4em] text-primary"
-              >
+              <p className="text-xs sm:text-sm tracking-[0.3em] sm:tracking-[0.4em] text-primary">
                 EAU DE PARFUM
-              </motion.p>
+              </p>
               <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-heading tracking-tight leading-none">
                 <span className="block text-foreground">LUXURY</span>
                 <span className="block text-gold-gradient">PERFUME</span>
@@ -141,10 +136,7 @@ const Hero = memo(() => {
               of luxurious fragrances crafted for the discerning individual.
             </p>
 
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
+            <div
               className="flex flex-col sm:flex-row gap-4"
             >
               <Link to="/shop">
@@ -164,7 +156,7 @@ const Hero = memo(() => {
                   EXPLORE
                 </Button>
               </a>
-            </motion.div>
+            </div>
           </motion.div>
         </div>
 
