@@ -18,10 +18,11 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Verify staff access
+    // Verify staff access (admin, shipping, or route)
     const adminEmails = (Deno.env.get("ADMIN_EMAILS") || "").toLowerCase().split(",").map(e => e.trim());
     const shippingEmails = (Deno.env.get("SHIPPING_EMAILS") || "").toLowerCase().split(",").map(e => e.trim());
-    const allStaff = [...adminEmails, ...shippingEmails];
+    const routeEmails = (Deno.env.get("ROUTE_EMAILS") || "").toLowerCase().split(",").map(e => e.trim());
+    const allStaff = [...adminEmails, ...shippingEmails, ...routeEmails];
     
     if (!allStaff.includes(admin_email?.toLowerCase())) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
