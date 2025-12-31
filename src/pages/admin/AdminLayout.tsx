@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { Outlet, useNavigate, Link, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -323,4 +323,4 @@ const AdminLayout = () => {
   );
 };
 
-export default AdminLayout;
+export default memo(AdminLayout);

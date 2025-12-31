@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, CreditCard, Truck, Check, Lock, LogIn, AlertTriangle } from "lucide-react";
@@ -765,4 +765,4 @@ const Checkout = () => {
   );
 };
 
-export default Checkout;
+export default memo(Checkout);

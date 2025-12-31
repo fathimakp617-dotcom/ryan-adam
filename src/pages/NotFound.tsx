@@ -1,5 +1,5 @@
 import { useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, memo } from "react";
 
 const NotFound = () => {
   const location = useLocation();
@@ -21,4 +21,4 @@ const NotFound = () => {
   );
 };
 
-export default NotFound;
+export default memo(NotFound);
