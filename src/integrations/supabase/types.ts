@@ -299,6 +299,7 @@ export type Database = {
           payment_method: string
           payment_status: string
           return_details: string | null
+          return_images: string[] | null
           return_reason: string | null
           return_requested_at: string | null
           return_status: string | null
@@ -328,6 +329,7 @@ export type Database = {
           payment_method: string
           payment_status?: string
           return_details?: string | null
+          return_images?: string[] | null
           return_reason?: string | null
           return_requested_at?: string | null
           return_status?: string | null
@@ -357,6 +359,7 @@ export type Database = {
           payment_method?: string
           payment_status?: string
           return_details?: string | null
+          return_images?: string[] | null
           return_reason?: string | null
           return_requested_at?: string | null
           return_status?: string | null

@@ -10,6 +10,7 @@ interface ReturnRequest {
   order_id: string;
   reason: string;
   details?: string;
+  images?: string[];
 }
 
 serve(async (req) => {
@@ -40,7 +41,7 @@ serve(async (req) => {
       );
     }
 
-    const { order_id, reason, details }: ReturnRequest = await req.json();
+    const { order_id, reason, details, images }: ReturnRequest = await req.json();
 
     if (!order_id || !reason) {
       return new Response(
@@ -110,6 +111,7 @@ serve(async (req) => {
         return_reason: reason,
         return_details: details || null,
         return_requested_at: new Date().toISOString(),
+        return_images: images && images.length > 0 ? images : null,
       })
       .eq("id", order_id);
 

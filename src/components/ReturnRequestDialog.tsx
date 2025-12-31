@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { RotateCcw, Package, AlertCircle, CheckCircle } from "lucide-react";
+import { RotateCcw, Package, AlertCircle, CheckCircle, ImagePlus, X, Upload } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface OrderItem {
   productId: string;
@@ -25,7 +27,7 @@ interface ReturnRequestDialogProps {
   orderNumber: string;
   orderId: string;
   items: OrderItem[];
-  onSubmit: (data: { reason: string; details: string }) => Promise<void>;
+  onSubmit: (data: { reason: string; details: string; images: string[] }) => Promise<void>;
   isSubmitting: boolean;
 }
 
@@ -51,23 +53,124 @@ const ReturnRequestDialog = ({
   const [selectedReason, setSelectedReason] = useState("");
   const [details, setDetails] = useState("");
   const [step, setStep] = useState<"reason" | "details" | "confirm">("reason");
+  const [images, setImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length + images.length > 5) {
+      toast({
+        title: "Too many images",
+        description: "You can upload a maximum of 5 images",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const validFiles = files.filter(file => {
+      if (!file.type.startsWith("image/")) {
+        toast({ title: "Invalid file", description: `${file.name} is not an image`, variant: "destructive" });
+        return false;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast({ title: "File too large", description: `${file.name} exceeds 5MB limit`, variant: "destructive" });
+        return false;
+      }
+      return true;
+    });
+
+    setImages(prev => [...prev, ...validFiles]);
+    
+    // Create previews
+    validFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreviews(prev => [...prev, e.target?.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadImages = async (): Promise<string[]> => {
+    if (images.length === 0) return [];
+    
+    setIsUploading(true);
+    const urls: string[] = [];
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+      
+      for (const file of images) {
+        const fileName = `${user.id}/${orderId}/${Date.now()}-${file.name}`;
+        const { data, error } = await supabase.storage
+          .from("return-images")
+          .upload(fileName, file);
+        
+        if (error) throw error;
+        
+        const { data: urlData } = supabase.storage
+          .from("return-images")
+          .getPublicUrl(data.path);
+        
+        urls.push(urlData.publicUrl);
+      }
+      
+      setUploadedUrls(urls);
+      return urls;
+    } catch (error: any) {
+      toast({
+        title: "Upload failed",
+        description: error.message || "Failed to upload images",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!selectedReason) return;
     
-    const reasonLabel = RETURN_REASONS.find(r => r.value === selectedReason)?.label || selectedReason;
-    await onSubmit({ reason: reasonLabel, details });
-    
-    // Reset form
-    setSelectedReason("");
-    setDetails("");
-    setStep("reason");
+    try {
+      // Upload images first if any
+      let imageUrls = uploadedUrls;
+      if (images.length > 0 && uploadedUrls.length === 0) {
+        imageUrls = await uploadImages();
+      }
+      
+      const reasonLabel = RETURN_REASONS.find(r => r.value === selectedReason)?.label || selectedReason;
+      await onSubmit({ reason: reasonLabel, details, images: imageUrls });
+      
+      // Reset form
+      setSelectedReason("");
+      setDetails("");
+      setStep("reason");
+      setImages([]);
+      setImagePreviews([]);
+      setUploadedUrls([]);
+    } catch (error) {
+      // Error already handled in uploadImages
+    }
   };
 
   const handleClose = () => {
     setSelectedReason("");
     setDetails("");
     setStep("reason");
+    setImages([]);
+    setImagePreviews([]);
+    setUploadedUrls([]);
     onClose();
   };
 
@@ -170,7 +273,7 @@ const ReturnRequestDialog = ({
                   value={details}
                   onChange={(e) => setDetails(e.target.value)}
                   placeholder="Please provide more details about your return request. This helps us process your request faster."
-                  className="min-h-[120px]"
+                  className="min-h-[100px]"
                   required={selectedReason === "other"}
                 />
                 {selectedReason === "other" && !details.trim() && (
@@ -178,6 +281,51 @@ const ReturnRequestDialog = ({
                     Please provide details for your return reason
                   </p>
                 )}
+              </div>
+
+              {/* Image Upload Section */}
+              <div>
+                <Label className="text-base font-semibold mb-2 block">
+                  Attach Images (Optional)
+                </Label>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Upload photos of the product issue to help us process your return faster. Max 5 images, 5MB each.
+                </p>
+                
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+                
+                <div className="grid grid-cols-3 gap-3">
+                  {imagePreviews.map((preview, index) => (
+                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-border">
+                      <img src={preview} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                  
+                  {images.length < 5 && (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="aspect-square rounded-lg border-2 border-dashed border-border hover:border-primary/50 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <ImagePlus size={20} />
+                      <span className="text-xs">Add</span>
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Policy Notice */}
@@ -224,6 +372,16 @@ const ReturnRequestDialog = ({
                       <p className="text-foreground">{details}</p>
                     </div>
                   )}
+                  {imagePreviews.length > 0 && (
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Attached Images ({imagePreviews.length})</p>
+                      <div className="flex gap-2 flex-wrap">
+                        {imagePreviews.map((preview, idx) => (
+                          <img key={idx} src={preview} alt={`Attached ${idx + 1}`} className="w-12 h-12 object-cover rounded border border-border" />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
@@ -234,14 +392,14 @@ const ReturnRequestDialog = ({
               </div>
 
               <div className="flex gap-3">
-                <Button variant="outline" onClick={() => setStep("details")} className="flex-1" disabled={isSubmitting}>
+                <Button variant="outline" onClick={() => setStep("details")} className="flex-1" disabled={isSubmitting || isUploading}>
                   Back
                 </Button>
-                <Button onClick={handleSubmit} disabled={isSubmitting} className="flex-1">
-                  {isSubmitting ? (
+                <Button onClick={handleSubmit} disabled={isSubmitting || isUploading} className="flex-1">
+                  {isSubmitting || isUploading ? (
                     <span className="flex items-center gap-2">
                       <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                      Submitting...
+                      {isUploading ? "Uploading..." : "Submitting..."}
                     </span>
                   ) : (
                     <>
