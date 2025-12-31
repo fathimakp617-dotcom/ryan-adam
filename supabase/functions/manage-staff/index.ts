@@ -21,7 +21,7 @@ serve(async (req) => {
   }
 
   try {
-    const { action, admin_email, email, role, password, staff_id, staff_email } = await req.json();
+    const { action, admin_email, email, name, role, password, staff_id, staff_email } = await req.json();
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -62,7 +62,7 @@ serve(async (req) => {
         // Get staff from database
         const { data: dbStaff, error } = await supabase
           .from("staff_members")
-          .select("id, email, role, is_active, created_at, created_by, updated_at")
+          .select("id, email, name, role, is_active, created_at, created_by, updated_at")
           .order("created_at", { ascending: false });
 
         if (error) throw error;
@@ -100,6 +100,7 @@ serve(async (req) => {
             envStaff.push({
               id: `env-admin-${email}`,
               email,
+              name: null,
               role: "admin",
               is_active: true,
               created_at: null,
@@ -118,6 +119,7 @@ serve(async (req) => {
             envStaff.push({
               id: `env-shipping-${email}`,
               email,
+              name: null,
               role: "shipping",
               is_active: true,
               created_at: null,
@@ -244,6 +246,7 @@ serve(async (req) => {
           .from("staff_members")
           .insert({
             email: email.toLowerCase().trim(),
+            name: name || null,
             role,
             password_hash: passwordHash,
             created_by: admin_email,
