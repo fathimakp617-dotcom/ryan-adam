@@ -205,6 +205,56 @@ export type Database = {
         }
         Relationships: []
       }
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string
+          expense_date: string
+          id: string
+          receipt_url: string | null
+          route_id: string | null
+          staff_email: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          created_by?: string | null
+          description: string
+          expense_date?: string
+          id?: string
+          receipt_url?: string | null
+          route_id?: string | null
+          staff_email?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          expense_date?: string
+          id?: string
+          receipt_url?: string | null
+          route_id?: string | null
+          staff_email?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loyalty_rewards: {
         Row: {
           created_at: string
@@ -355,6 +405,89 @@ export type Database = {
         }
         Relationships: []
       }
+      routes: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shop_orders: {
+        Row: {
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          order_date: string
+          products: Json
+          route_id: string | null
+          shop_name: string
+          status: string | null
+          total_bottles: number | null
+          updated_at: string
+        }
+        Insert: {
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          products?: Json
+          route_id?: string | null
+          shop_name: string
+          status?: string | null
+          total_bottles?: number | null
+          updated_at?: string
+        }
+        Update: {
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          products?: Json
+          route_id?: string | null
+          shop_name?: string
+          status?: string | null
+          total_bottles?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_orders_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_members: {
         Row: {
           created_at: string
@@ -447,6 +580,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      whatsapp_logs: {
+        Row: {
+          created_at: string
+          id: string
+          message_content: string
+          message_type: string
+          order_id: string | null
+          phone_number: string
+          sent_at: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_content: string
+          message_type: string
+          order_id?: string | null
+          phone_number: string
+          sent_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_content?: string
+          message_type?: string
+          order_id?: string | null
+          phone_number?: string
+          sent_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_logs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

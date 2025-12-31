@@ -95,3 +95,9 @@ verify_jwt = false
 
 [functions.mark-cash-received]
 verify_jwt = false
+
+[functions.manage-expenses]
+verify_jwt = false
+
+[functions.manage-shop-orders]
+verify_jwt = false
