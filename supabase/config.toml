@@ -83,3 +83,6 @@ verify_jwt = false
 
 [functions.update-staff-name]
 verify_jwt = false
+
+[functions.manage-coupons]
+verify_jwt = false
