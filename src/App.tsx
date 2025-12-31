@@ -47,6 +47,13 @@ const ShippingAccount = lazy(() => import("./pages/shipping/ShippingAccount"));
 const ShippingReturns = lazy(() => import("./pages/shipping/ShippingReturns"));
 const ShippingShopOrders = lazy(() => import("./pages/shipping/ShippingShopOrders"));
 
+// Lazy load route staff pages
+const RouteStaffLayout = lazy(() => import("./pages/routes/RouteStaffLayout"));
+const RouteStaffDashboard = lazy(() => import("./pages/routes/RouteStaffDashboard"));
+const RouteShopOrders = lazy(() => import("./pages/routes/RouteShopOrders"));
+const RouteMyRoute = lazy(() => import("./pages/routes/RouteMyRoute"));
+const RouteAccount = lazy(() => import("./pages/routes/RouteAccount"));
+
 // Minimal loading fallback
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -106,6 +113,12 @@ const App = () => (
                         <Route path="account" element={<ShippingAccount />} />
                         <Route path="returns" element={<ShippingReturns />} />
                         <Route path="shop-orders" element={<ShippingShopOrders />} />
+                      </Route>
+                      <Route path="/routes" element={<RouteStaffLayout />}>
+                        <Route index element={<RouteStaffDashboard />} />
+                        <Route path="shop-orders" element={<RouteShopOrders />} />
+                        <Route path="my-route" element={<RouteMyRoute />} />
+                        <Route path="account" element={<RouteAccount />} />
                       </Route>
                       <Route path="*" element={<NotFound />} />
                     </Routes>
