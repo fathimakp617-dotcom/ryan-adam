@@ -166,18 +166,38 @@ serve(async (req) => {
           );
         }
 
-        // Get notifications for this staff member
-        const { data: notifications, error } = await supabase
+        const staffEmailLower = staff_email.toLowerCase();
+
+        // Get notifications where this staff is the subject
+        const { data: subjectNotifications, error: error1 } = await supabase
           .from("staff_notifications")
           .select("*")
-          .eq("staff_email", staff_email.toLowerCase())
+          .eq("staff_email", staffEmailLower)
           .order("sent_at", { ascending: false })
           .limit(50);
 
-        if (error) throw error;
+        if (error1) throw error1;
+
+        // Get notifications where this staff is in recipients (like order status updates)
+        const { data: recipientNotifications, error: error2 } = await supabase
+          .from("staff_notifications")
+          .select("*")
+          .contains("recipients", [staffEmailLower])
+          .neq("staff_email", staffEmailLower)
+          .order("sent_at", { ascending: false })
+          .limit(50);
+
+        if (error2) throw error2;
+
+        // Combine and sort by sent_at, remove duplicates
+        const allNotifications = [...(subjectNotifications || []), ...(recipientNotifications || [])];
+        const uniqueNotifications = Array.from(
+          new Map(allNotifications.map(n => [n.id, n])).values()
+        ).sort((a, b) => new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime())
+        .slice(0, 50);
 
         return new Response(
-          JSON.stringify({ notifications: notifications || [] }),
+          JSON.stringify({ notifications: uniqueNotifications }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }

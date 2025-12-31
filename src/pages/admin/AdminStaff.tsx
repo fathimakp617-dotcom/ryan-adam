@@ -73,6 +73,10 @@ interface StaffNotification {
     staff_role?: string;
     sent_count?: number;
     total_recipients?: number;
+    old_status?: string;
+    new_status?: string;
+    customer_name?: string;
+    customer_email?: string;
   };
 }
 
@@ -340,15 +344,17 @@ const AdminStaff = () => {
   const getNotificationTypeLabel = (type: string) => {
     switch (type) {
       case "account_created":
-        return { label: "Account Created", color: "bg-green-500/10 text-green-600 border-green-500/30" };
+        return { label: "Account Created", color: "bg-green-500/10 text-green-600 border-green-500/30", icon: "👤" };
       case "password_changed":
-        return { label: "Password Changed", color: "bg-blue-500/10 text-blue-600 border-blue-500/30" };
+        return { label: "Password Changed", color: "bg-blue-500/10 text-blue-600 border-blue-500/30", icon: "🔑" };
       case "account_blocked":
-        return { label: "Account Blocked", color: "bg-red-500/10 text-red-600 border-red-500/30" };
+        return { label: "Account Blocked", color: "bg-red-500/10 text-red-600 border-red-500/30", icon: "⛔" };
       case "account_unblocked":
-        return { label: "Account Unblocked", color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30" };
+        return { label: "Account Unblocked", color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30", icon: "✓" };
+      case "order_status_update":
+        return { label: "Order Status Update", color: "bg-amber-500/10 text-amber-600 border-amber-500/30", icon: "📦" };
       default:
-        return { label: type, color: "bg-muted text-muted-foreground" };
+        return { label: type, color: "bg-muted text-muted-foreground", icon: "📧" };
     }
   };
 
@@ -802,15 +808,41 @@ const AdminStaff = () => {
                             className="p-4 bg-card border rounded-lg space-y-2"
                           >
                             <div className="flex items-start justify-between gap-2">
-                              <Badge variant="outline" className={typeInfo.color}>
-                                {typeInfo.label}
-                              </Badge>
+                              <div className="flex items-center gap-2">
+                                <span>{typeInfo.icon}</span>
+                                <Badge variant="outline" className={typeInfo.color}>
+                                  {typeInfo.label}
+                                </Badge>
+                              </div>
                               <span className="text-xs text-muted-foreground flex items-center gap-1">
                                 <Calendar className="h-3 w-3" />
                                 {format(new Date(notification.sent_at), "MMM d, yyyy h:mm a")}
                               </span>
                             </div>
                             <p className="text-sm font-medium">{notification.subject}</p>
+                            
+                            {/* Order details for order status updates */}
+                            {notification.notification_type === "order_status_update" && notification.order_number && (
+                              <div className="text-xs bg-muted/50 p-2 rounded flex flex-wrap gap-x-4 gap-y-1">
+                                <span className="flex items-center gap-1">
+                                  <span className="font-medium">Order:</span> {notification.order_number}
+                                </span>
+                                {notification.details?.customer_name && (
+                                  <span className="flex items-center gap-1">
+                                    <span className="font-medium">Customer:</span> {notification.details.customer_name}
+                                  </span>
+                                )}
+                                {notification.details?.old_status && notification.details?.new_status && (
+                                  <span className="flex items-center gap-1">
+                                    <span className="font-medium">Status:</span> 
+                                    <span className="capitalize">{notification.details.old_status}</span>
+                                    <span>→</span>
+                                    <span className="capitalize font-semibold">{notification.details.new_status}</span>
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            
                             <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                               <span className="flex items-center gap-1">
                                 <User className="h-3 w-3" />
