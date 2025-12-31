@@ -211,6 +211,10 @@ export type Database = {
           order_status: string
           payment_method: string
           payment_status: string
+          return_details: string | null
+          return_reason: string | null
+          return_requested_at: string | null
+          return_status: string | null
           shipping: number | null
           shipping_address: Json
           subtotal: number
@@ -235,6 +239,10 @@ export type Database = {
           order_status?: string
           payment_method: string
           payment_status?: string
+          return_details?: string | null
+          return_reason?: string | null
+          return_requested_at?: string | null
+          return_status?: string | null
           shipping?: number | null
           shipping_address: Json
           subtotal: number
@@ -259,6 +267,10 @@ export type Database = {
           order_status?: string
           payment_method?: string
           payment_status?: string
+          return_details?: string | null
+          return_reason?: string | null
+          return_requested_at?: string | null
+          return_status?: string | null
           shipping?: number | null
           shipping_address?: Json
           subtotal?: number

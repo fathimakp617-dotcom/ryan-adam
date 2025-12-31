@@ -76,6 +76,10 @@ interface Order {
   affiliate_code: string | null;
   tracking_number: string | null;
   tracking_url: string | null;
+  return_status: string | null;
+  return_reason: string | null;
+  return_details: string | null;
+  return_requested_at: string | null;
 }
 
 const AdminOrders = () => {
@@ -723,10 +727,22 @@ const AdminOrders = () => {
                       {formatCurrency(order.total)}
                     </TableCell>
                     <TableCell>
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(order.order_status)}`}>
-                        {getStatusIcon(order.order_status)}
-                        {order.order_status}
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(order.order_status)}`}>
+                          {getStatusIcon(order.order_status)}
+                          {order.order_status}
+                        </span>
+                        {order.return_status && (
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                            order.return_status === 'requested' ? 'bg-orange-500/10 text-orange-500' :
+                            order.return_status === 'approved' ? 'bg-green-500/10 text-green-500' :
+                            order.return_status === 'rejected' ? 'bg-red-500/10 text-red-500' :
+                            'bg-blue-500/10 text-blue-500'
+                          }`}>
+                            ↩ {order.return_status}
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <span className={`text-xs px-2 py-1 rounded-full ${
