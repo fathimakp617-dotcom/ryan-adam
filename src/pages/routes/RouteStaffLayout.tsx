@@ -76,8 +76,9 @@ const RouteStaffLayout = () => {
         throw new Error(data?.error || "Invalid credentials");
       }
 
-      // Only allow route staff
-      if (data.role !== "route" && data.role !== "admin" && data.role !== "shipping") {
+      // Only allow route, admin, or shipping staff
+      const allowedRoles = ["route", "admin", "shipping"];
+      if (!allowedRoles.includes(data.role)) {
         throw new Error("Access denied. Route staff only.");
       }
 
