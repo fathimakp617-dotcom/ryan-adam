@@ -350,6 +350,32 @@ serve(async (req) => {
       // Don't fail the order if email fails
     }
 
+    // Generate loyalty coupon for the customer (fire and forget)
+    if (orderRequest.user_id) {
+      try {
+        const supabaseAnonKeyForLoyalty = Deno.env.get('SUPABASE_ANON_KEY')!;
+        fetch(`${supabaseUrl}/functions/v1/generate-loyalty-coupon`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseAnonKeyForLoyalty}`,
+          },
+          body: JSON.stringify({
+            user_id: orderRequest.user_id,
+            customer_email: customerEmail,
+            customer_name: customerName,
+            order_number: order.order_number,
+          }),
+        }).then(res => {
+          console.log("Loyalty coupon generation triggered, status:", res.status);
+        }).catch(err => {
+          console.error("Failed to trigger loyalty coupon:", err);
+        });
+      } catch (loyaltyError) {
+        console.error("Error initiating loyalty coupon generation:", loyaltyError);
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 

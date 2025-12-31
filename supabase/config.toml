@@ -89,3 +89,6 @@ verify_jwt = false
 
 [functions.request-return]
 verify_jwt = false
+
+[functions.generate-loyalty-coupon]
+verify_jwt = false

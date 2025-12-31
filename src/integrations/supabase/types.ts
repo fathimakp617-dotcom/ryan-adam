@@ -160,6 +160,7 @@ export type Database = {
       coupons: {
         Row: {
           code: string
+          coupon_type: string | null
           created_at: string
           current_uses: number | null
           discount_amount: number | null
@@ -167,11 +168,14 @@ export type Database = {
           expires_at: string | null
           id: string
           is_active: boolean | null
+          is_bogo: boolean | null
           max_uses: number | null
           min_order_amount: number | null
+          user_id: string | null
         }
         Insert: {
           code: string
+          coupon_type?: string | null
           created_at?: string
           current_uses?: number | null
           discount_amount?: number | null
@@ -179,11 +183,14 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean | null
+          is_bogo?: boolean | null
           max_uses?: number | null
           min_order_amount?: number | null
+          user_id?: string | null
         }
         Update: {
           code?: string
+          coupon_type?: string | null
           created_at?: string
           current_uses?: number | null
           discount_amount?: number | null
@@ -191,8 +198,37 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean | null
+          is_bogo?: boolean | null
           max_uses?: number | null
           min_order_amount?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      loyalty_rewards: {
+        Row: {
+          created_at: string
+          id: string
+          last_coupon_order: number | null
+          order_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_coupon_order?: number | null
+          order_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_coupon_order?: number | null
+          order_count?: number
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
