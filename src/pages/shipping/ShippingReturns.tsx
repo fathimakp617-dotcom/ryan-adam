@@ -25,7 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Search, RefreshCw, Loader2, Phone, Mail, Package, Eye } from "lucide-react";
+import { Search, RefreshCw, Loader2, Phone, Mail, Package, Eye, Image as ImageIcon, Check, X, CheckCircle } from "lucide-react";
 
 interface ReturnOrder {
   id: string;
@@ -40,6 +40,7 @@ interface ReturnOrder {
   return_details: string | null;
   return_requested_at: string;
   shipping_address: any;
+  return_images: string[] | null;
 }
 
 const ShippingReturns = () => {
@@ -49,6 +50,7 @@ const ShippingReturns = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedReturn, setSelectedReturn] = useState<ReturnOrder | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
 
   const getSessionCredentials = () => {
@@ -108,11 +110,49 @@ const ShippingReturns = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "pending": return "bg-amber-500/20 text-amber-400";
+      case "requested": return "bg-amber-500/20 text-amber-400";
       case "approved": return "bg-green-500/20 text-green-400";
+      case "accepted": return "bg-emerald-500/20 text-emerald-400";
       case "rejected": return "bg-red-500/20 text-red-400";
       case "completed": return "bg-blue-500/20 text-blue-400";
       default: return "bg-muted text-muted-foreground";
+    }
+  };
+
+  const handleUpdateReturnStatus = async (orderId: string, newStatus: string) => {
+    setIsUpdating(true);
+    try {
+      const { email, token } = getSessionCredentials();
+      if (!email || !token) throw new Error("No session found");
+      
+      const { error } = await supabase.functions.invoke('update-order-status', {
+        body: {
+          admin_email: email,
+          admin_token: token,
+          order_id: orderId,
+          return_status: newStatus,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Updated",
+        description: `Return status updated to ${newStatus}`,
+      });
+
+      setReturns(returns.map(r => 
+        r.id === orderId ? { ...r, return_status: newStatus } : r
+      ));
+      setSelectedReturn(null);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update status",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -161,8 +201,9 @@ const ShippingReturns = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="requested">Requested</SelectItem>
             <SelectItem value="approved">Approved</SelectItem>
+            <SelectItem value="accepted">Accepted</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
           </SelectContent>
@@ -287,6 +328,82 @@ const ShippingReturns = () => {
                   <span className="text-muted-foreground text-sm">Additional Details:</span>
                   <p className="mt-1 p-3 bg-muted rounded-lg text-sm">{selectedReturn.return_details}</p>
                 </div>
+              )}
+
+              {/* Return Images */}
+              {selectedReturn.return_images && selectedReturn.return_images.length > 0 && (
+                <div>
+                  <span className="text-muted-foreground text-sm flex items-center gap-1 mb-2">
+                    <ImageIcon className="w-4 h-4" />
+                    Attached Images ({selectedReturn.return_images.length})
+                  </span>
+                  <div className="grid grid-cols-3 gap-2">
+                    {selectedReturn.return_images.map((url, idx) => (
+                      <a 
+                        key={idx} 
+                        href={url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="aspect-square rounded-lg overflow-hidden border border-border hover:border-primary transition-colors"
+                      >
+                        <img src={url} alt={`Return image ${idx + 1}`} className="w-full h-full object-cover" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(selectedReturn.return_status === "requested") && (
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    onClick={() => handleUpdateReturnStatus(selectedReturn.id, "approved")}
+                    disabled={isUpdating}
+                    className="flex-1"
+                  >
+                    <Check className="w-4 h-4 mr-2" />
+                    Approve Return
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleUpdateReturnStatus(selectedReturn.id, "rejected")}
+                    disabled={isUpdating}
+                    className="flex-1"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Reject
+                  </Button>
+                </div>
+              )}
+
+              {selectedReturn.return_status === "approved" && (
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    onClick={() => handleUpdateReturnStatus(selectedReturn.id, "accepted")}
+                    disabled={isUpdating}
+                    className="flex-1"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Accept Return
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => handleUpdateReturnStatus(selectedReturn.id, "completed")}
+                    disabled={isUpdating}
+                    className="flex-1"
+                  >
+                    Mark as Completed
+                  </Button>
+                </div>
+              )}
+
+              {selectedReturn.return_status === "accepted" && (
+                <Button
+                  onClick={() => handleUpdateReturnStatus(selectedReturn.id, "completed")}
+                  disabled={isUpdating}
+                  className="w-full"
+                >
+                  Mark as Completed
+                </Button>
               )}
 
               <div className="pt-2 text-center">

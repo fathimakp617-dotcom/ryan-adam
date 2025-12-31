@@ -378,7 +378,7 @@ const Account = () => {
     return daysSinceOrder <= 30; // Allow 30 days from order for return (buffer for delivery time)
   };
 
-  const handleReturnRequest = async (data: { reason: string; details: string }) => {
+  const handleReturnRequest = async (data: { reason: string; details: string; images: string[] }) => {
     if (!returnOrder || !user) return;
 
     setIsSubmittingReturn(true);
@@ -389,7 +389,8 @@ const Account = () => {
         body: { 
           order_id: returnOrder.id, 
           reason: data.reason,
-          details: data.details 
+          details: data.details,
+          images: data.images 
         },
       });
 
