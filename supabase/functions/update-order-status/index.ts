@@ -189,6 +189,43 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
+    // Send notification to all staff (admins and shipping) about order status change
+    if (new_status !== oldStatus) {
+      try {
+        const staffNotificationPayload = {
+          type: "order_status_update",
+          order_number: order.order_number,
+          customer_name: order.customer_name,
+          customer_email: order.customer_email,
+          old_status: oldStatus,
+          new_status: new_status,
+          updated_by: admin_email,
+          items: order.items,
+          total: order.total,
+          tracking_number: tracking_number || order.tracking_number,
+          tracking_url: tracking_url || order.tracking_url,
+        };
+
+        const staffEmailResponse = await fetch(`${supabaseUrl}/functions/v1/send-staff-notification`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${supabaseServiceKey}`,
+          },
+          body: JSON.stringify(staffNotificationPayload),
+        });
+
+        if (!staffEmailResponse.ok) {
+          const staffEmailError = await staffEmailResponse.text();
+          console.error("Failed to send staff notification:", staffEmailError);
+        } else {
+          console.log(`Staff notification sent for order ${order.order_number}`);
+        }
+      } catch (staffEmailError) {
+        console.error("Error sending staff notification:", staffEmailError);
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
