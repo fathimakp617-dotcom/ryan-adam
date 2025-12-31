@@ -86,3 +86,6 @@ verify_jwt = false
 
 [functions.manage-coupons]
 verify_jwt = false
+
+[functions.request-return]
+verify_jwt = false

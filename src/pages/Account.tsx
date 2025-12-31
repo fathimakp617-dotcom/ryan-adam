@@ -33,8 +33,11 @@ import {
   Mail,
   Eye,
   Download,
-  X
+  X,
+  RotateCcw,
+  AlertCircle
 } from "lucide-react";
+import ReturnRequestDialog from "@/components/ReturnRequestDialog";
 
 interface AffiliateData {
   id: string;
@@ -81,6 +84,10 @@ interface Order {
   items: OrderItem[];
   shipping_address: ShippingAddress;
   coupon_code: string | null;
+  return_status: string | null;
+  return_reason: string | null;
+  return_details: string | null;
+  return_requested_at: string | null;
 }
 
 interface ProfileData {
@@ -98,8 +105,11 @@ const Account = () => {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+  const [returnOrder, setReturnOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isSubmittingReturn, setIsSubmittingReturn] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isCreatingAffiliate, setIsCreatingAffiliate] = useState(false);
   const [affiliateName, setAffiliateName] = useState("");
@@ -335,6 +345,87 @@ const Account = () => {
         return "text-red-500 bg-red-500/10";
       default:
         return "text-muted-foreground bg-muted";
+    }
+  };
+
+  const getReturnStatusColor = (status: string | null) => {
+    switch (status) {
+      case "requested":
+        return "text-orange-500 bg-orange-500/10";
+      case "approved":
+        return "text-green-500 bg-green-500/10";
+      case "rejected":
+        return "text-red-500 bg-red-500/10";
+      case "completed":
+        return "text-blue-500 bg-blue-500/10";
+      default:
+        return "text-muted-foreground bg-muted";
+    }
+  };
+
+  const canRequestReturn = (order: Order) => {
+    // Only delivered orders without an existing return request
+    if (order.order_status !== "delivered") return false;
+    if (order.return_status) return false;
+    
+    // Check if within 7-day window
+    const deliveryDate = new Date(order.created_at);
+    const now = new Date();
+    const daysSinceOrder = Math.floor((now.getTime() - deliveryDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    return daysSinceOrder <= 30; // Allow 30 days from order for return (buffer for delivery time)
+  };
+
+  const handleReturnRequest = async (data: { reason: string; details: string }) => {
+    if (!returnOrder || !user) return;
+
+    setIsSubmittingReturn(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      
+      const { data: result, error } = await supabase.functions.invoke('request-return', {
+        body: { 
+          order_id: returnOrder.id, 
+          reason: data.reason,
+          details: data.details 
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Return Request Submitted",
+        description: `Your return request for order ${returnOrder.order_number} has been submitted. We'll contact you within 24-48 hours.`,
+      });
+
+      // Update local state
+      setOrders(orders.map(order => 
+        order.id === returnOrder.id 
+          ? { ...order, return_status: 'requested', return_reason: data.reason, return_details: data.details } 
+          : order
+      ));
+
+      // Update selected order if viewing it
+      if (selectedOrder?.id === returnOrder.id) {
+        setSelectedOrder({ 
+          ...selectedOrder, 
+          return_status: 'requested', 
+          return_reason: data.reason,
+          return_details: data.details 
+        });
+      }
+
+      setIsReturnModalOpen(false);
+      setReturnOrder(null);
+    } catch (error) {
+      console.error("Error submitting return request:", error);
+      toast({
+        title: "Failed to submit return request",
+        description: "Please try again or contact support.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmittingReturn(false);
     }
   };
 
@@ -641,10 +732,15 @@ const Account = () => {
                               })}
                             </p>
                           </div>
-                          <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${getStatusColor(order.order_status)}`}>
                               {order.order_status}
                             </span>
+                            {order.return_status && (
+                              <span className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${getReturnStatusColor(order.return_status)}`}>
+                                Return: {order.return_status}
+                              </span>
+                            )}
                             <p className="font-semibold text-foreground">
                               ₹{order.total.toLocaleString()}
                             </p>
@@ -711,6 +807,26 @@ const Account = () => {
                                   </>
                                 )}
                               </Button>
+                            )}
+                            {canRequestReturn(order) && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="border-orange-500/30 text-orange-500 hover:bg-orange-500/10"
+                                onClick={() => {
+                                  setReturnOrder(order);
+                                  setIsReturnModalOpen(true);
+                                }}
+                              >
+                                <RotateCcw size={16} className="mr-2" />
+                                Request Return
+                              </Button>
+                            )}
+                            {order.return_status === "requested" && (
+                              <div className="flex items-center gap-2 text-sm text-orange-500">
+                                <AlertCircle size={16} />
+                                <span>Return pending review</span>
+                              </div>
                             )}
                           </div>
                         </div>
@@ -1127,7 +1243,7 @@ const Account = () => {
               </div>
 
               {/* Status */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className={`px-3 py-1 rounded-full text-sm font-medium capitalize ${getStatusColor(selectedOrder.order_status)}`}>
                   {selectedOrder.order_status}
                 </span>
@@ -1138,7 +1254,41 @@ const Account = () => {
                 }`}>
                   {selectedOrder.payment_status}
                 </span>
+                {selectedOrder.return_status && (
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium capitalize ${getReturnStatusColor(selectedOrder.return_status)}`}>
+                    Return: {selectedOrder.return_status}
+                  </span>
+                )}
               </div>
+
+              {/* Return Info (if exists) */}
+              {selectedOrder.return_status && (
+                <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-4">
+                  <h3 className="font-semibold text-orange-500 mb-2 flex items-center gap-2">
+                    <RotateCcw size={18} />
+                    Return Request Details
+                  </h3>
+                  <p className="text-sm text-foreground mb-1">
+                    <strong>Reason:</strong> {selectedOrder.return_reason}
+                  </p>
+                  {selectedOrder.return_details && (
+                    <p className="text-sm text-muted-foreground mb-1">
+                      <strong>Details:</strong> {selectedOrder.return_details}
+                    </p>
+                  )}
+                  {selectedOrder.return_requested_at && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Requested on: {new Date(selectedOrder.return_requested_at).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit"
+                      })}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Items */}
               <div>
@@ -1252,11 +1402,42 @@ const Account = () => {
                     )}
                   </Button>
                 )}
+                
+                {canRequestReturn(selectedOrder) && (
+                  <Button
+                    variant="outline"
+                    className="w-full border-orange-500/30 text-orange-500 hover:bg-orange-500/10"
+                    onClick={() => {
+                      setReturnOrder(selectedOrder);
+                      setIsReturnModalOpen(true);
+                      setIsOrderModalOpen(false);
+                    }}
+                  >
+                    <RotateCcw size={18} className="mr-2" />
+                    Request Return
+                  </Button>
+                )}
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Return Request Modal */}
+      {returnOrder && (
+        <ReturnRequestDialog
+          isOpen={isReturnModalOpen}
+          onClose={() => {
+            setIsReturnModalOpen(false);
+            setReturnOrder(null);
+          }}
+          orderNumber={returnOrder.order_number}
+          orderId={returnOrder.id}
+          items={returnOrder.items}
+          onSubmit={handleReturnRequest}
+          isSubmitting={isSubmittingReturn}
+        />
+      )}
     </div>
   );
 };
