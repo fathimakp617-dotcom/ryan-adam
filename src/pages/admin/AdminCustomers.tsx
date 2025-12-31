@@ -1,5 +1,4 @@
-import { useState, useEffect, memo } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,55 +12,21 @@ import {
 import { Download, Search, Loader2, Users, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-
-interface CustomerData {
-  email: string;
-  created_at: string;
-}
+import { useAdminCustomers, useInvalidateAdminData } from "@/hooks/useAdminData";
 
 const AdminCustomers = () => {
-  const [customers, setCustomers] = useState<CustomerData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: customers = [], isLoading, error } = useAdminCustomers();
+  const { invalidateCustomers } = useInvalidateAdminData();
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
-
-  const fetchCustomers = async () => {
-    setIsLoading(true);
-    try {
-      const stored = localStorage.getItem("rayn_admin_session");
-      if (!stored) {
-        throw new Error("Admin session not found");
-      }
-
-      const session = JSON.parse(stored);
-      
-      const { data, error } = await supabase.functions.invoke("get-admin-customers", {
-        body: {
-          admin_email: session.email,
-          admin_token: session.token,
-        },
-      });
-
-      if (error) throw error;
-
-      if (data.customers) {
-        setCustomers(data.customers);
-      }
-    } catch (error: any) {
-      console.error("Error fetching customers:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch customer data",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  if (error) {
+    toast({
+      title: "Error",
+      description: "Failed to fetch customer data",
+      variant: "destructive",
+    });
+  }
 
   const filteredCustomers = customers.filter((customer) =>
     customer.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -126,7 +91,7 @@ const AdminCustomers = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={fetchCustomers}>
+          <Button variant="outline" size="sm" onClick={() => invalidateCustomers()}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>

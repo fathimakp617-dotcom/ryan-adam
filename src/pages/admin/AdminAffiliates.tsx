@@ -1,4 +1,4 @@
-import { useState, useEffect, memo } from "react";
+import { useState, memo } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -37,38 +37,20 @@ import {
   Edit,
   Link as LinkIcon
 } from "lucide-react";
-
-interface Affiliate {
-  id: string;
-  name: string;
-  email: string;
-  code: string;
-  commission_percent: number;
-  coupon_discount_percent: number;
-  total_earnings: number;
-  total_referrals: number;
-  is_active: boolean;
-  created_at: string;
-}
-
-interface AffiliateStats {
-  totalAffiliates: number;
-  activeAffiliates: number;
-  totalReferrals: number;
-  totalRevenue: number;
-  totalCommissions: number;
-}
+import { useAdminAffiliates, useInvalidateAdminData, type Affiliate, type AffiliateStats } from "@/hooks/useAdminData";
 
 const AdminAffiliates = () => {
-  const [affiliates, setAffiliates] = useState<Affiliate[]>([]);
-  const [stats, setStats] = useState<AffiliateStats>({
+  const { data, isLoading, error } = useAdminAffiliates();
+  const { invalidateAffiliates } = useInvalidateAdminData();
+  const affiliates = data?.affiliates || [];
+  const stats = data?.stats || {
     totalAffiliates: 0,
     activeAffiliates: 0,
     totalReferrals: 0,
     totalRevenue: 0,
     totalCommissions: 0,
-  });
-  const [isLoading, setIsLoading] = useState(true);
+  };
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
@@ -88,48 +70,13 @@ const AdminAffiliates = () => {
   
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchAffiliates();
-  }, []);
-
-  const fetchAffiliates = async () => {
-    setIsLoading(true);
-    try {
-      const stored = localStorage.getItem("rayn_admin_session");
-      if (!stored) throw new Error("Admin session not found");
-
-      const session = JSON.parse(stored);
-      
-      const { data, error } = await supabase.functions.invoke("get-admin-affiliates", {
-        body: {
-          admin_email: session.email,
-          admin_token: session.token,
-        },
-      });
-
-      if (error) throw error;
-
-      if (data) {
-        setAffiliates(data.affiliates || []);
-        setStats(data.stats || {
-          totalAffiliates: 0,
-          activeAffiliates: 0,
-          totalReferrals: 0,
-          totalRevenue: 0,
-          totalCommissions: 0,
-        });
-      }
-    } catch (error: any) {
-      console.error("Error fetching affiliates:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch affiliate data",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  if (error) {
+    toast({
+      title: "Error",
+      description: "Failed to fetch affiliate data",
+      variant: "destructive",
+    });
+  }
 
   const generateCode = () => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -174,7 +121,7 @@ const AdminAffiliates = () => {
       toast({ title: "Success", description: `Affiliate "${newName}" created with code: ${code}` });
       setIsCreateModalOpen(false);
       resetForm();
-      fetchAffiliates();
+      invalidateAffiliates();
     } catch (error: any) {
       toast({ title: "Error", description: error.message || "Failed to create affiliate", variant: "destructive" });
     } finally {
@@ -214,7 +161,7 @@ const AdminAffiliates = () => {
 
       toast({ title: "Success", description: `Created ${count} affiliate codes` });
       setIsBulkModalOpen(false);
-      fetchAffiliates();
+      invalidateAffiliates();
     } catch (error: any) {
       toast({ title: "Error", description: error.message || "Failed to create bulk codes", variant: "destructive" });
     } finally {
@@ -252,7 +199,7 @@ const AdminAffiliates = () => {
       toast({ title: "Success", description: "Affiliate updated successfully" });
       setEditingAffiliate(null);
       resetForm();
-      fetchAffiliates();
+      invalidateAffiliates();
     } catch (error: any) {
       toast({ title: "Error", description: error.message || "Failed to update affiliate", variant: "destructive" });
     } finally {
@@ -280,7 +227,7 @@ const AdminAffiliates = () => {
       if (error) throw error;
 
       toast({ title: "Success", description: `Affiliate ${!affiliate.is_active ? "activated" : "deactivated"}` });
-      fetchAffiliates();
+      invalidateAffiliates();
     } catch (error: any) {
       toast({ title: "Error", description: error.message || "Failed to update status", variant: "destructive" });
     }
@@ -307,7 +254,7 @@ const AdminAffiliates = () => {
       if (error) throw error;
 
       toast({ title: "Success", description: "Affiliate deleted" });
-      fetchAffiliates();
+      invalidateAffiliates();
     } catch (error: any) {
       toast({ title: "Error", description: error.message || "Failed to delete affiliate", variant: "destructive" });
     }
@@ -404,7 +351,7 @@ const AdminAffiliates = () => {
           <p className="text-muted-foreground text-sm">Manage affiliate partners and codes</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Button variant="outline" size="sm" onClick={fetchAffiliates}>
+          <Button variant="outline" size="sm" onClick={() => invalidateAffiliates()}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>

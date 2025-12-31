@@ -1,4 +1,4 @@
-import { useEffect, useState, memo } from "react";
+import { useEffect, useState, memo, useMemo } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -26,76 +26,42 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Search, RefreshCw, Loader2, Phone, Mail, Package, Eye, Check, X, Image as ImageIcon, CheckCircle } from "lucide-react";
+import { useAdminOrders, useInvalidateAdminData, type Order } from "@/hooks/useAdminData";
 
-interface ReturnOrder {
-  id: string;
-  order_number: string;
-  customer_name: string;
-  customer_email: string;
-  customer_phone: string | null;
-  total: number;
-  items: any[];
-  return_status: string;
-  return_reason: string;
-  return_details: string | null;
-  return_requested_at: string;
-  created_at: string;
-  shipping_address: any;
+interface ReturnOrder extends Order {
   return_images: string[] | null;
 }
 
 const AdminReturns = () => {
-  const [returns, setReturns] = useState<ReturnOrder[]>([]);
+  const { data: allOrders = [], isLoading, error } = useAdminOrders();
+  const { invalidateOrders } = useInvalidateAdminData();
+  
+  // Filter only orders with return requests
+  const returns = useMemo(() => 
+    allOrders.filter((order): order is ReturnOrder => 
+      Boolean(order.return_status && order.return_requested_at)
+    ),
+    [allOrders]
+  );
+  
   const [filteredReturns, setFilteredReturns] = useState<ReturnOrder[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedReturn, setSelectedReturn] = useState<ReturnOrder | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchReturns();
-  }, []);
+  if (error) {
+    toast({
+      title: "Error",
+      description: "Failed to fetch return requests",
+      variant: "destructive",
+    });
+  }
 
   useEffect(() => {
     filterReturns();
   }, [returns, searchQuery, statusFilter]);
-
-  const fetchReturns = async () => {
-    setIsLoading(true);
-    try {
-      const sessionData = localStorage.getItem("rayn_admin_session");
-      if (!sessionData) throw new Error("No admin session found");
-      
-      const session = JSON.parse(sessionData);
-      
-      const { data, error } = await supabase.functions.invoke('get-admin-orders', {
-        body: {
-          admin_email: session.email,
-          admin_token: session.token,
-        }
-      });
-      
-      if (error) throw error;
-      
-      // Filter only orders with return requests
-      const returnOrders = (data?.orders || []).filter(
-        (order: any) => order.return_status && order.return_requested_at
-      );
-      
-      setReturns(returnOrders);
-    } catch (error) {
-      console.error("Error fetching returns:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch return requests",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const filterReturns = () => {
     let filtered = [...returns];
@@ -141,10 +107,8 @@ const AdminReturns = () => {
         description: `Return status updated to ${newStatus}`,
       });
 
-      // Update local state
-      setReturns(returns.map(r => 
-        r.id === orderId ? { ...r, return_status: newStatus } : r
-      ));
+      // Invalidate cache to refetch
+      invalidateOrders();
       setSelectedReturn(null);
     } catch (error: any) {
       toast({
@@ -192,7 +156,7 @@ const AdminReturns = () => {
     >
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl font-bold text-foreground">Return Requests</h1>
-        <Button onClick={fetchReturns} variant="outline" size="sm">
+        <Button onClick={() => invalidateOrders()} variant="outline" size="sm">
           <RefreshCw className="w-4 h-4 mr-2" />
           Refresh
         </Button>
