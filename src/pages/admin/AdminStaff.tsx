@@ -50,6 +50,7 @@ import { useToast } from "@/hooks/use-toast";
 interface StaffMember {
   id: string;
   email: string;
+  name?: string;
   role: "admin" | "shipping";
   is_active: boolean;
   created_at: string | null;
@@ -100,6 +101,7 @@ const AdminStaff = () => {
   
   // Add staff dialog
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newRole, setNewRole] = useState<"admin" | "shipping">("shipping");
   const [newPassword, setNewPassword] = useState("");
@@ -202,6 +204,7 @@ const AdminStaff = () => {
         body: {
           action: "add",
           admin_email: adminEmail,
+          name: newName.trim() || null,
           email: newEmail.trim(),
           role: newRole,
           password: newPassword,
@@ -217,6 +220,7 @@ const AdminStaff = () => {
       });
 
       setShowAddDialog(false);
+      setNewName("");
       setNewEmail("");
       setNewPassword("");
       setNewRole("shipping");
@@ -459,7 +463,7 @@ const AdminStaff = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Email</TableHead>
+                    <TableHead>Staff</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Source</TableHead>
                     <TableHead>Status</TableHead>
@@ -476,14 +480,23 @@ const AdminStaff = () => {
                       onClick={() => handleViewStaffDetails(member)}
                     >
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{member.email}</span>
-                          {member.is_protected && (
-                            <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/30">
-                              Main Admin
-                            </Badge>
-                          )}
+                        <div className="flex flex-col gap-0.5">
+                          <div className="flex items-center gap-2">
+                            {member.name ? (
+                              <span className="font-medium">{member.name}</span>
+                            ) : (
+                              <span className="text-muted-foreground italic">No name</span>
+                            )}
+                            {member.is_protected && (
+                              <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/30">
+                                Main Admin
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Mail className="h-3 w-3" />
+                            {member.email}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -602,6 +615,16 @@ const AdminStaff = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Display Name (Optional)</Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="John Doe"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
               <Input
@@ -729,6 +752,12 @@ const AdminStaff = () => {
             <div className="space-y-6">
               {/* Staff Info */}
               <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+                <div className="col-span-2">
+                  <p className="text-sm text-muted-foreground">Name</p>
+                  <p className="font-medium text-lg">
+                    {detailStaff.name || <span className="text-muted-foreground italic">No name set</span>}
+                  </p>
+                </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Email</p>
                   <p className="font-medium flex items-center gap-2">

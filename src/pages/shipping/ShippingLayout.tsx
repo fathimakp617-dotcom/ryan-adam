@@ -17,7 +17,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Package, LayoutDashboard, LogOut, ArrowLeft, Mail, Lock, Loader2, Truck } from "lucide-react";
+import { Package, LayoutDashboard, LogOut, ArrowLeft, Mail, Lock, Loader2, Truck, User } from "lucide-react";
 import { motion } from "framer-motion";
 
 const SHIPPING_SESSION_KEY = "rayn_shipping_session";
@@ -228,6 +228,7 @@ const ShippingLayout = () => {
   const menuItems = [
     { title: "Dashboard", url: "/shipping", icon: LayoutDashboard },
     { title: "Orders", url: "/shipping/orders", icon: Package },
+    { title: "My Account", url: "/shipping/account", icon: User },
   ];
 
   const isActive = (path: string) => {

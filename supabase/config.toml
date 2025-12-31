@@ -77,3 +77,9 @@ verify_jwt = false
 
 [functions.send-staff-notification]
 verify_jwt = false
+
+[functions.get-shipping-account]
+verify_jwt = false
+
+[functions.update-staff-name]
+verify_jwt = false
