@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { motion } from "framer-motion";
 import { Helmet } from "react-helmet-async";
 import { ArrowLeft, Truck, CreditCard, Package, AlertTriangle, Shield, FileText } from "lucide-react";
@@ -222,4 +223,4 @@ const Terms = () => {
   );
 };
 
-export default Terms;
+export default memo(Terms);

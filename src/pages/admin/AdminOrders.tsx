@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -1129,4 +1129,4 @@ const AdminOrders = () => {
   );
 };
 
-export default AdminOrders;
+export default memo(AdminOrders);

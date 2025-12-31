@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -527,4 +527,4 @@ const AdminActivityLogs = () => {
   );
 };
 
-export default AdminActivityLogs;
+export default memo(AdminActivityLogs);

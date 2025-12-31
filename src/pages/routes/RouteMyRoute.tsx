@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -193,4 +193,4 @@ const RouteMyRoute = () => {
   );
 };
 
-export default RouteMyRoute;
+export default memo(RouteMyRoute);

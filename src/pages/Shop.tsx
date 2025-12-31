@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, memo } from "react";
 import { Helmet } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Grid3X3, List, Filter, X, ChevronDown, Heart, ShoppingBag } from "lucide-react";
@@ -541,4 +541,4 @@ const Shop = () => {
   );
 };
 
-export default Shop;
+export default memo(Shop);
