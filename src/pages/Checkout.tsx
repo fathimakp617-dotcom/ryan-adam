@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, CreditCard, Truck, Check, Lock, LogIn } from "lucide-react";
+import { ArrowLeft, CreditCard, Truck, Check, Lock, LogIn, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CouponInput from "@/components/CouponInput";
+import ShippingTermsDialog from "@/components/ShippingTermsDialog";
 
 declare global {
   interface Window {
@@ -30,6 +31,7 @@ const Checkout = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showTermsDialog, setShowTermsDialog] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [formData, setFormData] = useState({
     email: "",
@@ -67,7 +69,12 @@ const Checkout = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    // Show terms dialog instead of directly processing
+    setShowTermsDialog(true);
+  };
+
+  const handleConfirmOrder = async () => {
+    setShowTermsDialog(false);
     if (paymentMethod === "razorpay") {
       await handleRazorpayPayment();
     } else {
@@ -495,7 +502,12 @@ const Checkout = () => {
                       <RadioGroupItem value="cod" id="cod" />
                       <Label htmlFor="cod" className="flex items-center gap-2 cursor-pointer flex-1">
                         <Truck className="w-5 h-5 text-primary" />
-                        Cash on Delivery
+                        <div className="flex-1">
+                          <span>Cash on Delivery</span>
+                          <p className="text-xs text-orange-500 font-medium mt-0.5">
+                            Shipping charge must be paid in advance
+                          </p>
+                        </div>
                       </Label>
                     </div>
                     <div className="flex items-center space-x-3 bg-input border border-border rounded-lg p-4 cursor-pointer hover:border-primary transition-colors">
@@ -507,6 +519,16 @@ const Checkout = () => {
                       </Label>
                     </div>
                   </RadioGroup>
+
+                  {/* COD Shipping Notice */}
+                  {paymentMethod === "cod" && shipping > 0 && (
+                    <div className="flex items-start gap-2 p-3 bg-orange-500/5 border border-orange-500/20 rounded-lg mb-4">
+                      <AlertTriangle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-muted-foreground">
+                        <span className="text-orange-500 font-medium">Note:</span> For COD orders, the shipping charge of ₹{shipping} must be paid in advance. Our team will contact you to collect this fee before dispatching your order.
+                      </p>
+                    </div>
+                  )}
 
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mt-4">
                     <Lock className="w-4 h-4" />
@@ -597,12 +619,22 @@ const Checkout = () => {
                   </Button>
 
                   <p className="text-xs text-center text-muted-foreground mt-4">
-                    By placing this order, you agree to our Terms of Service and Privacy Policy
+                    By placing this order, you agree to our{" "}
+                    <Link to="/terms" className="text-primary hover:underline">Terms & Conditions</Link>
                   </p>
                 </div>
               </div>
             </div>
           </form>
+
+          {/* Shipping Terms Dialog */}
+          <ShippingTermsDialog
+            open={showTermsDialog}
+            onOpenChange={setShowTermsDialog}
+            onConfirm={handleConfirmOrder}
+            paymentMethod={paymentMethod}
+            shippingCharge={shipping}
+          />
         </motion.div>
       </main>
 
