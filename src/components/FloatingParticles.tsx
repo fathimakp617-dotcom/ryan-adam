@@ -1,14 +1,19 @@
-import { useRef, useMemo, lazy, Suspense, useState, useEffect } from "react";
+import { useRef, useMemo, useState, useEffect, memo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Points, PointMaterial } from "@react-three/drei";
 import * as THREE from "three";
 
-function ParticleField() {
+// Check for reduced motion preference
+const prefersReducedMotion = typeof window !== "undefined" 
+  ? window.matchMedia("(prefers-reduced-motion: reduce)").matches 
+  : false;
+
+const ParticleField = memo(() => {
   const ref = useRef<THREE.Points>(null);
 
-  // Reduced particle count for better performance
+  // Minimal particle count for performance
   const particles = useMemo(() => {
-    const count = 800; // Reduced from 2000
+    const count = 400; // Reduced from 800
     const positions = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
       positions[i * 3] = (Math.random() - 0.5) * 20;
@@ -19,10 +24,9 @@ function ParticleField() {
   }, []);
 
   useFrame((state) => {
-    if (ref.current) {
-      // Slower rotation for smoother performance
-      ref.current.rotation.x = state.clock.elapsedTime * 0.015;
-      ref.current.rotation.y = state.clock.elapsedTime * 0.02;
+    if (ref.current && !prefersReducedMotion) {
+      ref.current.rotation.x = state.clock.elapsedTime * 0.01;
+      ref.current.rotation.y = state.clock.elapsedTime * 0.015;
     }
   });
 
@@ -31,31 +35,27 @@ function ParticleField() {
       <PointMaterial
         transparent
         color="#a87c39"
-        size={0.025}
+        size={0.02}
         sizeAttenuation={true}
         depthWrite={false}
-        opacity={0.5}
+        opacity={0.4}
       />
     </Points>
   );
-}
+});
 
-const FloatingParticles = () => {
+ParticleField.displayName = "ParticleField";
+
+const FloatingParticles = memo(() => {
   const [shouldRender, setShouldRender] = useState(false);
 
-  // Defer 3D rendering to after initial page load
+  // Defer 3D rendering significantly
   useEffect(() => {
-    const timer = requestIdleCallback 
-      ? requestIdleCallback(() => setShouldRender(true))
-      : setTimeout(() => setShouldRender(true), 100);
-    
-    return () => {
-      if (requestIdleCallback && typeof timer === 'number') {
-        cancelIdleCallback(timer);
-      } else {
-        clearTimeout(timer as unknown as number);
-      }
-    };
+    // Skip entirely on reduced motion preference
+    if (prefersReducedMotion) return;
+
+    const timer = setTimeout(() => setShouldRender(true), 500);
+    return () => clearTimeout(timer);
   }, []);
 
   if (!shouldRender) return null;
@@ -64,13 +64,16 @@ const FloatingParticles = () => {
     <div className="fixed inset-0 pointer-events-none z-0">
       <Canvas 
         camera={{ position: [0, 0, 5], fov: 75 }}
-        dpr={[1, 1.5]} // Limit pixel ratio for performance
-        performance={{ min: 0.5 }}
+        dpr={1} // Force 1x pixel ratio for performance
+        performance={{ min: 0.3 }}
+        frameloop="demand" // Only render when needed
       >
         <ParticleField />
       </Canvas>
     </div>
   );
-};
+});
+
+FloatingParticles.displayName = "FloatingParticles";
 
 export default FloatingParticles;
