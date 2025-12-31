@@ -59,9 +59,20 @@ serve(async (req) => {
         );
       }
 
-      // Verify password hash
+      // Verify password - check if using env-based fallback or actual hash
       const passwordHash = await hashPassword(password);
-      if (passwordHash !== dbStaff.password_hash) {
+      let passwordValid = false;
+      
+      if (dbStaff.password_hash === "env_based_no_password") {
+        // Fallback to ADMIN_PASSWORD from environment for legacy accounts
+        passwordValid = adminPassword ? password === adminPassword : false;
+        console.log(`Using env-based password verification for: ${normalizedEmail}`);
+      } else {
+        // Use stored password hash
+        passwordValid = passwordHash === dbStaff.password_hash;
+      }
+      
+      if (!passwordValid) {
         console.log(`Invalid password attempt for DB staff: ${normalizedEmail}`);
         return new Response(
           JSON.stringify({ error: "Invalid credentials" }),
