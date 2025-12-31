@@ -25,6 +25,7 @@ import AdminCustomers from "./pages/admin/AdminCustomers";
 import AdminAffiliates from "./pages/admin/AdminAffiliates";
 import AdminActivityLogs from "./pages/admin/AdminActivityLogs";
 import AdminStaff from "./pages/admin/AdminStaff";
+import AdminAccount from "./pages/admin/AdminAccount";
 import ShippingLayout from "./pages/shipping/ShippingLayout";
 import ShippingDashboard from "./pages/shipping/ShippingDashboard";
 import ShippingOrders from "./pages/shipping/ShippingOrders";
@@ -60,6 +61,7 @@ const App = () => (
                       <Route path="affiliates" element={<AdminAffiliates />} />
                       <Route path="activity-logs" element={<AdminActivityLogs />} />
                       <Route path="staff" element={<AdminStaff />} />
+                      <Route path="account" element={<AdminAccount />} />
                     </Route>
                     <Route path="/shipping" element={<ShippingLayout />}>
                       <Route index element={<ShippingDashboard />} />
