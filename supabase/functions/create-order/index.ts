@@ -330,6 +330,8 @@ serve(async (req) => {
         total: total,
         shipping_address: shippingAddress,
         payment_method: orderRequest.payment_method,
+        coupon_code: validCouponCode,
+        affiliate_code: validAffiliateCode,
       };
 
       // Send email confirmation asynchronously

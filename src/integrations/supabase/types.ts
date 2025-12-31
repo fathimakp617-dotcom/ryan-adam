@@ -235,6 +235,7 @@ export type Database = {
       orders: {
         Row: {
           affiliate_code: string | null
+          cash_received: boolean | null
           coupon_code: string | null
           created_at: string
           customer_email: string
@@ -263,6 +264,7 @@ export type Database = {
         }
         Insert: {
           affiliate_code?: string | null
+          cash_received?: boolean | null
           coupon_code?: string | null
           created_at?: string
           customer_email: string
@@ -291,6 +293,7 @@ export type Database = {
         }
         Update: {
           affiliate_code?: string | null
+          cash_received?: boolean | null
           coupon_code?: string | null
           created_at?: string
           customer_email?: string
