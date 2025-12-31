@@ -35,12 +35,17 @@ const AdminActivityLogs = lazy(() => import("./pages/admin/AdminActivityLogs"));
 const AdminStaff = lazy(() => import("./pages/admin/AdminStaff"));
 const AdminAccount = lazy(() => import("./pages/admin/AdminAccount"));
 const AdminCoupons = lazy(() => import("./pages/admin/AdminCoupons"));
+const AdminReturns = lazy(() => import("./pages/admin/AdminReturns"));
+const AdminExpenses = lazy(() => import("./pages/admin/AdminExpenses"));
+const AdminShopOrders = lazy(() => import("./pages/admin/AdminShopOrders"));
 
 // Lazy load shipping pages
 const ShippingLayout = lazy(() => import("./pages/shipping/ShippingLayout"));
 const ShippingDashboard = lazy(() => import("./pages/shipping/ShippingDashboard"));
 const ShippingOrders = lazy(() => import("./pages/shipping/ShippingOrders"));
 const ShippingAccount = lazy(() => import("./pages/shipping/ShippingAccount"));
+const ShippingReturns = lazy(() => import("./pages/shipping/ShippingReturns"));
+const ShippingShopOrders = lazy(() => import("./pages/shipping/ShippingShopOrders"));
 
 // Minimal loading fallback
 const PageLoader = () => (
@@ -86,16 +91,21 @@ const App = () => (
                         <Route index element={<AdminDashboard />} />
                         <Route path="orders" element={<AdminOrders />} />
                         <Route path="customers" element={<AdminCustomers />} />
-                        <Route path="affiliates" element={<AdminAffiliates />} />
+                      <Route path="affiliates" element={<AdminAffiliates />} />
                         <Route path="activity-logs" element={<AdminActivityLogs />} />
                         <Route path="staff" element={<AdminStaff />} />
                         <Route path="coupons" element={<AdminCoupons />} />
                         <Route path="account" element={<AdminAccount />} />
+                        <Route path="returns" element={<AdminReturns />} />
+                        <Route path="expenses" element={<AdminExpenses />} />
+                        <Route path="shop-orders" element={<AdminShopOrders />} />
                       </Route>
                       <Route path="/shipping" element={<ShippingLayout />}>
                         <Route index element={<ShippingDashboard />} />
                         <Route path="orders" element={<ShippingOrders />} />
                         <Route path="account" element={<ShippingAccount />} />
+                        <Route path="returns" element={<ShippingReturns />} />
+                        <Route path="shop-orders" element={<ShippingShopOrders />} />
                       </Route>
                       <Route path="*" element={<NotFound />} />
                     </Routes>
