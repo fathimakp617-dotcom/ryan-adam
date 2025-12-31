@@ -83,6 +83,16 @@ const Checkout = () => {
   };
 
   const handleCODOrder = async () => {
+    // For COD orders with shipping charge, collect shipping via Razorpay first
+    if (shipping > 0) {
+      await handleCODShippingPayment();
+    } else {
+      // Free shipping - proceed directly with COD order
+      await createCODOrder();
+    }
+  };
+
+  const createCODOrder = async (shippingPaid = false) => {
     setIsProcessing(true);
 
     try {
@@ -105,6 +115,7 @@ const Checkout = () => {
           quantity: item.quantity,
         })),
         payment_method: "cod",
+        payment_status: shippingPaid ? "shipping_paid" : "pending",
         coupon_code: appliedCoupon?.code || null,
         affiliate_code: affiliateCode || null,
       };
@@ -121,7 +132,9 @@ const Checkout = () => {
 
       toast({
         title: "Order Placed Successfully!",
-        description: `Order #${data.order.order_number}. You will receive a confirmation email shortly.`,
+        description: shippingPaid 
+          ? `Order #${data.order.order_number}. Shipping paid - we'll dispatch your order soon!` 
+          : `Order #${data.order.order_number}. You will receive a confirmation email shortly.`,
       });
 
       clearCart();
@@ -134,6 +147,115 @@ const Checkout = () => {
         variant: "destructive",
       });
     } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleCODShippingPayment = async () => {
+    setIsProcessing(true);
+
+    try {
+      // Create Razorpay order for shipping charge only
+      const { data: orderData, error: orderError } = await supabase.functions.invoke('create-razorpay-order', {
+        body: {
+          amount: shipping,
+          currency: "INR",
+          receipt: `cod_shipping_${Date.now()}`,
+          notes: {
+            customer_email: formData.email,
+            customer_name: `${formData.firstName} ${formData.lastName}`,
+            payment_type: "cod_shipping",
+          },
+        },
+      });
+
+      if (orderError || !orderData?.success) {
+        throw new Error(orderData?.error || "Failed to create shipping payment order");
+      }
+
+      // Load Razorpay script if not loaded
+      if (!window.Razorpay) {
+        await loadRazorpayScript();
+      }
+
+      const options = {
+        key: orderData.key_id,
+        amount: orderData.order.amount,
+        currency: orderData.order.currency,
+        name: "Rayn Adam",
+        description: "COD Shipping Charge",
+        order_id: orderData.order.id,
+        handler: async (response: any) => {
+          // Verify shipping payment and create COD order
+          await verifyCODShippingAndCreateOrder(response);
+        },
+        prefill: {
+          name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          contact: formData.phone,
+        },
+        theme: {
+          color: "#c9a962",
+        },
+        modal: {
+          ondismiss: () => {
+            setIsProcessing(false);
+            toast({
+              title: "Shipping Payment Cancelled",
+              description: "Please pay the shipping charge to place your COD order.",
+              variant: "destructive",
+            });
+          },
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    } catch (error) {
+      console.error("COD Shipping payment error:", error);
+      toast({
+        title: "Payment Error",
+        description: error instanceof Error ? error.message : "Failed to initiate shipping payment. Please try again.",
+        variant: "destructive",
+      });
+      setIsProcessing(false);
+    }
+  };
+
+  const verifyCODShippingAndCreateOrder = async (response: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+  }) => {
+    try {
+      // Verify the shipping payment
+      const { data, error } = await supabase.functions.invoke('verify-razorpay-payment', {
+        body: {
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_signature: response.razorpay_signature,
+          is_shipping_only: true, // Flag to indicate this is just shipping verification
+        },
+      });
+
+      if (error || !data?.success) {
+        throw new Error(data?.error || "Shipping payment verification failed");
+      }
+
+      toast({
+        title: "Shipping Paid!",
+        description: "Creating your COD order...",
+      });
+
+      // Now create the COD order with shipping marked as paid
+      await createCODOrder(true);
+    } catch (error) {
+      console.error("Shipping verification error:", error);
+      toast({
+        title: "Payment Verification Failed",
+        description: "Please contact support with your payment details.",
+        variant: "destructive",
+      });
       setIsProcessing(false);
     }
   };
