@@ -316,8 +316,8 @@ const AdminOrders = () => {
 
     setIsUpdating(true);
     try {
-      // Get admin session from localStorage
-      const sessionData = localStorage.getItem("rayn_admin_session");
+      // Get admin session from sessionStorage
+      const sessionData = sessionStorage.getItem("rayn_admin_session");
       if (!sessionData) {
         throw new Error("No admin session found");
       }
@@ -375,7 +375,7 @@ const AdminOrders = () => {
 
   const handleToggleCashReceived = async (order: Order) => {
     try {
-      const sessionData = localStorage.getItem("rayn_admin_session");
+      const sessionData = sessionStorage.getItem("rayn_admin_session");
       if (!sessionData) {
         throw new Error("No admin session found");
       }
@@ -423,7 +423,7 @@ const AdminOrders = () => {
   const handleDeleteOrder = async (orderId: string) => {
     setIsDeleting(true);
     try {
-      const sessionData = localStorage.getItem("rayn_admin_session");
+      const sessionData = sessionStorage.getItem("rayn_admin_session");
       if (!sessionData) {
         throw new Error("No admin session found");
       }
