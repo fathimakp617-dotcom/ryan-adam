@@ -38,23 +38,62 @@ serve(async (req) => {
 
     const emailLower = email.toLowerCase();
 
-    // Update name in staff_members table
-    const { data, error } = await supabase
+    // First check if staff member exists
+    const { data: existing } = await supabase
       .from("staff_members")
-      .update({ name: name || null })
+      .select("id")
       .eq("email", emailLower)
-      .select()
-      .single();
+      .maybeSingle();
 
-    if (error) {
-      // If not found in database, it might be an environment-based staff
-      // In that case, we can't update the name
-      if (error.code === "PGRST116") {
+    let data;
+    let error;
+
+    if (existing) {
+      // Update existing staff member
+      const result = await supabase
+        .from("staff_members")
+        .update({ name: name || null })
+        .eq("email", emailLower)
+        .select()
+        .single();
+      data = result.data;
+      error = result.error;
+    } else {
+      // Check if email is in admin or shipping emails (environment-based staff)
+      const adminEmails = (Deno.env.get("ADMIN_EMAILS") || "").toLowerCase().split(",").map(e => e.trim()).filter(Boolean);
+      const shippingEmails = (Deno.env.get("SHIPPING_EMAILS") || "").toLowerCase().split(",").map(e => e.trim()).filter(Boolean);
+      
+      let role = "";
+      if (adminEmails.includes(emailLower)) {
+        role = "admin";
+      } else if (shippingEmails.includes(emailLower)) {
+        role = "shipping";
+      }
+
+      if (!role) {
         return new Response(
-          JSON.stringify({ error: "Staff member not found in database. Environment-based staff cannot update their name." }),
+          JSON.stringify({ error: "Staff member not found" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+
+      // Create staff member record for environment-based staff
+      const result = await supabase
+        .from("staff_members")
+        .insert({
+          email: emailLower,
+          name: name || null,
+          role: role,
+          password_hash: "env_based_no_password",
+          is_active: true,
+        })
+        .select()
+        .single();
+      data = result.data;
+      error = result.error;
+    }
+
+    if (error) {
       throw error;
     }
 
