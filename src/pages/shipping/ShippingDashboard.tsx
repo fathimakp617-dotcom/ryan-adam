@@ -67,11 +67,13 @@ const ShippingDashboard = () => {
       if (error) throw error;
 
       if (data) {
+        // Stats are inside data.stats object
+        const statsData = data.stats || {};
         setStats({
-          pending: data.pending || 0,
-          processing: data.processing || 0,
-          shipped: data.shipped || 0,
-          delivered: data.delivered || 0,
+          pending: statsData.pending || 0,
+          processing: statsData.processing || 0,
+          shipped: statsData.shipped || 0,
+          delivered: statsData.delivered || 0,
         });
         setRecentOrders(data.recentOrders?.slice(0, 5) || []);
       }
