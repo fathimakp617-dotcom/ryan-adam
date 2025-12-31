@@ -59,6 +59,7 @@ interface OrderRequest {
   shipping_address: ShippingAddress;
   items: OrderItem[];
   payment_method: string;
+  payment_status?: string; // For COD with prepaid shipping
   coupon_code?: string | null;
   affiliate_code?: string | null;
 }
@@ -290,8 +291,8 @@ serve(async (req) => {
       payment_method: orderRequest.payment_method,
       coupon_code: validCouponCode,
       affiliate_code: validAffiliateCode,
-      payment_status: 'pending',
-      order_status: 'pending',
+      payment_status: orderRequest.payment_status || 'pending',
+      order_status: orderRequest.payment_status === 'shipping_paid' ? 'confirmed' : 'pending',
     };
 
     console.log("Creating order:", orderNumber);

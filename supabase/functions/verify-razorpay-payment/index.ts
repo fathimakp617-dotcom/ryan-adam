@@ -24,7 +24,8 @@ interface VerifyPaymentRequest {
   razorpay_order_id: string;
   razorpay_payment_id: string;
   razorpay_signature: string;
-  order_data: {
+  is_shipping_only?: boolean; // For COD shipping prepayment
+  order_data?: {
     user_id?: string;
     customer_name: string;
     customer_email: string;
@@ -66,6 +67,7 @@ const handler = async (req: Request): Promise<Response> => {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
+      is_shipping_only,
       order_data,
     }: VerifyPaymentRequest = await req.json();
 
@@ -84,6 +86,27 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log("Payment verified successfully:", razorpay_payment_id);
+
+    // If this is just shipping verification for COD, return success without creating order
+    if (is_shipping_only) {
+      console.log("COD shipping payment verified successfully");
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "Shipping payment verified",
+          payment_id: razorpay_payment_id,
+        }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // For full payment, order_data is required
+    if (!order_data) {
+      return new Response(
+        JSON.stringify({ error: "Order data is required for full payment verification" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
     // Create Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;

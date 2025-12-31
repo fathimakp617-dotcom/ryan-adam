@@ -31,7 +31,8 @@ const ShippingTermsDialog = ({
   const [codTermsAccepted, setCodTermsAccepted] = useState(false);
 
   const isCOD = paymentMethod === "cod";
-  const canConfirm = termsAccepted && (!isCOD || codTermsAccepted);
+  // Only require COD terms checkbox if there's a shipping charge to prepay
+  const canConfirm = termsAccepted && (!isCOD || shippingCharge === 0 || codTermsAccepted);
 
   const handleConfirm = () => {
     if (canConfirm) {
@@ -78,15 +79,30 @@ const ShippingTermsDialog = ({
           )}
 
           {/* COD Special Notice */}
-          {isCOD && (
+          {isCOD && shippingCharge > 0 && (
             <div className="flex items-start gap-3 p-3 bg-orange-500/5 border border-orange-500/20 rounded-lg">
               <CreditCard className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="text-sm font-medium text-foreground">
-                  Cash on Delivery Selected
+                  Cash on Delivery - Shipping Prepayment Required
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  <span className="text-orange-500 font-semibold">Important:</span> For COD orders, the shipping charge must be paid in advance before we dispatch your order. Our team will contact you to collect the shipping fee.
+                  You will be redirected to <span className="text-orange-500 font-semibold">pay ₹{shippingCharge} shipping charge via Razorpay</span> first. 
+                  After payment, your order will be confirmed and you'll pay the product amount (₹{shippingCharge > 0 ? "remaining" : "total"}) at delivery.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {isCOD && shippingCharge === 0 && (
+            <div className="flex items-start gap-3 p-3 bg-green-500/5 border border-green-500/20 rounded-lg">
+              <Truck className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  Free Shipping - Cash on Delivery
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Your order qualifies for free shipping! You'll pay the full amount at delivery.
                 </p>
               </div>
             </div>
@@ -109,7 +125,7 @@ const ShippingTermsDialog = ({
               </Label>
             </div>
 
-            {isCOD && (
+            {isCOD && shippingCharge > 0 && (
               <div className="flex items-start gap-3">
                 <Checkbox
                   id="cod-terms"
@@ -117,7 +133,7 @@ const ShippingTermsDialog = ({
                   onCheckedChange={(checked) => setCodTermsAccepted(checked === true)}
                 />
                 <Label htmlFor="cod-terms" className="text-sm text-muted-foreground leading-relaxed cursor-pointer">
-                  I understand that the <span className="text-orange-500 font-medium">shipping charge must be paid in advance</span> for Cash on Delivery orders, and my order will be shipped after payment confirmation.
+                  I understand that I will <span className="text-orange-500 font-medium">pay ₹{shippingCharge} shipping via Razorpay now</span>, and pay the product amount at delivery.
                 </Label>
               </div>
             )}
