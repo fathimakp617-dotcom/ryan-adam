@@ -37,14 +37,47 @@ serve(async (req) => {
 
     const emailLower = email.toLowerCase();
 
+    // Get admin and shipping emails from environment
+    const adminEmails = (Deno.env.get("ADMIN_EMAILS") || "").toLowerCase().split(",").map(e => e.trim()).filter(Boolean);
+    const shippingEmails = (Deno.env.get("SHIPPING_EMAILS") || "").toLowerCase().split(",").map(e => e.trim()).filter(Boolean);
+
+    // Determine role from environment
+    let envRole = "";
+    if (adminEmails.includes(emailLower)) {
+      envRole = "admin";
+    } else if (shippingEmails.includes(emailLower)) {
+      envRole = "shipping";
+    }
+
     // Get staff member info
-    const { data: staffMember, error: staffError } = await supabase
+    let { data: staffMember, error: staffError } = await supabase
       .from("staff_members")
       .select("id, email, name, role, is_active, created_at")
       .eq("email", emailLower)
       .maybeSingle();
 
     if (staffError) throw staffError;
+
+    // If staff member doesn't exist in DB but is in environment, create them
+    if (!staffMember && envRole) {
+      const { data: newStaff, error: createError } = await supabase
+        .from("staff_members")
+        .insert({
+          email: emailLower,
+          name: null,
+          role: envRole,
+          password_hash: "env_based_no_password",
+          is_active: true,
+        })
+        .select("id, email, name, role, is_active, created_at")
+        .single();
+
+      if (createError) {
+        console.error("Error creating staff member:", createError);
+      } else {
+        staffMember = newStaff;
+      }
+    }
 
     // Get login stats from activity logs
     const { data: loginLogs, error: logError } = await supabase
@@ -92,7 +125,7 @@ serve(async (req) => {
       id: `env-${emailLower}`,
       email: emailLower,
       name: null,
-      role: "shipping",
+      role: envRole || "staff",
       is_active: true,
       created_at: null,
       login_count: loginCount,
