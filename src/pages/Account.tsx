@@ -35,9 +35,11 @@ import {
   Download,
   X,
   RotateCcw,
-  AlertCircle
+  AlertCircle,
+  Gift
 } from "lucide-react";
 import ReturnRequestDialog from "@/components/ReturnRequestDialog";
+import LoyaltyCoupons from "@/components/LoyaltyCoupons";
 
 interface AffiliateData {
   id: string;
@@ -511,7 +513,7 @@ const Account = () => {
 
             {/* Tabs */}
             <Tabs defaultValue="profile" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
+              <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-flex">
                 <TabsTrigger value="profile" className="gap-2">
                   <User size={16} />
                   <span className="hidden sm:inline">Profile</span>
@@ -519,6 +521,10 @@ const Account = () => {
                 <TabsTrigger value="orders" className="gap-2">
                   <Package size={16} />
                   <span className="hidden sm:inline">Orders</span>
+                </TabsTrigger>
+                <TabsTrigger value="rewards" className="gap-2">
+                  <Gift size={16} />
+                  <span className="hidden sm:inline">Rewards</span>
                 </TabsTrigger>
                 <TabsTrigger value="affiliate" className="gap-2">
                   <Share2 size={16} />
@@ -834,6 +840,17 @@ const Account = () => {
                     ))}
                   </div>
                 )}
+              </TabsContent>
+
+              {/* Rewards Tab */}
+              <TabsContent value="rewards" className="space-y-6">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-card border border-border rounded-2xl p-6"
+                >
+                  <LoyaltyCoupons />
+                </motion.div>
               </TabsContent>
 
               {/* Affiliate Tab */}
