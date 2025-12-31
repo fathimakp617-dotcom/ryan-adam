@@ -1,4 +1,4 @@
-import { useState, useEffect, memo } from "react";
+import { useState, memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,25 +32,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Ticket, Loader2, Gift, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, Ticket, Loader2, Gift, Users, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
-
-interface Coupon {
-  id: string;
-  code: string;
-  discount_percent: number | null;
-  discount_amount: number | null;
-  min_order_amount: number;
-  max_uses: number | null;
-  current_uses: number;
-  expires_at: string | null;
-  is_active: boolean;
-  created_at: string;
-  coupon_type?: string | null;
-  is_bogo?: boolean | null;
-  user_id?: string | null;
-  user_email?: string;
-}
+import { useAdminCoupons, useAdminLoyaltyCoupons, useInvalidateAdminData, type Coupon } from "@/hooks/useAdminData";
 
 interface CouponFormData {
   code: string;
@@ -73,10 +57,10 @@ const initialFormData: CouponFormData = {
 };
 
 const AdminCoupons = () => {
-  const [coupons, setCoupons] = useState<Coupon[]>([]);
-  const [loyaltyCoupons, setLoyaltyCoupons] = useState<Coupon[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loyaltyLoading, setLoyaltyLoading] = useState(true);
+  const { data: coupons = [], isLoading: loading } = useAdminCoupons();
+  const { data: loyaltyCoupons = [], isLoading: loyaltyLoading } = useAdminLoyaltyCoupons();
+  const { invalidateCoupons, invalidateLoyaltyCoupons } = useInvalidateAdminData();
+  
   const [saving, setSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -84,49 +68,6 @@ const AdminCoupons = () => {
   const [formData, setFormData] = useState<CouponFormData>(initialFormData);
   const [activeTab, setActiveTab] = useState("regular");
   const { toast } = useToast();
-
-  const fetchCoupons = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke("manage-coupons", {
-        body: { action: "list" },
-      });
-
-      if (error) throw error;
-      setCoupons(data.coupons || []);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to fetch coupons",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchLoyaltyCoupons = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke("manage-coupons", {
-        body: { action: "list_loyalty" },
-      });
-
-      if (error) throw error;
-      setLoyaltyCoupons(data.coupons || []);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to fetch loyalty coupons",
-        variant: "destructive",
-      });
-    } finally {
-      setLoyaltyLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCoupons();
-    fetchLoyaltyCoupons();
-  }, []);
 
   const handleOpenCreate = () => {
     setSelectedCoupon(null);
@@ -201,7 +142,7 @@ const AdminCoupons = () => {
       });
 
       setDialogOpen(false);
-      fetchCoupons();
+      invalidateCoupons();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -230,9 +171,9 @@ const AdminCoupons = () => {
 
       setDeleteDialogOpen(false);
       if (selectedCoupon.coupon_type === 'loyalty') {
-        fetchLoyaltyCoupons();
+        invalidateLoyaltyCoupons();
       } else {
-        fetchCoupons();
+        invalidateCoupons();
       }
     } catch (error: any) {
       toast({
@@ -254,9 +195,9 @@ const AdminCoupons = () => {
 
       if (error) throw error;
       if (coupon.coupon_type === 'loyalty') {
-        fetchLoyaltyCoupons();
+        invalidateLoyaltyCoupons();
       } else {
-        fetchCoupons();
+        invalidateCoupons();
       }
     } catch (error: any) {
       toast({

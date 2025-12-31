@@ -1,7 +1,8 @@
-import { useEffect, useState, memo } from "react";
+import { useEffect, useState, memo, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdminOrders, useInvalidateAdminData, type Order, type OrderItem, type ShippingAddress } from "@/hooks/useAdminData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,53 +42,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-interface OrderItem {
-  productId: string;
-  name: string;
-  price: number;
-  quantity: number;
-}
-
-interface ShippingAddress {
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  country: string;
-}
-
-interface Order {
-  id: string;
-  order_number: string;
-  customer_name: string;
-  customer_email: string;
-  customer_phone: string | null;
-  total: number;
-  subtotal: number;
-  discount: number | null;
-  shipping: number | null;
-  order_status: string;
-  payment_status: string;
-  payment_method: string;
-  created_at: string;
-  items: OrderItem[];
-  shipping_address: ShippingAddress;
-  coupon_code: string | null;
-  affiliate_code: string | null;
-  tracking_number: string | null;
-  tracking_url: string | null;
-  return_status: string | null;
-  return_reason: string | null;
-  return_details: string | null;
-  return_requested_at: string | null;
-  cash_received: boolean;
-}
+// Types are imported from useAdminData
 
 const AdminOrders = () => {
   const [searchParams] = useSearchParams();
+  const { data: cachedOrders = [], isLoading, refetch } = useAdminOrders();
+  const { invalidateOrders } = useInvalidateAdminData();
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -102,6 +64,13 @@ const AdminOrders = () => {
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
   const { toast } = useToast();
 
+  // Sync cached orders to local state
+  useEffect(() => {
+    if (cachedOrders.length > 0) {
+      setOrders(cachedOrders);
+    }
+  }, [cachedOrders]);
+
   // Initialize status filter from URL params
   useEffect(() => {
     const statusParam = searchParams.get("status");
@@ -110,13 +79,8 @@ const AdminOrders = () => {
     }
   }, [searchParams]);
 
+  // Real-time updates
   useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  // Separate effect for real-time updates
-  useEffect(() => {
-    // Subscribe to real-time order updates
     const channel = supabase
       .channel('admin-orders-list-realtime')
       .on(
@@ -127,8 +91,6 @@ const AdminOrders = () => {
           table: 'orders'
         },
         (payload) => {
-          console.log('New order received:', payload);
-          // Add new order to the list
           setOrders(prev => [payload.new as any, ...prev]);
         }
       )
@@ -140,8 +102,6 @@ const AdminOrders = () => {
           table: 'orders'
         },
         (payload) => {
-          console.log('Order updated:', payload);
-          // Update the order in the list
           setOrders(prev => prev.map(order => 
             order.id === payload.new.id ? payload.new as any : order
           ));
@@ -158,46 +118,8 @@ const AdminOrders = () => {
     filterOrders();
   }, [orders, searchQuery, statusFilter, dateFrom, dateTo]);
 
-  const fetchOrders = async () => {
-    setIsLoading(true);
-    try {
-      // Get admin session from localStorage
-      const sessionData = localStorage.getItem("rayn_admin_session");
-      console.log("Admin session data:", sessionData);
-      
-      if (!sessionData) {
-        console.error("No admin session found in localStorage");
-        throw new Error("No admin session found");
-      }
-      
-      const session = JSON.parse(sessionData);
-      console.log("Parsed session:", { email: session.email, hasToken: !!session.token });
-      
-      const { data, error } = await supabase.functions.invoke('get-admin-orders', {
-        body: {
-          admin_email: session.email,
-          admin_token: session.token,
-        }
-      });
-      
-      console.log("get-admin-orders response:", { data, error });
-      
-      if (error) throw error;
-      
-      if (data?.orders) {
-        console.log("Orders fetched successfully:", data.orders.length);
-        setOrders(data.orders);
-      }
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch orders",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const fetchOrders = () => {
+    invalidateOrders();
   };
 
   const filterOrders = () => {
