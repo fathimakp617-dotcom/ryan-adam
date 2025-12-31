@@ -18,13 +18,44 @@ Deno.serve(async (req) => {
     const { action, coupon } = await req.json();
 
     if (action === 'list') {
+      // List regular coupons (not loyalty)
       const { data, error } = await supabase
         .from('coupons')
         .select('*')
+        .or('coupon_type.is.null,coupon_type.eq.regular')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       return new Response(JSON.stringify({ coupons: data }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'list_loyalty') {
+      // List loyalty coupons with user email
+      const { data: loyaltyCoupons, error } = await supabase
+        .from('coupons')
+        .select('*')
+        .eq('coupon_type', 'loyalty')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Get user emails for each coupon
+      const couponsWithUsers = await Promise.all(
+        (loyaltyCoupons || []).map(async (coupon: any) => {
+          if (coupon.user_id) {
+            const { data: userData } = await supabase.auth.admin.getUserById(coupon.user_id);
+            return {
+              ...coupon,
+              user_email: userData?.user?.email || 'Unknown',
+            };
+          }
+          return { ...coupon, user_email: 'Unknown' };
+        })
+      );
+
+      return new Response(JSON.stringify({ coupons: couponsWithUsers }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
