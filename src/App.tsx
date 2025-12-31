@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,30 +11,53 @@ import { AffiliateProvider } from "@/contexts/AffiliateContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import CartDrawer from "@/components/CartDrawer";
 import ScrollToTop from "@/components/ScrollToTop";
-import Index from "./pages/Index";
-import Shop from "./pages/Shop";
-import ProductDetail from "./pages/ProductDetail";
-import Wishlist from "./pages/Wishlist";
-import Checkout from "./pages/Checkout";
-import Auth from "./pages/Auth";
-import Account from "./pages/Account";
-import Terms from "./pages/Terms";
-import NotFound from "./pages/NotFound";
-import AdminLayout from "./pages/admin/AdminLayout";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminOrders from "./pages/admin/AdminOrders";
-import AdminCustomers from "./pages/admin/AdminCustomers";
-import AdminAffiliates from "./pages/admin/AdminAffiliates";
-import AdminActivityLogs from "./pages/admin/AdminActivityLogs";
-import AdminStaff from "./pages/admin/AdminStaff";
-import AdminAccount from "./pages/admin/AdminAccount";
-import AdminCoupons from "./pages/admin/AdminCoupons";
-import ShippingLayout from "./pages/shipping/ShippingLayout";
-import ShippingDashboard from "./pages/shipping/ShippingDashboard";
-import ShippingOrders from "./pages/shipping/ShippingOrders";
-import ShippingAccount from "./pages/shipping/ShippingAccount";
 
-const queryClient = new QueryClient();
+// Eagerly load critical pages
+import Index from "./pages/Index";
+
+// Lazy load non-critical pages
+const Shop = lazy(() => import("./pages/Shop"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const Wishlist = lazy(() => import("./pages/Wishlist"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const Auth = lazy(() => import("./pages/Auth"));
+const Account = lazy(() => import("./pages/Account"));
+const Terms = lazy(() => import("./pages/Terms"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+// Lazy load admin pages (rarely visited)
+const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
+const AdminCustomers = lazy(() => import("./pages/admin/AdminCustomers"));
+const AdminAffiliates = lazy(() => import("./pages/admin/AdminAffiliates"));
+const AdminActivityLogs = lazy(() => import("./pages/admin/AdminActivityLogs"));
+const AdminStaff = lazy(() => import("./pages/admin/AdminStaff"));
+const AdminAccount = lazy(() => import("./pages/admin/AdminAccount"));
+const AdminCoupons = lazy(() => import("./pages/admin/AdminCoupons"));
+
+// Lazy load shipping pages
+const ShippingLayout = lazy(() => import("./pages/shipping/ShippingLayout"));
+const ShippingDashboard = lazy(() => import("./pages/shipping/ShippingDashboard"));
+const ShippingOrders = lazy(() => import("./pages/shipping/ShippingOrders"));
+const ShippingAccount = lazy(() => import("./pages/shipping/ShippingAccount"));
+
+// Minimal loading fallback
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+);
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <HelmetProvider>
@@ -48,32 +72,34 @@ const App = () => (
                 <BrowserRouter>
                   <ScrollToTop />
                   <CartDrawer />
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/shop" element={<Shop />} />
-                    <Route path="/product/:id" element={<ProductDetail />} />
-                    <Route path="/wishlist" element={<Wishlist />} />
-                    <Route path="/checkout" element={<Checkout />} />
-                    <Route path="/auth" element={<Auth />} />
-                    <Route path="/account" element={<Account />} />
-                    <Route path="/terms" element={<Terms />} />
-                    <Route path="/admin" element={<AdminLayout />}>
-                      <Route index element={<AdminDashboard />} />
-                      <Route path="orders" element={<AdminOrders />} />
-                      <Route path="customers" element={<AdminCustomers />} />
-                      <Route path="affiliates" element={<AdminAffiliates />} />
-                      <Route path="activity-logs" element={<AdminActivityLogs />} />
-                      <Route path="staff" element={<AdminStaff />} />
-                      <Route path="coupons" element={<AdminCoupons />} />
-                      <Route path="account" element={<AdminAccount />} />
-                    </Route>
-                    <Route path="/shipping" element={<ShippingLayout />}>
-                      <Route index element={<ShippingDashboard />} />
-                      <Route path="orders" element={<ShippingOrders />} />
-                      <Route path="account" element={<ShippingAccount />} />
-                    </Route>
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
+                  <Suspense fallback={<PageLoader />}>
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/shop" element={<Shop />} />
+                      <Route path="/product/:id" element={<ProductDetail />} />
+                      <Route path="/wishlist" element={<Wishlist />} />
+                      <Route path="/checkout" element={<Checkout />} />
+                      <Route path="/auth" element={<Auth />} />
+                      <Route path="/account" element={<Account />} />
+                      <Route path="/terms" element={<Terms />} />
+                      <Route path="/admin" element={<AdminLayout />}>
+                        <Route index element={<AdminDashboard />} />
+                        <Route path="orders" element={<AdminOrders />} />
+                        <Route path="customers" element={<AdminCustomers />} />
+                        <Route path="affiliates" element={<AdminAffiliates />} />
+                        <Route path="activity-logs" element={<AdminActivityLogs />} />
+                        <Route path="staff" element={<AdminStaff />} />
+                        <Route path="coupons" element={<AdminCoupons />} />
+                        <Route path="account" element={<AdminAccount />} />
+                      </Route>
+                      <Route path="/shipping" element={<ShippingLayout />}>
+                        <Route index element={<ShippingDashboard />} />
+                        <Route path="orders" element={<ShippingOrders />} />
+                        <Route path="account" element={<ShippingAccount />} />
+                      </Route>
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Suspense>
                 </BrowserRouter>
               </TooltipProvider>
             </AffiliateProvider>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -24,8 +24,35 @@ const slides = [
   },
 ];
 
-const Hero = () => {
+// Preload first image immediately
+const preloadFirstImage = () => {
+  const img = new Image();
+  img.src = noirIntense;
+};
+preloadFirstImage();
+
+const Hero = memo(() => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [imagesLoaded, setImagesLoaded] = useState<Set<number>>(new Set([0]));
+
+  // Preload next slides in the background
+  useEffect(() => {
+    const preloadImages = () => {
+      slides.forEach((slide, index) => {
+        if (index !== 0) {
+          const img = new Image();
+          img.onload = () => {
+            setImagesLoaded(prev => new Set([...prev, index]));
+          };
+          img.src = slide.image;
+        }
+      });
+    };
+    
+    // Delay preloading other images
+    const timer = setTimeout(preloadImages, 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -43,16 +70,18 @@ const Hero = () => {
       <AnimatePresence mode="wait">
         <motion.div
           key={currentSlide}
-          initial={{ opacity: 0, scale: 1.1 }}
+          initial={{ opacity: 0, scale: 1.05 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 1.2 }}
+          transition={{ duration: 0.8 }}
           className="absolute inset-0"
         >
           <img
             src={slides[currentSlide].image}
             alt={slides[currentSlide].title}
             className="w-full h-full object-cover"
+            loading={currentSlide === 0 ? "eager" : "lazy"}
+            decoding="async"
           />
           {/* Dark overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/70 to-background/40" />
@@ -68,16 +97,16 @@ const Hero = () => {
         <div className="max-w-2xl">
           {/* Left Content */}
           <motion.div
-            initial={{ opacity: 0, x: -50 }}
+            initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 1, delay: 0.2 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
             className="space-y-6 sm:space-y-8"
           >
             <div className="space-y-3 sm:space-y-4">
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.4 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
                 className="text-xs sm:text-sm tracking-[0.3em] sm:tracking-[0.4em] text-primary"
               >
                 EAU DE PARFUM
@@ -92,10 +121,10 @@ const Hero = () => {
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentSlide}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.5 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
                 className="space-y-1"
               >
                 <p className="text-xl sm:text-2xl font-heading tracking-[0.2em] text-primary">
@@ -113,9 +142,9 @@ const Hero = () => {
             </p>
 
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.8 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
               className="flex flex-col sm:flex-row gap-4"
             >
               <Link to="/shop">
@@ -159,7 +188,7 @@ const Hero = () => {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1.5 }}
+        transition={{ delay: 1 }}
         className="absolute bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2 hidden sm:block"
       >
         <div className="w-6 h-10 border-2 border-primary/50 rounded-full flex justify-center">
@@ -172,6 +201,8 @@ const Hero = () => {
       </motion.div>
     </section>
   );
-};
+});
+
+Hero.displayName = "Hero";
 
 export default Hero;

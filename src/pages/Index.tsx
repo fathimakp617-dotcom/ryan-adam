@@ -1,13 +1,22 @@
+import { Suspense, lazy } from "react";
 import { Helmet } from "react-helmet-async";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
-import Collection from "@/components/Collection";
-import About from "@/components/About";
-import Contact from "@/components/Contact";
-import Footer from "@/components/Footer";
-import FloatingParticles from "@/components/FloatingParticles";
 import PageTransition from "@/components/PageTransition";
-import OrderSuccessModal from "@/components/OrderSuccessModal";
+
+// Lazy load below-fold components
+const Collection = lazy(() => import("@/components/Collection"));
+const About = lazy(() => import("@/components/About"));
+const Contact = lazy(() => import("@/components/Contact"));
+const Footer = lazy(() => import("@/components/Footer"));
+const FloatingParticles = lazy(() => import("@/components/FloatingParticles"));
+const OrderSuccessModal = lazy(() => import("@/components/OrderSuccessModal"));
+
+const SectionLoader = () => (
+  <div className="py-12 flex items-center justify-center">
+    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 const Index = () => {
   return (
@@ -24,17 +33,33 @@ const Index = () => {
         />
       </Helmet>
 
-      <FloatingParticles />
-      <OrderSuccessModal />
+      {/* Defer particles loading */}
+      <Suspense fallback={null}>
+        <FloatingParticles />
+        <OrderSuccessModal />
+      </Suspense>
 
       <PageTransition>
         <main className="min-h-screen bg-background relative z-10">
           <Navbar />
           <Hero />
-          <Collection />
-          <About />
-          <Contact />
-          <Footer />
+          
+          {/* Lazy load below-the-fold content */}
+          <Suspense fallback={<SectionLoader />}>
+            <Collection />
+          </Suspense>
+          
+          <Suspense fallback={<SectionLoader />}>
+            <About />
+          </Suspense>
+          
+          <Suspense fallback={<SectionLoader />}>
+            <Contact />
+          </Suspense>
+          
+          <Suspense fallback={<SectionLoader />}>
+            <Footer />
+          </Suspense>
         </main>
       </PageTransition>
     </>
