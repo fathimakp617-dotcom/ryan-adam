@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 // Helper to get admin session
@@ -6,6 +6,27 @@ const getAdminSession = () => {
   const stored = sessionStorage.getItem("rayn_admin_session") || localStorage.getItem("rayn_admin_session");
   if (!stored) return null;
   return JSON.parse(stored);
+};
+
+// Helper to get shipping session
+const getShippingSession = () => {
+  const stored = sessionStorage.getItem("rayn_shipping_session");
+  if (stored) {
+    return JSON.parse(stored);
+  }
+  // Fallback to old format
+  const email = sessionStorage.getItem("shipping_email");
+  const token = sessionStorage.getItem("shipping_token");
+  if (email && token) return { email, token };
+  return null;
+};
+
+// Helper to get route staff session
+const getRouteSession = () => {
+  const email = sessionStorage.getItem("route_email");
+  const token = sessionStorage.getItem("route_token");
+  if (email && token) return { email, token };
+  return null;
 };
 
 // ============ ORDERS ============
@@ -340,6 +361,82 @@ export const useAdminDashboard = (dateFrom?: string, dateTo?: string) => {
   });
 };
 
+// ============ SHIPPING ORDERS ============
+export const useShippingOrders = () => {
+  return useQuery({
+    queryKey: ["shipping", "orders"],
+    queryFn: async () => {
+      const session = getShippingSession();
+      if (!session) throw new Error("No shipping session found");
+
+      const { data, error } = await supabase.functions.invoke("get-admin-orders", {
+        body: {
+          admin_email: session.email,
+          admin_token: session.token,
+        },
+      });
+
+      if (error) throw error;
+      return (data.orders || []) as Order[];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+// ============ SHOP ORDERS ============
+export interface ShopOrder {
+  id: string;
+  shop_name: string;
+  contact_name: string | null;
+  contact_phone: string | null;
+  products: { name: string; quantity: number }[];
+  total_bottles: number;
+  notes: string | null;
+  order_date: string;
+  status: string;
+  route_id?: string | null;
+}
+
+export interface Route {
+  id: string;
+  name: string;
+  description?: string | null;
+  is_active?: boolean;
+}
+
+export const useShopOrders = (sessionType: 'admin' | 'shipping' | 'route' = 'admin') => {
+  return useQuery({
+    queryKey: ["shop-orders", sessionType],
+    queryFn: async () => {
+      let session;
+      if (sessionType === 'admin') {
+        session = getAdminSession();
+      } else if (sessionType === 'shipping') {
+        session = getShippingSession();
+      } else {
+        session = getRouteSession();
+      }
+      
+      if (!session) throw new Error(`No ${sessionType} session found`);
+
+      const { data, error } = await supabase.functions.invoke("manage-shop-orders", {
+        body: {
+          admin_email: session.email,
+          admin_token: session.token,
+          action: "list",
+        },
+      });
+
+      if (error) throw error;
+      return {
+        shopOrders: (data.shop_orders || []) as ShopOrder[],
+        routes: (data.routes || []) as Route[],
+      };
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
 // ============ INVALIDATION HELPERS ============
 export const useInvalidateAdminData = () => {
   const queryClient = useQueryClient();
@@ -353,6 +450,12 @@ export const useInvalidateAdminData = () => {
     invalidateActivityLogs: () => queryClient.invalidateQueries({ queryKey: ["admin", "activity-logs"] }),
     invalidateStaff: () => queryClient.invalidateQueries({ queryKey: ["admin", "staff"] }),
     invalidateDashboard: () => queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] }),
-    invalidateAll: () => queryClient.invalidateQueries({ queryKey: ["admin"] }),
+    invalidateShippingOrders: () => queryClient.invalidateQueries({ queryKey: ["shipping", "orders"] }),
+    invalidateShopOrders: () => queryClient.invalidateQueries({ queryKey: ["shop-orders"] }),
+    invalidateAll: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin"] });
+      queryClient.invalidateQueries({ queryKey: ["shipping"] });
+      queryClient.invalidateQueries({ queryKey: ["shop-orders"] });
+    },
   };
 };

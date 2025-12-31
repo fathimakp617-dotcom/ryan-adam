@@ -29,31 +29,15 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, RefreshCw, Loader2, Store, Phone, MapPin, Check, X, Clock, Truck } from "lucide-react";
-
-interface Route {
-  id: string;
-  name: string;
-}
-
-interface ShopOrder {
-  id: string;
-  route_id: string | null;
-  shop_name: string;
-  contact_name: string | null;
-  contact_phone: string | null;
-  products: { name: string; quantity: number }[];
-  total_bottles: number;
-  notes: string | null;
-  order_date: string;
-  status: string;
-  created_at: string;
-  route?: Route;
-}
+import { useShopOrders, useInvalidateAdminData, type ShopOrder, type Route } from "@/hooks/useAdminData";
 
 const AdminShopOrders = () => {
-  const [shopOrders, setShopOrders] = useState<ShopOrder[]>([]);
-  const [routes, setRoutes] = useState<Route[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data, isLoading: loading, error } = useShopOrders('admin');
+  const { invalidateShopOrders } = useInvalidateAdminData();
+  const shopOrders = data?.shopOrders || [];
+  const routes = data?.routes || [];
+  
+  const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
@@ -72,9 +56,13 @@ const AdminShopOrders = () => {
 
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  if (error) {
+    toast({ title: "Error", description: "Failed to fetch shop orders", variant: "destructive" });
+  }
+
+  const fetchData = () => {
+    invalidateShopOrders();
+  };
 
   // Real-time updates
   useEffect(() => {
@@ -87,38 +75,6 @@ const AdminShopOrders = () => {
 
     return () => { supabase.removeChannel(channel); };
   }, []);
-
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const sessionData = localStorage.getItem("rayn_admin_session");
-      if (!sessionData) throw new Error("No admin session found");
-      
-      const session = JSON.parse(sessionData);
-      
-      const { data, error } = await supabase.functions.invoke('manage-shop-orders', {
-        body: {
-          admin_email: session.email,
-          admin_token: session.token,
-          action: "list",
-        }
-      });
-      
-      if (error) throw error;
-      
-      setShopOrders(data?.shop_orders || []);
-      setRoutes(data?.routes || []);
-    } catch (error) {
-      console.error("Error fetching shop orders:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch shop orders",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const addProductRow = () => {
     setFormData({
@@ -207,7 +163,7 @@ const AdminShopOrders = () => {
       if (error) throw error;
 
       toast({ title: "Updated", description: `Status changed to ${newStatus}` });
-      setShopOrders(shopOrders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+      invalidateShopOrders();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }
@@ -490,10 +446,10 @@ const AdminShopOrders = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {order.route ? (
+                      {order.route_id && routes.find(r => r.id === order.route_id) ? (
                         <div className="flex items-center gap-1 text-sm">
                           <MapPin className="w-3 h-3" />
-                          {order.route.name}
+                          {routes.find(r => r.id === order.route_id)?.name}
                         </div>
                       ) : "-"}
                     </TableCell>
