@@ -65,6 +65,13 @@ const generateOrderEmailHTML = (order: OrderConfirmationRequest): string => {
   const invoiceText = `
 RAYN ADAM - LUXURY PERFUMES
 ================================
+RAYN ADAM PRIVATE LIMITED
+Ward No. 21, Door No. 553/1, Kavumpadi, Pallikkal
+Tirurangadi, Malappuram – 673634, Kerala, India
+Phone: +91 99466 47442
+GSTIN: 32AAPCR2931R1ZS | TAN: CHNR06383G
+================================
+
 INVOICE
 
 Order Number: ${order.order_number}
@@ -95,6 +102,7 @@ Payment Method: ${paymentMethodLabel}
 ================================
 Thank you for shopping with Rayn Adam!
 For questions: support@raynadamperfume.com
+© ${new Date().getFullYear()} Rayn Adam Private Limited
   `.trim();
 
   // Base64 encode the invoice text for attachment
@@ -268,12 +276,15 @@ For questions: support@raynadamperfume.com
                     RAYN ADAM
                   </p>
                   <p style="margin: 0; color: #666; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px;">
-                    © 2026 Rayn Adam. All rights reserved.
+                    © ${new Date().getFullYear()} Rayn Adam Private Limited. All rights reserved.
                   </p>
                   <p style="margin: 8px 0 0; color: #555; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 10px;">
                     Ward No. 21, Door No. 553/1, Kavumpadi, Pallikkal<br>
                     Tirurangadi, Malappuram – 673634, Kerala, India<br>
                     Phone: +91 99466 47442
+                  </p>
+                  <p style="margin: 8px 0 0; color: #555; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 9px;">
+                    GSTIN: 32AAPCR2931R1ZS | TAN: CHNR06383G
                   </p>
                 </td>
               </tr>
@@ -326,6 +337,15 @@ const generateInvoicePDF = async (order: OrderConfirmationRequest): Promise<Uint
   yPos -= 12;
   page.drawText('RAYN ADAM PRIVATE LIMITED', {
     x: width / 2 - 70,
+    y: yPos,
+    size: 9,
+    font: font,
+    color: rgb(0.5, 0.5, 0.5),
+  });
+  
+  yPos -= 12;
+  page.drawText('Ward No. 21, Door No. 553/1, Kavumpadi, Pallikkal, Tirurangadi', {
+    x: width / 2 - 155,
     y: yPos,
     size: 9,
     font: font,
