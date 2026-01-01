@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AffiliateData {
   code: string;
@@ -12,6 +13,7 @@ interface CouponData {
   discountPercent: number;
   discountAmount: number | null;
   minOrderAmount: number;
+  isLoyalty?: boolean;
 }
 
 interface AffiliateContextType {
@@ -29,6 +31,7 @@ interface AffiliateContextType {
 const AffiliateContext = createContext<AffiliateContextType | undefined>(undefined);
 
 export const AffiliateProvider = ({ children }: { children: ReactNode }) => {
+  const { user } = useAuth();
   const [affiliateCode, setAffiliateCode] = useState<string | null>(null);
   const [affiliateData, setAffiliateData] = useState<AffiliateData | null>(null);
   const [appliedCoupon, setAppliedCoupon] = useState<CouponData | null>(null);
@@ -55,6 +58,41 @@ export const AffiliateProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  // Auto-apply loyalty coupon when user logs in
+  useEffect(() => {
+    if (user && !appliedCoupon) {
+      fetchAndApplyLoyaltyCoupon(user.id);
+    }
+  }, [user]);
+
+  const fetchAndApplyLoyaltyCoupon = async (userId: string) => {
+    try {
+      const { data: coupon, error } = await supabase
+        .from("coupons")
+        .select("code, discount_percent, discount_amount, min_order_amount, is_bogo")
+        .eq("user_id", userId)
+        .eq("is_active", true)
+        .eq("current_uses", 0)
+        .like("coupon_type", "loyalty%")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!error && coupon?.code) {
+        setAppliedCoupon({
+          code: coupon.code,
+          discountPercent: coupon.discount_percent,
+          discountAmount: coupon.discount_amount,
+          minOrderAmount: coupon.min_order_amount || 0,
+          isLoyalty: true,
+        });
+        setCouponCode(coupon.code);
+      }
+    } catch (error) {
+      console.log("No loyalty coupon to auto-apply");
+    }
+  };
+
   const fetchAffiliateData = async (code: string) => {
     setIsLoading(true);
     try {
@@ -70,14 +108,16 @@ export const AffiliateProvider = ({ children }: { children: ReactNode }) => {
           couponDiscountPercent: affiliate.discount_percent || 10,
         });
         
-        // Auto-apply affiliate coupon
-        setAppliedCoupon({
-          code: affiliate.code,
-          discountPercent: affiliate.discount_percent || 10,
-          discountAmount: null,
-          minOrderAmount: 0,
-        });
-        setCouponCode(affiliate.code);
+        // Auto-apply affiliate coupon (only if no loyalty coupon already applied)
+        if (!appliedCoupon?.isLoyalty) {
+          setAppliedCoupon({
+            code: affiliate.code,
+            discountPercent: affiliate.discount_percent || 10,
+            discountAmount: null,
+            minOrderAmount: 0,
+          });
+          setCouponCode(affiliate.code);
+        }
       }
     } catch (error) {
       console.error("Error fetching affiliate data:", error);
