@@ -6,16 +6,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Product prices - server-side source of truth (must match create-order)
+// Product prices - server-side source of truth (all prices include taxes, must match create-order)
 const PRODUCT_PRICES: Record<string, number> = {
-  "noir-intense": 499,
-  "blanc-elegance": 499,
-  "rouge-passion": 499,
-  "oud-royal": 599,
-  "velvet-night": 549,
-  "divine-rose": 529,
-  "amber-elixir": 499,
-  "citrus-aura": 449,
+  "noir-intense": 444,
+  "blanc-elegance": 444,
+  "rouge-passion": 444,
+  "oud-royal": 444,
+  "velvet-night": 444,
+  "divine-rose": 444,
+  "amber-elixir": 444,
+  "citrus-aura": 444,
 };
 
 const VALID_PRODUCT_IDS = Object.keys(PRODUCT_PRICES);
@@ -141,7 +141,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
     
     let discount = 0;
-    const shipping = subtotal >= 999 ? 0 : 99;
+    const shipping = subtotal >= 999 ? 0 : 79;
 
     // Apply coupon if provided
     if (order_data.coupon_code) {
