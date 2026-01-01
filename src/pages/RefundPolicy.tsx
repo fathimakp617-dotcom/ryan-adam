@@ -11,7 +11,7 @@ const RefundPolicy = () => {
     <div className="min-h-screen bg-background">
       <Helmet>
         <title>Refund & Return Policy | Rayn Adam</title>
-        <meta name="description" content="Refund and return policy for Rayn Adam Luxury Perfumes. Learn about our 30-day return window and refund process." />
+        <meta name="description" content="Refund and return policy for Rayn Adam Luxury Perfumes. Learn about our 7-day return window and refund process." />
       </Helmet>
       
       <Navbar />
@@ -40,7 +40,7 @@ const RefundPolicy = () => {
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <Clock className="w-5 h-5 text-primary" />
                 </div>
-                <h2 className="text-2xl font-heading text-foreground">30-Day Return Window</h2>
+                <h2 className="text-2xl font-heading text-foreground">7-Day Return Window</h2>
               </div>
               <div className="bg-card border border-border rounded-xl p-6">
                 <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-lg mb-4">
@@ -48,7 +48,7 @@ const RefundPolicy = () => {
                   <div>
                     <p className="font-medium text-foreground">Easy Returns</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      You can return any product within <span className="text-primary font-semibold">30 days</span> of delivery 
+                      You can return any product within <span className="text-primary font-semibold">7 days</span> of delivery 
                       for a full refund or exchange, subject to our return conditions.
                     </p>
                   </div>
@@ -118,7 +118,7 @@ const RefundPolicy = () => {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-red-500 font-bold">✗</span>
-                    Return requests made after 30 days
+                    Return requests made after 7 days
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-red-500 font-bold">✗</span>

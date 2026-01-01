@@ -15,9 +15,9 @@ const isMobile = typeof window !== "undefined"
 const ParticleField = memo(() => {
   const ref = useRef<THREE.Points>(null);
 
-  // Minimal particle count for performance
+  // Ultra-minimal particle count for performance
   const particles = useMemo(() => {
-    const count = 400; // Reduced from 800
+    const count = 150; // Reduced from 400 for faster rendering
     const positions = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
       positions[i * 3] = (Math.random() - 0.5) * 20;
@@ -58,7 +58,7 @@ const FloatingParticles = memo(() => {
     // Skip entirely on mobile or reduced motion preference
     if (prefersReducedMotion || isMobile) return;
 
-    const timer = setTimeout(() => setShouldRender(true), 500);
+    const timer = setTimeout(() => setShouldRender(true), 1500); // Delay more for faster initial load
     return () => clearTimeout(timer);
   }, []);
 

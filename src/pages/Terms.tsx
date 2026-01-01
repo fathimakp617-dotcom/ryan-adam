@@ -148,7 +148,7 @@ const Terms = () => {
                 <ul className="space-y-2 text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <span className="text-primary">•</span>
-                    Returns accepted within 30 days of delivery for unopened products
+                    Returns accepted within 7 days of delivery for unopened products
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary">•</span>
