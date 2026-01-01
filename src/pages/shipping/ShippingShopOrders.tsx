@@ -70,6 +70,18 @@ const ShippingShopOrders = () => {
   const { toast } = useToast();
 
   const getSessionCredentials = () => {
+    // Preferred session format
+    const stored = sessionStorage.getItem("rayn_shipping_session");
+    if (stored) {
+      try {
+        const session = JSON.parse(stored);
+        return { email: session.email as string | null, token: session.token as string | null };
+      } catch {
+        // ignore
+      }
+    }
+
+    // Backward-compatible session format
     const email = sessionStorage.getItem("shipping_email");
     const token = sessionStorage.getItem("shipping_token");
     return { email, token };
@@ -94,14 +106,21 @@ const ShippingShopOrders = () => {
     setIsLoading(true);
     try {
       const { email, token } = getSessionCredentials();
-      if (!email || !token) throw new Error("No session found");
-      
+      if (!email || !token) {
+        toast({
+          title: "Session expired",
+          description: "Please sign in again to access Shop Orders.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('manage-shop-orders', {
         body: { admin_email: email, admin_token: token, action: "list" }
       });
-      
+
       if (error) throw error;
-      
+
       setShopOrders(data?.shop_orders || []);
       setRoutes(data?.routes || []);
     } catch (error) {
@@ -134,8 +153,15 @@ const ShippingShopOrders = () => {
 
     try {
       const { email, token } = getSessionCredentials();
-      if (!email || !token) throw new Error("No session found");
-      
+      if (!email || !token) {
+        toast({
+          title: "Session expired",
+          description: "Please sign in again to add a shop order.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const totalBottles = formData.products.reduce((sum, p) => sum + (p.quantity || 0), 0);
       
       const { error } = await supabase.functions.invoke('manage-shop-orders', {
@@ -167,8 +193,15 @@ const ShippingShopOrders = () => {
   const updateStatus = async (orderId: string, newStatus: string) => {
     try {
       const { email, token } = getSessionCredentials();
-      if (!email || !token) throw new Error("No session found");
-      
+      if (!email || !token) {
+        toast({
+          title: "Session expired",
+          description: "Please sign in again to update the status.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error } = await supabase.functions.invoke('manage-shop-orders', {
         body: { admin_email: email, admin_token: token, action: "update_status", order_id: orderId, status: newStatus }
       });
