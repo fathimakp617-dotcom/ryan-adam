@@ -323,9 +323,27 @@ const generateInvoicePDF = async (order: OrderConfirmationRequest): Promise<Uint
     color: rgb(0.4, 0.4, 0.4),
   });
   
-  yPos -= 15;
+  yPos -= 12;
+  page.drawText('RAYN ADAM PRIVATE LIMITED', {
+    x: width / 2 - 70,
+    y: yPos,
+    size: 9,
+    font: font,
+    color: rgb(0.5, 0.5, 0.5),
+  });
+  
+  yPos -= 12;
   page.drawText('Malappuram – 673634, Kerala, India | Ph: +91 99466 47442', {
     x: width / 2 - 140,
+    y: yPos,
+    size: 9,
+    font: font,
+    color: rgb(0.5, 0.5, 0.5),
+  });
+  
+  yPos -= 12;
+  page.drawText('TAN: CHNR06383G', {
+    x: width / 2 - 40,
     y: yPos,
     size: 9,
     font: font,
