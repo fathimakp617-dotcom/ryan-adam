@@ -271,7 +271,9 @@ For questions: support@raynadamperfume.com
                     © 2026 Rayn Adam. All rights reserved.
                   </p>
                   <p style="margin: 8px 0 0; color: #555; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 10px;">
-                    Kozhikode, Kerala, India
+                    Ward No. 21, Door No. 553/1, Kavumpadi, Pallikkal<br>
+                    Tirurangadi, Malappuram – 673634, Kerala, India<br>
+                    Phone: +91 99466 47442
                   </p>
                 </td>
               </tr>
@@ -322,8 +324,8 @@ const generateInvoicePDF = async (order: OrderConfirmationRequest): Promise<Uint
   });
   
   yPos -= 15;
-  page.drawText('Kozhikode, Kerala, India | Ph: XXXXXXXXXXXX', {
-    x: width / 2 - 100,
+  page.drawText('Malappuram – 673634, Kerala, India | Ph: +91 99466 47442', {
+    x: width / 2 - 140,
     y: yPos,
     size: 9,
     font: font,
@@ -631,8 +633,8 @@ const generateInvoicePDF = async (order: OrderConfirmationRequest): Promise<Uint
   });
   
   yPos -= 14;
-  page.drawText('Email: support@raynadamperfume.com | Phone: XXXXXXXXXXXX', {
-    x: width / 2 - 145,
+  page.drawText('Email: support@raynadamperfume.com | Phone: +91 99466 47442', {
+    x: width / 2 - 150,
     y: yPos,
     size: 9,
     font: font,

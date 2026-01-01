@@ -366,8 +366,9 @@ export const generateShippingLabelPDF = (order: ShippingLabelOrder): void => {
 
   doc.setTextColor(...darkColor);
   doc.setFontSize(9);
-  doc.text("Rayn Adam Perfumes", 15, fromY + 12);
-  doc.text("contact@raynadamperfume.com", 15, fromY + 24);
+  doc.text("RAYN ADAM PRIVATE LIMITED", 15, fromY + 12);
+  doc.text("Malappuram – 673634, Kerala", 15, fromY + 24);
+  doc.text("+91 99466 47442", 15, fromY + 36);
 
   // Save
   doc.save(`shipping-label-${order.order_number}.pdf`);

@@ -178,7 +178,10 @@ const getOrderStatusEmailTemplate = (
                       RAYN ADAM
                     </p>
                     <p style="color: #555; margin: 8px 0 0; font-size: 11px;">
-                      © 2026 Rayn Adam. All rights reserved.
+                      © 2026 Rayn Adam Private Limited. All rights reserved.
+                    </p>
+                    <p style="color: #444; margin: 5px 0 0; font-size: 10px;">
+                      Malappuram – 673634, Kerala, India | +91 99466 47442
                     </p>
                   </td>
                 </tr>
@@ -257,7 +260,8 @@ const getEmailTemplate = (type: string, staffEmail: string, staffRole: string, c
                     <td style="background: linear-gradient(135deg, #1c1c1c 0%, #0f0f0f 100%); padding: 25px; text-align: center; border-top: 1px solid #3d3d3d;">
                       <p style="color: #666; font-size: 12px; margin: 0;">This is an automated notification from RAYN ADAM</p>
                       <p style="color: #a87c39; margin: 10px 0 0; font-size: 13px; letter-spacing: 2px;">RAYN ADAM</p>
-                      <p style="color: #555; margin: 8px 0 0; font-size: 11px;">© 2026 Rayn Adam. All rights reserved.</p>
+                      <p style="color: #555; margin: 8px 0 0; font-size: 11px;">© 2026 Rayn Adam Private Limited. All rights reserved.</p>
+                      <p style="color: #444; margin: 5px 0 0; font-size: 10px;">Malappuram – 673634, Kerala, India | +91 99466 47442</p>
                     </td>
                   </tr>
                 </table>
@@ -325,7 +329,8 @@ const getEmailTemplate = (type: string, staffEmail: string, staffRole: string, c
                     <td style="background: linear-gradient(135deg, #1c1c1c 0%, #0f0f0f 100%); padding: 25px; text-align: center; border-top: 1px solid #3d3d3d;">
                       <p style="color: #666; font-size: 12px; margin: 0;">This is an automated security notification from RAYN ADAM</p>
                       <p style="color: #a87c39; margin: 10px 0 0; font-size: 13px; letter-spacing: 2px;">RAYN ADAM</p>
-                      <p style="color: #555; margin: 8px 0 0; font-size: 11px;">© 2026 Rayn Adam. All rights reserved.</p>
+                      <p style="color: #555; margin: 8px 0 0; font-size: 11px;">© 2026 Rayn Adam Private Limited. All rights reserved.</p>
+                      <p style="color: #444; margin: 5px 0 0; font-size: 10px;">Malappuram – 673634, Kerala, India | +91 99466 47442</p>
                     </td>
                   </tr>
                 </table>
@@ -393,7 +398,8 @@ const getEmailTemplate = (type: string, staffEmail: string, staffRole: string, c
                     <td style="background: linear-gradient(135deg, #1c1c1c 0%, #0f0f0f 100%); padding: 25px; text-align: center; border-top: 1px solid #3d3d3d;">
                       <p style="color: #666; font-size: 12px; margin: 0;">This is an automated notification from RAYN ADAM</p>
                       <p style="color: #a87c39; margin: 10px 0 0; font-size: 13px; letter-spacing: 2px;">RAYN ADAM</p>
-                      <p style="color: #555; margin: 8px 0 0; font-size: 11px;">© 2026 Rayn Adam. All rights reserved.</p>
+                      <p style="color: #555; margin: 8px 0 0; font-size: 11px;">© 2026 Rayn Adam Private Limited. All rights reserved.</p>
+                      <p style="color: #444; margin: 5px 0 0; font-size: 10px;">Malappuram – 673634, Kerala, India | +91 99466 47442</p>
                     </td>
                   </tr>
                 </table>
@@ -460,7 +466,8 @@ const getEmailTemplate = (type: string, staffEmail: string, staffRole: string, c
                   <td style="background: linear-gradient(135deg, #1c1c1c 0%, #0f0f0f 100%); padding: 25px; text-align: center; border-top: 1px solid #3d3d3d;">
                     <p style="color: #666; font-size: 12px; margin: 0;">This is an automated security notification from RAYN ADAM</p>
                     <p style="color: #a87c39; margin: 10px 0 0; font-size: 13px; letter-spacing: 2px;">RAYN ADAM</p>
-                    <p style="color: #555; margin: 8px 0 0; font-size: 11px;">© 2026 Rayn Adam. All rights reserved.</p>
+                    <p style="color: #555; margin: 8px 0 0; font-size: 11px;">© 2026 Rayn Adam Private Limited. All rights reserved.</p>
+                    <p style="color: #444; margin: 5px 0 0; font-size: 10px;">Malappuram – 673634, Kerala, India | +91 99466 47442</p>
                   </td>
                 </tr>
               </table>

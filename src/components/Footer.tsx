@@ -52,8 +52,13 @@ const Footer = () => {
             <h4 className="text-sm tracking-[0.2em] text-foreground">CONTACT</h4>
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li>info@raynadamperfume.com</li>
-              <li>+1 (555) 123-4567</li>
-              <li>Dubai, UAE</li>
+              <li>+91 99466 47442</li>
+              <li>
+                Ward No. 21, Door No. 553/1<br />
+                Kavumpadi, Pallikkal, Tirurangadi<br />
+                Malappuram – 673634<br />
+                Kerala, India
+              </li>
             </ul>
           </div>
         </div>

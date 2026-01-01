@@ -137,7 +137,10 @@ const handler = async (req: Request): Promise<Response> => {
                   <tr>
                     <td style="padding: 30px 40px; border-top: 1px solid #333; text-align: center;">
                       <p style="margin: 0; font-size: 11px; color: #666; letter-spacing: 1px;">
-                        © 2024 Rayn Adam. All rights reserved.
+                        © 2026 Rayn Adam Private Limited. All rights reserved.
+                      </p>
+                      <p style="margin: 8px 0 0; font-size: 10px; color: #555;">
+                        Malappuram – 673634, Kerala, India | +91 99466 47442
                       </p>
                     </td>
                   </tr>
