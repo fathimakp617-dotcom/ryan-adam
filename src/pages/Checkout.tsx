@@ -58,7 +58,8 @@ const Checkout = () => {
     }
   }, [user]);
 
-  const shipping = totalPrice >= 999 ? 0 : 79;
+  // Free shipping for online payment, ₹79 for COD orders under ₹999
+  const shipping = paymentMethod === "razorpay" ? 0 : (totalPrice >= 999 ? 0 : 79);
   const discount = calculateDiscount(totalPrice);
   const orderTotal = totalPrice - discount + shipping;
 
