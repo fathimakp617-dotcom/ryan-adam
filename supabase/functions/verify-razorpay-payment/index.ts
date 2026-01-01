@@ -141,7 +141,8 @@ const handler = async (req: Request): Promise<Response> => {
     }
     
     let discount = 0;
-    const shipping = subtotal >= 999 ? 0 : 79;
+    // Free shipping for online payments
+    const shipping = 0;
 
     // Apply coupon if provided
     if (order_data.coupon_code) {

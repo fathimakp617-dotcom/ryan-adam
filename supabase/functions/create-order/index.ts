@@ -220,8 +220,8 @@ serve(async (req) => {
       );
     }
 
-    // Calculate shipping (free over 999)
-    const shipping = subtotal >= 999 ? 0 : 79;
+    // Calculate shipping - FREE for online payment, ₹79 for COD under ₹999
+    const shipping = orderRequest.payment_method === 'razorpay' ? 0 : (subtotal >= 999 ? 0 : 79);
 
     // Initialize Supabase client with service role for inserting
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
