@@ -41,7 +41,7 @@ interface CountryCodeSelectProps {
 const CountryCodeSelect = ({ value, onChange }: CountryCodeSelectProps) => {
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-24 bg-input border-border">
+      <SelectTrigger className="w-[100px] h-12 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl text-base">
         <SelectValue placeholder="Code" />
       </SelectTrigger>
       <SelectContent className="max-h-60">
@@ -52,7 +52,7 @@ const CountryCodeSelect = ({ value, onChange }: CountryCodeSelectProps) => {
           >
             <span className="flex items-center gap-2">
               <span>{item.flag}</span>
-              <span>{item.code}</span>
+              <span className="font-medium">{item.code}</span>
             </span>
           </SelectItem>
         ))}

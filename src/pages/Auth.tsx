@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
+import CountryCodeSelect from "@/components/CountryCodeSelect";
 import { z } from "zod";
 
 const emailSchema = z.string().email("Invalid email address").max(255, "Email too long");
@@ -24,7 +25,7 @@ const passwordSchema = z
   .regex(/[a-z]/, "Password must contain at least one lowercase letter")
   .regex(/[!@#$%^&*(),.?":{}|<>]/, "Password must contain at least one special character (!@#$%^&*)");
 const otpSchema = z.string().length(8, "OTP must be 8 digits").regex(/^\d+$/, "OTP must contain only numbers");
-const phoneSchema = z.string().min(10, "Phone number must be at least 10 digits").max(15, "Phone number too long").regex(/^[+]?[\d\s-]+$/, "Invalid phone number format");
+const phoneSchema = z.string().min(6, "Phone number must be at least 6 digits").max(15, "Phone number too long").regex(/^[\d]+$/, "Phone number must contain only digits");
 
 type AuthMode = "login" | "signup" | "signup-verify" | "forgot" | "forgot-verify" | "reset" | "email-otp" | "email-otp-verify";
 
@@ -40,6 +41,7 @@ const Auth = () => {
     confirmPassword: "",
     firstName: "",
     lastName: "",
+    countryCode: "+91-IN",
     phone: "",
     otpEmail: "",
     otp: "",
@@ -121,15 +123,23 @@ const Auth = () => {
     }
     
     // Phone validation - required
-    const phoneResult = phoneSchema.safeParse(formData.phone);
     if (!formData.phone.trim()) {
       newErrors.phone = "Phone number is required";
-    } else if (!phoneResult.success) {
-      newErrors.phone = phoneResult.error.errors[0].message;
+    } else {
+      const phoneResult = phoneSchema.safeParse(formData.phone);
+      if (!phoneResult.success) {
+        newErrors.phone = phoneResult.error.errors[0].message;
+      }
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  // Helper to get full phone number with country code
+  const getFullPhoneNumber = () => {
+    const code = formData.countryCode.split("-")[0]; // Extract just the code part
+    return `${code}${formData.phone}`;
   };
 
   const validateForgotForm = () => {
@@ -259,10 +269,11 @@ const Auth = () => {
     setIsSubmitting(true);
     try {
       // Check if email or phone already exists
+      const fullPhone = getFullPhoneNumber();
       const { data: existsData, error: existsError } = await supabase
         .rpc('check_account_exists', { 
           check_email: formData.email, 
-          check_phone: formData.phone 
+          check_phone: fullPhone 
         });
 
       if (existsError) {
@@ -340,6 +351,7 @@ const Auth = () => {
 
       // OTP verified - now update the user's profile with additional data
       // The user is now logged in via OTP, update their profile
+      const fullPhone = getFullPhoneNumber();
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         // Update auth user metadata
@@ -347,7 +359,7 @@ const Auth = () => {
           data: {
             first_name: formData.firstName,
             last_name: formData.lastName,
-            phone: formData.phone,
+            phone: fullPhone,
           }
         });
 
@@ -356,7 +368,7 @@ const Auth = () => {
           user_id: user.id,
           first_name: formData.firstName,
           last_name: formData.lastName,
-          phone: formData.phone,
+          phone: fullPhone,
         }, { onConflict: 'user_id' });
       }
 
@@ -838,18 +850,30 @@ const Auth = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="signupPhone" className="text-sm font-medium">Phone Number</Label>
-                    <div className="relative">
-                      <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="signupPhone"
-                        name="phone"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        className="pl-11 h-12 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl text-base"
-                        placeholder="+91 9876543210"
+                    <Label htmlFor="signupPhone" className="text-sm font-medium">Phone Number <span className="text-destructive">*</span></Label>
+                    <div className="flex gap-2">
+                      <CountryCodeSelect
+                        value={formData.countryCode}
+                        onChange={(value) => setFormData(prev => ({ ...prev, countryCode: value }))}
                       />
+                      <div className="relative flex-1">
+                        <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="signupPhone"
+                          name="phone"
+                          type="tel"
+                          value={formData.phone}
+                          onChange={(e) => {
+                            // Only allow digits
+                            const value = e.target.value.replace(/\D/g, '');
+                            setFormData(prev => ({ ...prev, phone: value }));
+                            setErrors(prev => ({ ...prev, phone: "" }));
+                          }}
+                          className="pl-11 h-12 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl text-base"
+                          placeholder="9876543210"
+                          maxLength={15}
+                        />
+                      </div>
                     </div>
                     {errors.phone && (
                       <p className="text-destructive text-xs">{errors.phone}</p>
