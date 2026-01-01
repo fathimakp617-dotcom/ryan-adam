@@ -18,7 +18,7 @@ interface OrderItem {
 interface StaffNotificationRequest {
   type: "account_created" | "password_changed" | "account_blocked" | "account_unblocked" | "order_status_update";
   staff_email?: string;
-  staff_role?: "admin" | "shipping";
+  staff_role?: "admin" | "shipping" | "route";
   created_by?: string;
   temporary_password?: string;
   order_number?: string;
@@ -250,7 +250,7 @@ const getEmailTemplate = (type: string, staffEmail: string, staffRole: string, c
                       ` : ""}
                       
                       <p style="color: #888; font-size: 14px; line-height: 1.6; margin: 25px 0 0;">
-                        You can now access the ${staffRole === "admin" ? "Admin" : "Shipping"} Dashboard using your credentials.
+                        You can now access the ${staffRole === "admin" ? "Admin" : staffRole === "shipping" ? "Shipping" : "Route"} Dashboard using your credentials.
                       </p>
                     </td>
                   </tr>
@@ -318,8 +318,8 @@ const getEmailTemplate = (type: string, staffEmail: string, staffRole: string, c
                         ${createdBy ? `<p style="margin: 0; color: #888; font-size: 14px;"><strong style="color: #ef4444;">Blocked by:</strong> ${createdBy}</p>` : ""}
                       </div>
                       
-                      <p style="color: #888; font-size: 14px; line-height: 1.6;">
-                        This staff member will no longer be able to log in until their account is unblocked.
+                      <p style="color: #888; font-size: 14px; line-height: 1.6; margin: 25px 0 0;">
+                        If you believe this was done in error, please contact your administrator immediately.
                       </p>
                     </td>
                   </tr>
@@ -345,7 +345,7 @@ const getEmailTemplate = (type: string, staffEmail: string, staffRole: string, c
 
   if (type === "account_unblocked") {
     return {
-      subject: `✅ RAYN ADAM - Staff Account Unblocked: ${staffEmail}`,
+      subject: `✅ RAYN ADAM - Staff Account Restored: ${staffEmail}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -362,14 +362,14 @@ const getEmailTemplate = (type: string, staffEmail: string, staffRole: string, c
                   <tr>
                     <td style="background: linear-gradient(135deg, #1c1c1c 0%, #2d2d2d 100%); padding: 40px; text-align: center; border-bottom: 2px solid #a87c39;">
                       <h1 style="color: #c7915e; margin: 0; font-size: 32px; font-weight: 300; letter-spacing: 3px;">RAYN ADAM</h1>
-                      <p style="color: #a87c39; margin: 8px 0 0; font-size: 11px; letter-spacing: 3px; text-transform: uppercase;">Access Restored</p>
+                      <p style="color: #a87c39; margin: 8px 0 0; font-size: 11px; letter-spacing: 3px; text-transform: uppercase;">Account Update</p>
                     </td>
                   </tr>
 
                   <!-- Success Banner -->
                   <tr>
                     <td style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 30px; text-align: center;">
-                      <span style="font-size: 48px;">✓</span>
+                      <span style="font-size: 48px;">✅</span>
                       <h2 style="color: #ffffff; margin: 15px 0 0; font-size: 24px; font-weight: 500;">Account Access Restored</h2>
                     </td>
                   </tr>
@@ -377,18 +377,18 @@ const getEmailTemplate = (type: string, staffEmail: string, staffRole: string, c
                   <tr>
                     <td style="padding: 35px 30px;">
                       <p style="color: #e0e0e0; font-size: 16px; line-height: 1.7; margin: 0 0 25px;">
-                        The following staff account has been unblocked and can now access the portal:
+                        The following staff account has been unblocked and can now access the portal again:
                       </p>
                       
                       <div style="background: #1c1c1c; padding: 25px; border-radius: 8px; margin: 25px 0; border: 1px solid #22c55e;">
                         <p style="margin: 0 0 12px; color: #f5f5f0; font-size: 15px;"><strong style="color: #22c55e;">Email:</strong> ${staffEmail}</p>
                         <p style="margin: 0 0 12px; color: #f5f5f0; font-size: 15px;"><strong style="color: #22c55e;">Role:</strong> ${staffRole.charAt(0).toUpperCase() + staffRole.slice(1)}</p>
-                        <p style="margin: 0 0 12px; color: #888; font-size: 14px;"><strong style="color: #22c55e;">Unblocked at:</strong> ${new Date().toLocaleString()}</p>
-                        ${createdBy ? `<p style="margin: 0; color: #888; font-size: 14px;"><strong style="color: #22c55e;">Unblocked by:</strong> ${createdBy}</p>` : ""}
+                        <p style="margin: 0 0 12px; color: #888; font-size: 14px;"><strong style="color: #22c55e;">Restored at:</strong> ${new Date().toLocaleString()}</p>
+                        ${createdBy ? `<p style="margin: 0; color: #888; font-size: 14px;"><strong style="color: #22c55e;">Restored by:</strong> ${createdBy}</p>` : ""}
                       </div>
                       
-                      <p style="color: #888; font-size: 14px; line-height: 1.6;">
-                        This staff member can now log in and access the ${staffRole === "admin" ? "Admin" : "Shipping"} Dashboard.
+                      <p style="color: #888; font-size: 14px; line-height: 1.6; margin: 25px 0 0;">
+                        You can now log in with your existing credentials.
                       </p>
                     </td>
                   </tr>
@@ -412,7 +412,7 @@ const getEmailTemplate = (type: string, staffEmail: string, staffRole: string, c
     };
   }
 
-  // Default: password_changed
+  // password_changed
   return {
     subject: `🔐 RAYN ADAM - Password Changed for ${staffEmail}`,
     html: `
@@ -431,15 +431,15 @@ const getEmailTemplate = (type: string, staffEmail: string, staffRole: string, c
                 <tr>
                   <td style="background: linear-gradient(135deg, #1c1c1c 0%, #2d2d2d 100%); padding: 40px; text-align: center; border-bottom: 2px solid #a87c39;">
                     <h1 style="color: #c7915e; margin: 0; font-size: 32px; font-weight: 300; letter-spacing: 3px;">RAYN ADAM</h1>
-                    <p style="color: #a87c39; margin: 8px 0 0; font-size: 11px; letter-spacing: 3px; text-transform: uppercase;">Security Update</p>
+                    <p style="color: #a87c39; margin: 8px 0 0; font-size: 11px; letter-spacing: 3px; text-transform: uppercase;">Security Notification</p>
                   </td>
                 </tr>
 
-                <!-- Info Banner -->
+                <!-- Alert Banner -->
                 <tr>
                   <td style="background: linear-gradient(135deg, #a87c39 0%, #c7915e 100%); padding: 30px; text-align: center;">
                     <span style="font-size: 48px;">🔐</span>
-                    <h2 style="color: #1c1c1c; margin: 15px 0 0; font-size: 24px; font-weight: 500;">Password Changed</h2>
+                    <h2 style="color: #1c1c1c; margin: 15px 0 0; font-size: 24px; font-weight: 500;">Password Updated</h2>
                   </td>
                 </tr>
                 
@@ -452,11 +452,12 @@ const getEmailTemplate = (type: string, staffEmail: string, staffRole: string, c
                     <div style="background: #1c1c1c; padding: 25px; border-radius: 8px; margin: 25px 0; border: 1px solid #3d3d3d;">
                       <p style="margin: 0 0 12px; color: #f5f5f0; font-size: 15px;"><strong style="color: #a87c39;">Email:</strong> ${staffEmail}</p>
                       <p style="margin: 0 0 12px; color: #f5f5f0; font-size: 15px;"><strong style="color: #a87c39;">Role:</strong> ${staffRole.charAt(0).toUpperCase() + staffRole.slice(1)}</p>
-                      <p style="margin: 0; color: #888; font-size: 14px;"><strong style="color: #a87c39;">Changed at:</strong> ${new Date().toLocaleString()}</p>
+                      <p style="margin: 0 0 12px; color: #888; font-size: 14px;"><strong style="color: #a87c39;">Changed at:</strong> ${new Date().toLocaleString()}</p>
+                      ${createdBy ? `<p style="margin: 0; color: #888; font-size: 14px;"><strong style="color: #a87c39;">Changed by:</strong> ${createdBy}</p>` : ""}
                     </div>
                     
-                    <p style="color: #888; font-size: 14px; line-height: 1.6;">
-                      If you did not make this change, please contact an administrator immediately.
+                    <p style="color: #ef4444; font-size: 14px; line-height: 1.6; margin: 25px 0 0;">
+                      ⚠️ If you did not request this change, please contact your administrator immediately.
                     </p>
                   </td>
                 </tr>
@@ -486,63 +487,71 @@ serve(async (req) => {
   }
 
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, serviceKey);
+
     const request: StaffNotificationRequest = await req.json();
-    console.log("Staff notification request:", request);
+    console.log("Staff notification request:", request.type);
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Handle order status update notifications
+    // Handle order status update notifications (to all staff)
     if (request.type === "order_status_update") {
-      if (!request.order_number || !request.customer_name || !request.customer_email || !request.old_status || !request.new_status || !request.updated_by) {
-        throw new Error("Missing required fields for order status update notification");
+      const {
+        order_number,
+        customer_name,
+        customer_email,
+        old_status,
+        new_status,
+        updated_by,
+        items = [],
+        total = 0,
+        tracking_number,
+        tracking_url,
+      } = request;
+
+      if (!order_number || !old_status || !new_status) {
+        throw new Error("Missing required fields for order status update");
       }
 
-      // Get all staff emails - environment admins + shipping staff + DB active staff
+      // Get all active staff emails
       const adminEmails = (Deno.env.get("ADMIN_EMAILS") || "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
       const shippingEmails = (Deno.env.get("SHIPPING_EMAILS") || "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
-
-      // Also get active staff from database
+      
+      // Get active staff from database
       const { data: dbStaff } = await supabase
         .from("staff_members")
         .select("email")
         .eq("is_active", true);
 
-      const dbStaffEmails = (dbStaff || []).map((s: { email: string }) => s.email.toLowerCase());
-
-      // Combine all unique staff emails
-      const allStaffEmails = [...new Set([...adminEmails, ...shippingEmails, ...dbStaffEmails])];
+      const dbEmails = (dbStaff || []).map((s) => s.email.toLowerCase());
+      const allStaffEmails = [...new Set([...adminEmails, ...shippingEmails, ...dbEmails])];
 
       if (allStaffEmails.length === 0) {
-        console.log("No staff emails found to notify");
+        console.log("No staff emails to notify");
         return new Response(
           JSON.stringify({ success: true, message: "No staff to notify" }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      const items = request.items || [];
-      const total = request.total || 0;
-
       const emailTemplate = getOrderStatusEmailTemplate(
-        request.order_number,
-        request.customer_name,
-        request.customer_email,
-        request.old_status,
-        request.new_status,
-        request.updated_by,
+        order_number,
+        customer_name || "Unknown",
+        customer_email || "Unknown",
+        old_status,
+        new_status,
+        updated_by || "System",
         items,
         total,
-        request.tracking_number,
-        request.tracking_url
+        tracking_number,
+        tracking_url
       );
 
       // Send to all staff
       const emailPromises = allStaffEmails.map(async (email) => {
         try {
           const { error } = await resend.emails.send({
-            from: "Rayn Adam <notifications@raynadamperfume.com>",
+            from: "Rayn Adam <onboarding@resend.dev>",
             to: [email],
             subject: emailTemplate.subject,
             html: emailTemplate.html,
@@ -567,7 +576,7 @@ serve(async (req) => {
       try {
         await supabase.from("staff_notifications").insert({
           notification_type: "order_status_update",
-          staff_email: request.updated_by,
+          staff_email: request.updated_by || "system",
           order_number: request.order_number,
           subject: emailTemplate.subject,
           recipients: allStaffEmails,
@@ -598,13 +607,6 @@ serve(async (req) => {
     if (!request.staff_email || !request.staff_role) {
       throw new Error("Missing required fields: staff_email and staff_role");
     }
-
-    // Check if the staff member is active
-    const { data: staffMember } = await supabase
-      .from("staff_members")
-      .select("is_active")
-      .eq("email", request.staff_email.toLowerCase())
-      .maybeSingle();
 
     // Get admin emails
     const adminEmails = (Deno.env.get("ADMIN_EMAILS") || "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
@@ -638,11 +640,11 @@ serve(async (req) => {
       request.temporary_password
     );
 
-    // Send to all recipients
+    // Send to all recipients - using onboarding@resend.dev since custom domain may not be verified
     const emailPromises = recipients.map(async (email) => {
       try {
         const { error } = await resend.emails.send({
-          from: "Rayn Adam <notifications@raynadamperfume.com>",
+          from: "Rayn Adam <onboarding@resend.dev>",
           to: [email],
           subject: emailTemplate.subject,
           html: emailTemplate.html,

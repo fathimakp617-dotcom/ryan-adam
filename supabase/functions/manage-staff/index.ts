@@ -1,11 +1,37 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Secure password hashing using PBKDF2 (Web Crypto API compatible)
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt: salt,
+      iterations: 100000,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    256
+  );
+  const hashArray = new Uint8Array(derivedBits);
+  const saltHex = Array.from(salt).map((b) => b.toString(16).padStart(2, "0")).join("");
+  const hashHex = Array.from(hashArray).map((b) => b.toString(16).padStart(2, "0")).join("");
+  return `pbkdf2:${saltHex}:${hashHex}`;
+}
 
 // Validate session token from database
 async function validateSession(supabase: any, email: string, token: string): Promise<boolean> {
@@ -239,9 +265,9 @@ serve(async (req) => {
           );
         }
 
-        if (!["admin", "shipping"].includes(role)) {
+        if (!["admin", "shipping", "route"].includes(role)) {
           return new Response(
-            JSON.stringify({ error: "Role must be 'admin' or 'shipping'" }),
+            JSON.stringify({ error: "Role must be 'admin', 'shipping', or 'route'" }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
@@ -267,8 +293,8 @@ serve(async (req) => {
           );
         }
 
-        // Use bcrypt for password hashing with automatic salt
-        const passwordHash = await bcrypt.hash(password);
+        // Use PBKDF2 for password hashing (Web Crypto API compatible)
+        const passwordHash = await hashPassword(password);
 
         const { data, error } = await supabase
           .from("staff_members")
@@ -288,7 +314,7 @@ serve(async (req) => {
 
         // Send email notification (fire and forget)
         try {
-          await fetch(`${supabaseUrl}/functions/v1/send-staff-notification`, {
+          const notifyResponse = await fetch(`${supabaseUrl}/functions/v1/send-staff-notification`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -302,7 +328,8 @@ serve(async (req) => {
               temporary_password: password,
             }),
           });
-          console.log("Staff notification email sent");
+          const notifyResult = await notifyResponse.json();
+          console.log("Staff notification email result:", notifyResult);
         } catch (emailError) {
           console.error("Failed to send staff notification:", emailError);
         }
@@ -328,8 +355,8 @@ serve(async (req) => {
           );
         }
 
-        // Use bcrypt for password hashing
-        const passwordHash = await bcrypt.hash(password);
+        // Use PBKDF2 for password hashing
+        const passwordHash = await hashPassword(password);
 
         // Get staff member info for notification
         const { data: staffMember } = await supabase
@@ -358,7 +385,7 @@ serve(async (req) => {
         // Send password change notification (only if staff is active)
         if (staffMember && staffMember.is_active) {
           try {
-            await fetch(`${supabaseUrl}/functions/v1/send-staff-notification`, {
+            const notifyResponse = await fetch(`${supabaseUrl}/functions/v1/send-staff-notification`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -371,7 +398,8 @@ serve(async (req) => {
                 created_by: admin_email,
               }),
             });
-            console.log("Password change notification email sent");
+            const notifyResult = await notifyResponse.json();
+            console.log("Password change notification result:", notifyResult);
           } catch (emailError) {
             console.error("Failed to send password change notification:", emailError);
           }
@@ -432,9 +460,9 @@ serve(async (req) => {
 
         console.log(`Staff ${staff_id} (${current.email}) ${newStatus ? "unblocked" : "blocked"} by ${admin_email}`);
 
-        // Send block/unblock notification to main admin only (not to the blocked staff)
+        // Send block/unblock notification
         try {
-          await fetch(`${supabaseUrl}/functions/v1/send-staff-notification`, {
+          const notifyResponse = await fetch(`${supabaseUrl}/functions/v1/send-staff-notification`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -447,7 +475,8 @@ serve(async (req) => {
               created_by: admin_email,
             }),
           });
-          console.log(`Staff ${newStatus ? "unblock" : "block"} notification sent`);
+          const notifyResult = await notifyResponse.json();
+          console.log(`Staff ${newStatus ? "unblock" : "block"} notification result:`, notifyResult);
         } catch (emailError) {
           console.error("Failed to send notification:", emailError);
         }
@@ -511,9 +540,9 @@ serve(async (req) => {
     }
   } catch (error: unknown) {
     console.error("Error in manage-staff:", error);
-    const message = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage = error instanceof Error ? error.message : "An error occurred";
     return new Response(
-      JSON.stringify({ error: message }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
