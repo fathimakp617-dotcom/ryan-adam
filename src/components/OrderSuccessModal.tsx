@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle, X, Download, Mail, RefreshCw } from "lucide-react";
+import { CheckCircle, X, Download, Mail, RefreshCw, Gift, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+
 import OrderReceipt from "./OrderReceipt";
 
 interface OrderData {
@@ -28,15 +29,24 @@ interface OrderData {
   user_id: string | null;
 }
 
+interface LoyaltyCoupon {
+  code: string;
+  discount_percent: number;
+  is_bogo: boolean;
+  expires_at: string | null;
+}
+
 const OrderSuccessModal = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
   const { toast } = useToast();
+
   const orderNumber = searchParams.get("order");
   const [orderData, setOrderData] = useState<OrderData | null>(null);
+  const [loyaltyCoupon, setLoyaltyCoupon] = useState<LoyaltyCoupon | null>(null);
   const [showReceipt, setShowReceipt] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isResending, setIsResending] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (orderNumber) {
@@ -46,37 +56,88 @@ const OrderSuccessModal = () => {
 
   const fetchOrderData = async () => {
     if (!orderNumber) return;
-    
+
     try {
       const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('order_number', orderNumber)
+        .from("orders")
+        .select("*")
+        .eq("order_number", orderNumber)
         .single();
 
       if (error) throw error;
-      
+
       if (data) {
         setOrderData({
           order_number: data.order_number,
           customer_name: data.customer_name,
           customer_email: data.customer_email,
-          items: data.items as OrderData['items'],
+          items: data.items as OrderData["items"],
           subtotal: data.subtotal,
           discount: data.discount || 0,
           shipping: data.shipping || 0,
           total: data.total,
-          shipping_address: data.shipping_address as OrderData['shipping_address'],
+          shipping_address: data.shipping_address as OrderData["shipping_address"],
           payment_method: data.payment_method,
           created_at: data.created_at,
           user_id: data.user_id,
         });
+
+        // Loyalty coupons are generated async after order creation, so we retry briefly.
+        if (data.user_id) {
+          fetchLoyaltyCouponWithRetry(data.user_id);
+        }
       }
     } catch (error) {
       console.error("Error fetching order:", error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const fetchLoyaltyCoupon = async (userId: string) => {
+    const { data, error } = await supabase
+      .from("coupons")
+      .select("code, discount_percent, is_bogo, expires_at")
+      .eq("user_id", userId)
+      .eq("is_active", true)
+      .eq("current_uses", 0)
+      .like("coupon_type", "loyalty%")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (!error && data?.code) {
+      setLoyaltyCoupon({
+        code: data.code,
+        discount_percent: data.discount_percent,
+        is_bogo: data.is_bogo ?? false,
+        expires_at: data.expires_at,
+      });
+      return true;
+    }
+
+    return false;
+  };
+
+  const fetchLoyaltyCouponWithRetry = async (userId: string) => {
+    // quick retries to catch async coupon generation
+    const ok = await fetchLoyaltyCoupon(userId);
+    if (ok) return;
+
+    await new Promise((r) => setTimeout(r, 1500));
+    const ok2 = await fetchLoyaltyCoupon(userId);
+    if (ok2) return;
+
+    await new Promise((r) => setTimeout(r, 2500));
+    await fetchLoyaltyCoupon(userId);
+  };
+
+  const handleCopyCoupon = async () => {
+    if (!loyaltyCoupon) return;
+    await navigator.clipboard.writeText(loyaltyCoupon.code);
+    setCopied(true);
+    toast({ title: "Copied", description: "Coupon code copied to clipboard" });
+    setTimeout(() => setCopied(false), 1600);
   };
 
   const handleResendEmail = async () => {
@@ -169,6 +230,40 @@ const OrderSuccessModal = () => {
                   <span>Confirmation email sent</span>
                 </div>
 
+                {/* Loyalty coupon popup */}
+                {loyaltyCoupon && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-6 rounded-xl border border-border bg-muted/40 p-4 text-left"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+                        <Gift className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-foreground">You won a coupon!</p>
+                        <p className="text-xs text-muted-foreground">
+                          {loyaltyCoupon.is_bogo
+                            ? "Buy 1 Get 1 FREE on your next order"
+                            : `${loyaltyCoupon.discount_percent}% off on your next order`}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex items-center gap-2">
+                      <div className="flex-1 rounded-lg border border-border bg-card px-3 py-2">
+                        <p className="font-mono text-sm font-semibold tracking-wider text-foreground">
+                          {loyaltyCoupon.code}
+                        </p>
+                        <p className="mt-1 text-[10px] text-muted-foreground">Single-use • Valid for 30 days</p>
+                      </div>
+                      <Button type="button" size="sm" variant="outline" onClick={handleCopyCoupon}>
+                        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
 
                 {isLoading ? (
                   <div className="flex justify-center">
