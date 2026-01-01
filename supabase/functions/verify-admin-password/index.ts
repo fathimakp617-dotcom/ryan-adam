@@ -97,11 +97,9 @@ serve(async (req) => {
     const adminPassword = Deno.env.get("ADMIN_PASSWORD");
     const adminEmailsRaw = Deno.env.get("ADMIN_EMAILS") || "";
     const shippingEmailsRaw = Deno.env.get("SHIPPING_EMAILS") || "";
-    const routeEmailsRaw = Deno.env.get("ROUTE_EMAILS") || "";
     
     const adminEmails = adminEmailsRaw.split(",").map(e => e.trim().toLowerCase()).filter(e => e);
     const shippingEmails = shippingEmailsRaw.split(",").map(e => e.trim().toLowerCase()).filter(e => e);
-    const routeEmails = routeEmailsRaw.split(",").map(e => e.trim().toLowerCase()).filter(e => e);
 
     const { email, password } = await req.json();
     
@@ -247,14 +245,12 @@ serve(async (req) => {
     }
 
     // Determine role based on email list
-    let role: "admin" | "shipping" | "route" | null = null;
+    let role: "admin" | "shipping" | null = null;
     
     if (adminEmails.includes(normalizedEmail)) {
       role = "admin";
     } else if (shippingEmails.includes(normalizedEmail)) {
       role = "shipping";
-    } else if (routeEmails.includes(normalizedEmail)) {
-      role = "route";
     }
 
     // Check if email is in either list
