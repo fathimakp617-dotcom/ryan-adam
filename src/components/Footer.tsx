@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Instagram, Facebook, Twitter } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
@@ -68,13 +69,19 @@ const Footer = () => {
           <p className="text-sm text-muted-foreground">
             © 2026 Rayn Adam. All rights reserved.
           </p>
-          <div className="flex gap-8 text-sm text-muted-foreground">
-            <a href="#" className="hover:text-primary transition-colors">
+          <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm text-muted-foreground">
+            <Link to="/privacy" className="hover:text-primary transition-colors">
               Privacy Policy
-            </a>
-            <a href="#" className="hover:text-primary transition-colors">
-              Terms of Service
-            </a>
+            </Link>
+            <Link to="/terms" className="hover:text-primary transition-colors">
+              Terms & Conditions
+            </Link>
+            <Link to="/refund-policy" className="hover:text-primary transition-colors">
+              Refund Policy
+            </Link>
+            <Link to="/shipping-policy" className="hover:text-primary transition-colors">
+              Shipping Policy
+            </Link>
           </div>
         </div>
       </div>
