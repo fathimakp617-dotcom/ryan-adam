@@ -56,7 +56,7 @@ export const generateInvoicePDF = (data: InvoiceData): jsPDF => {
   doc.setTextColor(180, 180, 180);
   doc.setFontSize(8);
   doc.text("RAYN ADAM PRIVATE LIMITED", pageWidth / 2, 38, { align: "center" });
-  doc.text("Malappuram – 673634, Kerala, India | TAN: CHNR06383G", pageWidth / 2, 46, { align: "center" });
+  doc.text("GSTIN: 32AAPCR2931R1ZS | TAN: CHNR06383G", pageWidth / 2, 46, { align: "center" });
 
   // Invoice title
   doc.setTextColor(...darkColor);

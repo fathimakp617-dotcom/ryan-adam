@@ -342,8 +342,8 @@ const generateInvoicePDF = async (order: OrderConfirmationRequest): Promise<Uint
   });
   
   yPos -= 12;
-  page.drawText('TAN: CHNR06383G', {
-    x: width / 2 - 40,
+  page.drawText('GSTIN: 32AAPCR2931R1ZS | TAN: CHNR06383G', {
+    x: width / 2 - 100,
     y: yPos,
     size: 9,
     font: font,
