@@ -32,11 +32,11 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'list_loyalty') {
-      // List loyalty coupons with user email
+      // List loyalty coupons with user email (coupon_type starts with 'loyalty')
       const { data: loyaltyCoupons, error } = await supabase
         .from('coupons')
         .select('*')
-        .eq('coupon_type', 'loyalty')
+        .like('coupon_type', 'loyalty%')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
