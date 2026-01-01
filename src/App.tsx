@@ -23,6 +23,9 @@ const Checkout = lazy(() => import("./pages/Checkout"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Account = lazy(() => import("./pages/Account"));
 const Terms = lazy(() => import("./pages/Terms"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const RefundPolicy = lazy(() => import("./pages/RefundPolicy"));
+const ShippingPolicy = lazy(() => import("./pages/ShippingPolicy"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Admin pages - eager load child routes for instant switching
@@ -96,6 +99,9 @@ const App = () => (
                       <Route path="/auth" element={<Auth />} />
                       <Route path="/account" element={<Account />} />
                       <Route path="/terms" element={<Terms />} />
+                      <Route path="/privacy" element={<PrivacyPolicy />} />
+                      <Route path="/refund-policy" element={<RefundPolicy />} />
+                      <Route path="/shipping-policy" element={<ShippingPolicy />} />
                       <Route path="/admin" element={<AdminLayout />}>
                         <Route index element={<AdminDashboard />} />
                         <Route path="orders" element={<AdminOrders />} />
