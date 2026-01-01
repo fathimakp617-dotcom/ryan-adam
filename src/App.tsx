@@ -40,7 +40,6 @@ import AdminAccount from "./pages/admin/AdminAccount";
 import AdminCoupons from "./pages/admin/AdminCoupons";
 import AdminReturns from "./pages/admin/AdminReturns";
 import AdminExpenses from "./pages/admin/AdminExpenses";
-import AdminShopOrders from "./pages/admin/AdminShopOrders";
 import AdminReviewsPage from "./pages/admin/AdminReviewsPage";
 
 // Shipping pages - eager load child routes for instant switching
@@ -49,7 +48,6 @@ import ShippingDashboard from "./pages/shipping/ShippingDashboard";
 import ShippingOrders from "./pages/shipping/ShippingOrders";
 import ShippingAccount from "./pages/shipping/ShippingAccount";
 import ShippingReturns from "./pages/shipping/ShippingReturns";
-import ShippingShopOrders from "./pages/shipping/ShippingShopOrders";
 
 
 // Minimal loading fallback
@@ -108,7 +106,6 @@ const App = () => (
                         <Route path="account" element={<AdminAccount />} />
                         <Route path="returns" element={<AdminReturns />} />
                         <Route path="expenses" element={<AdminExpenses />} />
-                        <Route path="shop-orders" element={<AdminShopOrders />} />
                         <Route path="reviews" element={<AdminReviewsPage />} />
                       </Route>
                       <Route path="/shipping" element={<ShippingLayout />}>
@@ -116,7 +113,6 @@ const App = () => (
                         <Route path="orders" element={<ShippingOrders />} />
                         <Route path="account" element={<ShippingAccount />} />
                         <Route path="returns" element={<ShippingReturns />} />
-                        <Route path="shop-orders" element={<ShippingShopOrders />} />
                       </Route>
                       <Route path="*" element={<NotFound />} />
                     </Routes>
