@@ -1,70 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Star, ThumbsUp, User } from "lucide-react";
+import { Star, ThumbsUp, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { fadeInUp, staggerContainer, staggerItem } from "@/lib/animations";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Review {
   id: string;
-  author: string;
+  customer_name: string;
   rating: number;
-  date: string;
-  title: string;
-  content: string;
-  helpful: number;
-  verified: boolean;
+  created_at: string;
+  title: string | null;
+  comment: string | null;
+  is_verified_purchase: boolean;
 }
 
 interface ProductReviewsProps {
   productId: string;
 }
-
-// Mock reviews data
-const mockReviews: Review[] = [
-  {
-    id: "1",
-    author: "Arjun M.",
-    rating: 5,
-    date: "December 15, 2024",
-    title: "Absolutely mesmerizing fragrance",
-    content: "This is hands down the best perfume I've ever owned. The longevity is incredible - I can still smell it on my shirt the next day. The oud notes are perfectly balanced with the rose, creating a sophisticated yet approachable scent. Worth every rupee!",
-    helpful: 24,
-    verified: true,
-  },
-  {
-    id: "2",
-    author: "Priya S.",
-    rating: 5,
-    date: "December 10, 2024",
-    title: "Luxury in a bottle",
-    content: "Received so many compliments wearing this. The packaging is exquisite and the fragrance develops beautifully throughout the day. Started with bright citrus and settled into this warm, woody base that's absolutely divine.",
-    helpful: 18,
-    verified: true,
-  },
-  {
-    id: "3",
-    author: "Rahul K.",
-    rating: 4,
-    date: "December 5, 2024",
-    title: "Great quality, slightly strong projection",
-    content: "Beautiful fragrance with excellent ingredients. The only reason for 4 stars is that the projection might be a bit strong for office settings. Perfect for evenings and special occasions though!",
-    helpful: 12,
-    verified: true,
-  },
-  {
-    id: "4",
-    author: "Ananya R.",
-    rating: 5,
-    date: "November 28, 2024",
-    title: "My signature scent now",
-    content: "I've been searching for years for a scent that truly represents me, and this is it. Elegant, mysterious, and unforgettable. The craftsmanship is evident in every note.",
-    helpful: 8,
-    verified: false,
-  },
-];
 
 const StarRating = ({ rating, onRate, interactive = false, size = "md" }: { 
   rating: number; 
@@ -105,27 +62,124 @@ const StarRating = ({ rating, onRate, interactive = false, size = "md" }: {
 };
 
 const ProductReviews = ({ productId }: ProductReviewsProps) => {
-  const [reviews] = useState<Review[]>(mockReviews);
+  const { user } = useAuth();
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [newReview, setNewReview] = useState({ rating: 0, title: "", content: "", name: "" });
+  const [averageRating, setAverageRating] = useState(0);
+  const [totalReviews, setTotalReviews] = useState(0);
 
-  const averageRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+  useEffect(() => {
+    fetchReviews();
+    fetchRatingSummary();
+  }, [productId]);
+
+  const fetchReviews = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("product_reviews")
+        .select("*")
+        .eq("product_id", productId)
+        .eq("is_approved", true)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setReviews(data || []);
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchRatingSummary = async () => {
+    try {
+      const { data, error } = await supabase.rpc("get_product_rating", {
+        p_product_id: productId,
+      });
+
+      if (error) throw error;
+      if (data && data.length > 0) {
+        setAverageRating(Number(data[0].average_rating) || 0);
+        setTotalReviews(Number(data[0].total_reviews) || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching rating summary:", error);
+    }
+  };
+
   const ratingCounts = [5, 4, 3, 2, 1].map(
     (rating) => reviews.filter((r) => r.rating === rating).length
   );
 
-  const handleSubmitReview = (e: React.FormEvent) => {
+  const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast.error("Please sign in to write a review");
+      return;
+    }
+
     if (newReview.rating === 0) {
       toast.error("Please select a rating");
       return;
     }
-    toast.success("Thank you for your review!", {
-      description: "Your review will be published after moderation.",
-    });
-    setShowReviewForm(false);
-    setNewReview({ rating: 0, title: "", content: "", name: "" });
+
+    if (!newReview.name.trim()) {
+      toast.error("Please enter your name");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await supabase.from("product_reviews").insert({
+        product_id: productId,
+        user_id: user.id,
+        customer_name: newReview.name.trim(),
+        customer_email: user.email || "",
+        rating: newReview.rating,
+        title: newReview.title.trim() || null,
+        comment: newReview.content.trim() || null,
+        is_verified_purchase: false, // Could be checked against orders table
+      });
+
+      if (error) throw error;
+
+      toast.success("Thank you for your review!", {
+        description: "Your review has been submitted.",
+      });
+      setShowReviewForm(false);
+      setNewReview({ rating: 0, title: "", content: "", name: "" });
+      fetchReviews();
+      fetchRatingSummary();
+    } catch (error: any) {
+      console.error("Error submitting review:", error);
+      toast.error("Failed to submit review", {
+        description: error.message,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -145,44 +199,58 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
             <div>
               <StarRating rating={Math.round(averageRating)} size="lg" />
               <p className="text-sm text-muted-foreground mt-1">
-                Based on {reviews.length} reviews
+                Based on {totalReviews} {totalReviews === 1 ? "review" : "reviews"}
               </p>
             </div>
           </div>
 
           {/* Rating Breakdown */}
-          <div className="space-y-2">
-            {[5, 4, 3, 2, 1].map((rating, idx) => (
-              <div key={rating} className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground w-12">{rating} stars</span>
-                <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary transition-all duration-500"
-                    style={{
-                      width: `${(ratingCounts[idx] / reviews.length) * 100}%`,
-                    }}
-                  />
+          {reviews.length > 0 && (
+            <div className="space-y-2">
+              {[5, 4, 3, 2, 1].map((rating, idx) => (
+                <div key={rating} className="flex items-center gap-3">
+                  <span className="text-sm text-muted-foreground w-12">{rating} stars</span>
+                  <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary transition-all duration-500"
+                      style={{
+                        width: reviews.length > 0 ? `${(ratingCounts[idx] / reviews.length) * 100}%` : "0%",
+                      }}
+                    />
+                  </div>
+                  <span className="text-sm text-muted-foreground w-8">
+                    {ratingCounts[idx]}
+                  </span>
                 </div>
-                <span className="text-sm text-muted-foreground w-8">
-                  {ratingCounts[idx]}
-                </span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col justify-center">
-          <Button
-            onClick={() => setShowReviewForm(!showReviewForm)}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground"
-          >
-            {showReviewForm ? "Cancel" : "Write a Review"}
-          </Button>
+          {user ? (
+            <Button
+              onClick={() => setShowReviewForm(!showReviewForm)}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              {showReviewForm ? "Cancel" : "Write a Review"}
+            </Button>
+          ) : (
+            <div className="text-center">
+              <p className="text-muted-foreground mb-2">Sign in to write a review</p>
+              <Button
+                variant="outline"
+                onClick={() => window.location.href = "/auth"}
+              >
+                Sign In
+              </Button>
+            </div>
+          )}
         </div>
       </motion.div>
 
       {/* Review Form */}
-      {showReviewForm && (
+      {showReviewForm && user && (
         <motion.form
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
@@ -191,7 +259,7 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
           className="bg-card/50 border border-border/50 p-6 space-y-4"
         >
           <div>
-            <label className="text-sm text-muted-foreground block mb-2">Your Rating</label>
+            <label className="text-sm text-muted-foreground block mb-2">Your Rating *</label>
             <StarRating
               rating={newReview.rating}
               onRate={(rating) => setNewReview({ ...newReview, rating })}
@@ -200,7 +268,7 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
             />
           </div>
           <div>
-            <label className="text-sm text-muted-foreground block mb-2">Your Name</label>
+            <label className="text-sm text-muted-foreground block mb-2">Your Name *</label>
             <Input
               value={newReview.name}
               onChange={(e) => setNewReview({ ...newReview, name: e.target.value })}
@@ -215,7 +283,6 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
               value={newReview.title}
               onChange={(e) => setNewReview({ ...newReview, title: e.target.value })}
               placeholder="Summarize your experience"
-              required
               className="bg-background border-border/50"
             />
           </div>
@@ -225,12 +292,12 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
               value={newReview.content}
               onChange={(e) => setNewReview({ ...newReview, content: e.target.value })}
               placeholder="Share your experience with this fragrance..."
-              required
               rows={4}
               className="bg-background border-border/50"
             />
           </div>
-          <Button type="submit" className="bg-primary hover:bg-primary/90">
+          <Button type="submit" disabled={isSubmitting} className="bg-primary hover:bg-primary/90">
+            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             Submit Review
           </Button>
         </motion.form>
@@ -238,41 +305,44 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
 
       {/* Reviews List */}
       <motion.div variants={staggerContainer} className="space-y-6">
-        {reviews.map((review) => (
-          <motion.div
-            key={review.id}
-            variants={staggerItem}
-            className="border-b border-border/30 pb-6"
-          >
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                  <User className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{review.author}</span>
-                    {review.verified && (
-                      <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
-                        Verified Purchase
-                      </span>
-                    )}
+        {reviews.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No reviews yet. Be the first to review this product!</p>
+          </div>
+        ) : (
+          reviews.map((review) => (
+            <motion.div
+              key={review.id}
+              variants={staggerItem}
+              className="border-b border-border/30 pb-6"
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                    <User className="w-5 h-5 text-muted-foreground" />
                   </div>
-                  <p className="text-xs text-muted-foreground">{review.date}</p>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{review.customer_name}</span>
+                      {review.is_verified_purchase && (
+                        <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">
+                          Verified Purchase
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">{formatDate(review.created_at)}</p>
+                  </div>
                 </div>
+                <StarRating rating={review.rating} size="sm" />
               </div>
-              <StarRating rating={review.rating} size="sm" />
-            </div>
 
-            <h4 className="font-medium mb-2">{review.title}</h4>
-            <p className="text-muted-foreground text-sm leading-relaxed">{review.content}</p>
-
-            <button className="flex items-center gap-2 mt-4 text-sm text-muted-foreground hover:text-primary transition-colors">
-              <ThumbsUp className="w-4 h-4" />
-              Helpful ({review.helpful})
-            </button>
-          </motion.div>
-        ))}
+              {review.title && <h4 className="font-medium mb-2">{review.title}</h4>}
+              {review.comment && (
+                <p className="text-muted-foreground text-sm leading-relaxed">{review.comment}</p>
+              )}
+            </motion.div>
+          ))
+        )}
       </motion.div>
     </motion.div>
   );

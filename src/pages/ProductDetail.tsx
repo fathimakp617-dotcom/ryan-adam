@@ -1,4 +1,4 @@
-import { useState, memo } from "react";
+import { useState, useEffect, memo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,6 +16,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { fadeInUp, fadeInLeft, staggerContainer, staggerItem } from "@/lib/animations";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,8 +24,31 @@ const ProductDetail = () => {
   const product = getProductById(id || "");
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [averageRating, setAverageRating] = useState(0);
+  const [totalReviews, setTotalReviews] = useState(0);
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
+
+  useEffect(() => {
+    if (id) {
+      fetchRatingSummary();
+    }
+  }, [id]);
+
+  const fetchRatingSummary = async () => {
+    try {
+      const { data, error } = await supabase.rpc("get_product_rating", {
+        p_product_id: id || "",
+      });
+      if (error) throw error;
+      if (data && data.length > 0) {
+        setAverageRating(Number(data[0].average_rating) || 0);
+        setTotalReviews(Number(data[0].total_reviews) || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching rating summary:", error);
+    }
+  };
 
   if (!product) {
     return (
@@ -206,11 +230,13 @@ const ProductDetail = () => {
                       {[1, 2, 3, 4, 5].map((star) => (
                         <Star
                           key={star}
-                          className={`w-4 h-4 ${star <= 5 ? "fill-primary text-primary" : "text-muted-foreground/30"}`}
+                          className={`w-4 h-4 ${star <= Math.round(averageRating) ? "fill-primary text-primary" : "text-muted-foreground/30"}`}
                         />
                       ))}
                     </div>
-                    <span className="text-sm text-muted-foreground">(4 reviews)</span>
+                    <span className="text-sm text-muted-foreground">
+                      {totalReviews > 0 ? `${averageRating.toFixed(1)} (${totalReviews} ${totalReviews === 1 ? "review" : "reviews"})` : "No reviews yet"}
+                    </span>
                   </motion.div>
                 </div>
 

@@ -41,6 +41,7 @@ import AdminCoupons from "./pages/admin/AdminCoupons";
 import AdminReturns from "./pages/admin/AdminReturns";
 import AdminExpenses from "./pages/admin/AdminExpenses";
 import AdminShopOrders from "./pages/admin/AdminShopOrders";
+import AdminReviewsPage from "./pages/admin/AdminReviewsPage";
 
 // Shipping pages - eager load child routes for instant switching
 const ShippingLayout = lazy(() => import("./pages/shipping/ShippingLayout"));
@@ -114,6 +115,7 @@ const App = () => (
                         <Route path="returns" element={<AdminReturns />} />
                         <Route path="expenses" element={<AdminExpenses />} />
                         <Route path="shop-orders" element={<AdminShopOrders />} />
+                        <Route path="reviews" element={<AdminReviewsPage />} />
                       </Route>
                       <Route path="/shipping" element={<ShippingLayout />}>
                         <Route index element={<ShippingDashboard />} />
