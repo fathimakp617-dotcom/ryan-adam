@@ -23,6 +23,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -294,7 +295,7 @@ const RouteShopOrders = () => {
                 Add Order
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
               <DialogHeader>
                 <DialogTitle>Add Shop Order</DialogTitle>
               </DialogHeader>
@@ -407,7 +408,7 @@ const RouteShopOrders = () => {
 
           {/* Route Management Dialog */}
           <Dialog open={isRouteDialogOpen} onOpenChange={setIsRouteDialogOpen}>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-md" aria-describedby={undefined}>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <MapPin className="w-5 h-5" />
