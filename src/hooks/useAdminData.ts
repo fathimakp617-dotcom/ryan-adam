@@ -21,14 +21,6 @@ const getShippingSession = () => {
   return null;
 };
 
-// Helper to get route staff session
-const getRouteSession = () => {
-  const email = sessionStorage.getItem("route_email");
-  const token = sessionStorage.getItem("route_token");
-  if (email && token) return { email, token };
-  return null;
-};
-
 // ============ ORDERS ============
 export interface OrderItem {
   productId: string;
@@ -394,27 +386,17 @@ export interface ShopOrder {
   notes: string | null;
   order_date: string;
   status: string;
-  route_id?: string | null;
 }
 
-export interface Route {
-  id: string;
-  name: string;
-  description?: string | null;
-  is_active?: boolean;
-}
-
-export const useShopOrders = (sessionType: 'admin' | 'shipping' | 'route' = 'admin') => {
+export const useShopOrders = (sessionType: 'admin' | 'shipping' = 'admin') => {
   return useQuery({
     queryKey: ["shop-orders", sessionType],
     queryFn: async () => {
       let session;
       if (sessionType === 'admin') {
         session = getAdminSession();
-      } else if (sessionType === 'shipping') {
-        session = getShippingSession();
       } else {
-        session = getRouteSession();
+        session = getShippingSession();
       }
       
       if (!session) throw new Error(`No ${sessionType} session found`);
@@ -430,7 +412,6 @@ export const useShopOrders = (sessionType: 'admin' | 'shipping' | 'route' = 'adm
       if (error) throw error;
       return {
         shopOrders: (data.shop_orders || []) as ShopOrder[],
-        routes: (data.routes || []) as Route[],
       };
     },
     staleTime: 5 * 60 * 1000,

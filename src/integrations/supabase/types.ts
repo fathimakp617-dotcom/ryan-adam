@@ -215,7 +215,6 @@ export type Database = {
           expense_date: string
           id: string
           receipt_url: string | null
-          route_id: string | null
           staff_email: string | null
           updated_at: string
         }
@@ -228,7 +227,6 @@ export type Database = {
           expense_date?: string
           id?: string
           receipt_url?: string | null
-          route_id?: string | null
           staff_email?: string | null
           updated_at?: string
         }
@@ -241,19 +239,10 @@ export type Database = {
           expense_date?: string
           id?: string
           receipt_url?: string | null
-          route_id?: string | null
           staff_email?: string | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "expenses_route_id_fkey"
-            columns: ["route_id"]
-            isOneToOne: false
-            referencedRelation: "routes"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       loyalty_rewards: {
         Row: {
@@ -453,33 +442,6 @@ export type Database = {
         }
         Relationships: []
       }
-      routes: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          is_active: boolean | null
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       shop_orders: {
         Row: {
           contact_name: string | null
@@ -490,7 +452,6 @@ export type Database = {
           notes: string | null
           order_date: string
           products: Json
-          route_id: string | null
           shop_name: string
           status: string | null
           total_bottles: number | null
@@ -505,7 +466,6 @@ export type Database = {
           notes?: string | null
           order_date?: string
           products?: Json
-          route_id?: string | null
           shop_name: string
           status?: string | null
           total_bottles?: number | null
@@ -520,21 +480,12 @@ export type Database = {
           notes?: string | null
           order_date?: string
           products?: Json
-          route_id?: string | null
           shop_name?: string
           status?: string | null
           total_bottles?: number | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "shop_orders_route_id_fkey"
-            columns: ["route_id"]
-            isOneToOne: false
-            referencedRelation: "routes"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       staff_members: {
         Row: {

@@ -23,22 +23,15 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, RefreshCw, Loader2, Store, Phone, MapPin, Check, X, Clock, Truck } from "lucide-react";
-
-interface Route {
-  id: string;
-  name: string;
-}
+import { Plus, RefreshCw, Loader2, Store, Phone, Check, X, Clock, Truck } from "lucide-react";
 
 interface ShopOrder {
   id: string;
-  route_id: string | null;
   shop_name: string;
   contact_name: string | null;
   contact_phone: string | null;
@@ -47,12 +40,10 @@ interface ShopOrder {
   notes: string | null;
   order_date: string;
   status: string;
-  route?: Route;
 }
 
 const ShippingShopOrders = () => {
   const [shopOrders, setShopOrders] = useState<ShopOrder[]>([]);
-  const [routes, setRoutes] = useState<Route[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -65,13 +56,11 @@ const ShippingShopOrders = () => {
     products: [{ name: "", quantity: 1 }],
     notes: "",
     order_date: new Date().toISOString().split("T")[0],
-    route_id: "",
   });
 
   const { toast } = useToast();
 
   const getSessionCredentials = () => {
-    // Preferred session format
     const stored = sessionStorage.getItem("rayn_shipping_session");
     if (stored) {
       try {
@@ -81,8 +70,6 @@ const ShippingShopOrders = () => {
         // ignore
       }
     }
-
-    // Backward-compatible session format
     const email = sessionStorage.getItem("shipping_email");
     const token = sessionStorage.getItem("shipping_token");
     return { email, token };
@@ -123,7 +110,6 @@ const ShippingShopOrders = () => {
       if (error) throw error;
 
       setShopOrders(data?.shop_orders || []);
-      setRoutes(data?.routes || []);
     } catch (error) {
       console.error("Error fetching shop orders:", error);
       toast({ title: "Error", description: "Failed to fetch shop orders", variant: "destructive" });
@@ -170,7 +156,7 @@ const ShippingShopOrders = () => {
           admin_email: email,
           admin_token: token,
           action: "create",
-          shop_order: { ...formData, total_bottles: totalBottles, route_id: formData.route_id || null },
+          shop_order: { ...formData, total_bottles: totalBottles },
         }
       });
 
@@ -181,7 +167,7 @@ const ShippingShopOrders = () => {
       setFormData({
         shop_name: "", contact_name: "", contact_phone: "",
         products: [{ name: "", quantity: 1 }], notes: "",
-        order_date: new Date().toISOString().split("T")[0], route_id: "",
+        order_date: new Date().toISOString().split("T")[0],
       });
       fetchData();
     } catch (error: any) {
@@ -255,7 +241,7 @@ const ShippingShopOrders = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Shop Orders</h1>
-          <p className="text-muted-foreground">Track and add shop orders on routes</p>
+          <p className="text-muted-foreground">Track and add shop orders</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={fetchData} variant="outline" size="sm">
@@ -274,28 +260,14 @@ const ShippingShopOrders = () => {
                 <DialogTitle>Add Shop Order</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Shop Name *</Label>
-                    <Input
-                      value={formData.shop_name}
-                      onChange={(e) => setFormData({ ...formData, shop_name: e.target.value })}
-                      placeholder="Shop name"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Route</Label>
-                    <Select value={formData.route_id || "none"} onValueChange={(v) => setFormData({ ...formData, route_id: v === "none" ? "" : v })}>
-                      <SelectTrigger><SelectValue placeholder="Select route" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No route</SelectItem>
-                        {routes.map((route) => (
-                          <SelectItem key={route.id} value={route.id}>{route.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="space-y-2">
+                  <Label>Shop Name *</Label>
+                  <Input
+                    value={formData.shop_name}
+                    onChange={(e) => setFormData({ ...formData, shop_name: e.target.value })}
+                    placeholder="Shop name"
+                    required
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -426,7 +398,6 @@ const ShippingShopOrders = () => {
               <TableHead>Shop</TableHead>
               <TableHead>Contact</TableHead>
               <TableHead>Products</TableHead>
-              <TableHead>Route</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -434,7 +405,7 @@ const ShippingShopOrders = () => {
           <TableBody>
             {filteredOrders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                   No shop orders found
                 </TableCell>
               </TableRow>
@@ -470,22 +441,19 @@ const ShippingShopOrders = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {order.route ? (
-                        <div className="flex items-center gap-1 text-sm">
-                          <MapPin className="w-3 h-3" />
-                          {order.route.name}
-                        </div>
-                      ) : "-"}
-                    </TableCell>
-                    <TableCell>
                       <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
                         <StatusIcon className="w-3 h-3" />
                         {order.status}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Select value={order.status} onValueChange={(v) => updateStatus(order.id, v)}>
-                        <SelectTrigger className="w-32 h-8"><SelectValue /></SelectTrigger>
+                      <Select
+                        value={order.status}
+                        onValueChange={(v) => updateStatus(order.id, v)}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="pending">Pending</SelectItem>
                           <SelectItem value="confirmed">Confirmed</SelectItem>

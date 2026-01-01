@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { admin_email, admin_token, action, shop_order, order_id, status, route_name, route_description, route_id } = await req.json();
+    const { admin_email, admin_token, action, shop_order, order_id, status } = await req.json();
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -29,14 +29,7 @@ serve(async (req) => {
 
     if (action === "list") {
       const { data: shop_orders } = await supabase.from("shop_orders").select("*").order("order_date", { ascending: false });
-      const { data: routes } = await supabase.from("routes").select("id, name").eq("is_active", true);
-      
-      const ordersWithRoutes = (shop_orders || []).map(o => ({
-        ...o,
-        route: routes?.find(r => r.id === o.route_id)
-      }));
-
-      return new Response(JSON.stringify({ shop_orders: ordersWithRoutes, routes }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ shop_orders: shop_orders || [] }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     if (action === "create") {
@@ -50,21 +43,6 @@ serve(async (req) => {
 
     if (action === "update_status") {
       const { error } = await supabase.from("shop_orders").update({ status }).eq("id", order_id);
-      if (error) throw error;
-      return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
-    if (action === "create_route") {
-      const { error } = await supabase.from("routes").insert({
-        name: route_name,
-        description: route_description || null,
-      });
-      if (error) throw error;
-      return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
-    if (action === "delete_route") {
-      const { error } = await supabase.from("routes").delete().eq("id", route_id);
       if (error) throw error;
       return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
