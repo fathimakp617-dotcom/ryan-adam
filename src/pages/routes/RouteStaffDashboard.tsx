@@ -274,7 +274,7 @@ const RouteStaffDashboard = () => {
                   Manage Routes
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-md">
+              <DialogContent className="max-w-md" aria-describedby={undefined}>
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <MapPin className="w-5 h-5" />
