@@ -42,7 +42,7 @@ export const generateInvoicePDF = (data: InvoiceData): jsPDF => {
 
   // Header
   doc.setFillColor(...darkColor);
-  doc.rect(0, 0, pageWidth, 55, "F");
+  doc.rect(0, 0, pageWidth, 58, "F");
 
   doc.setTextColor(...goldColor);
   doc.setFontSize(24);
@@ -55,8 +55,9 @@ export const generateInvoicePDF = (data: InvoiceData): jsPDF => {
 
   doc.setTextColor(180, 180, 180);
   doc.setFontSize(8);
-  doc.text("RAYN ADAM PRIVATE LIMITED", pageWidth / 2, 38, { align: "center" });
-  doc.text("GSTIN: 32AAPCR2931R1ZS | TAN: CHNR06383G", pageWidth / 2, 46, { align: "center" });
+  doc.text("RAYN ADAM PRIVATE LIMITED", pageWidth / 2, 36, { align: "center" });
+  doc.text("Ward No. 21, Door No. 553/1, Kavumpadi, Pallikkal, Tirurangadi", pageWidth / 2, 43, { align: "center" });
+  doc.text("Malappuram – 673634, Kerala, India | Ph: +91 99466 47442", pageWidth / 2, 50, { align: "center" });
 
   // Invoice title
   doc.setTextColor(...darkColor);
@@ -229,19 +230,26 @@ export const generateInvoicePDF = (data: InvoiceData): jsPDF => {
 
   doc.setTextColor(...grayColor);
   doc.setFontSize(9);
-  doc.text("Thank you for shopping with Rayn Adam!", pageWidth / 2, footerY + 10, {
+  doc.text("Thank you for shopping with Rayn Adam!", pageWidth / 2, footerY + 8, {
     align: "center",
   });
   doc.text(
-    "For questions, contact: support@raynadamperfume.com",
+    "For questions, contact: support@raynadamperfume.com | Ph: +91 99466 47442",
     pageWidth / 2,
-    footerY + 18,
+    footerY + 16,
+    { align: "center" }
+  );
+  doc.setFontSize(8);
+  doc.text(
+    "GSTIN: 32AAPCR2931R1ZS | TAN: CHNR06383G",
+    pageWidth / 2,
+    footerY + 24,
     { align: "center" }
   );
   doc.text(
-    `© ${new Date().getFullYear()} Rayn Adam. All rights reserved.`,
+    `© ${new Date().getFullYear()} Rayn Adam Private Limited. All rights reserved.`,
     pageWidth / 2,
-    footerY + 26,
+    footerY + 32,
     { align: "center" }
   );
 
