@@ -883,7 +883,7 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
     color: rgb(0, 0, 0),
   });
   
-  page.drawText('Cheriyamundakkal, Koppam, Malappuram', {
+  page.drawText('Ward No. 21, Door No. 553/1, Kavumpadi', {
     x: 20,
     y: height - 62,
     size: 9,
@@ -891,9 +891,17 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
     color: rgb(0.2, 0.2, 0.2),
   });
 
-  page.drawText('Kerala - 673634, India', {
+  page.drawText('Pallikkal, Tirurangadi, Malappuram – 673634', {
     x: 20,
     y: height - 76,
+    size: 9,
+    font: font,
+    color: rgb(0.2, 0.2, 0.2),
+  });
+
+  page.drawText('Kerala, India', {
+    x: 20,
+    y: height - 90,
     size: 9,
     font: font,
     color: rgb(0.2, 0.2, 0.2),
@@ -902,7 +910,7 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   // Company phone number
   page.drawText('Ph: +91 99466 47442', {
     x: 20,
-    y: height - 90,
+    y: height - 104,
     size: 9,
     font: font,
     color: rgb(0.2, 0.2, 0.2),
@@ -911,7 +919,7 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   // Company email
   page.drawText('Email: support@raynadamperfume.com', {
     x: 20,
-    y: height - 104,
+    y: height - 118,
     size: 9,
     font: font,
     color: rgb(0.2, 0.2, 0.2),
@@ -919,8 +927,8 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   
   // Divider line
   page.drawLine({
-    start: { x: 20, y: height - 120 },
-    end: { x: width - 20, y: height - 120 },
+    start: { x: 20, y: height - 135 },
+    end: { x: width - 20, y: height - 135 },
     thickness: 1,
     color: rgb(0.7, 0.7, 0.7),
   });
@@ -928,7 +936,7 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   // TO section
   page.drawText('SHIP TO:', {
     x: 20,
-    y: height - 140,
+    y: height - 155,
     size: 10,
     font: boldFont,
     color: rgb(0, 0, 0),
@@ -937,7 +945,7 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   // Customer name
   page.drawText(order.customer_name.toUpperCase(), {
     x: 20,
-    y: height - 165,
+    y: height - 180,
     size: 14,
     font: boldFont,
     color: rgb(0, 0, 0),
@@ -947,7 +955,7 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   const customerPhone = order.customer_phone || 'N/A';
   page.drawText(`Ph: ${customerPhone}`, {
     x: 20,
-    y: height - 182,
+    y: height - 197,
     size: 10,
     font: font,
     color: rgb(0, 0, 0),
@@ -956,7 +964,7 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   // Customer email
   page.drawText(`Email: ${order.customer_email}`, {
     x: 20,
-    y: height - 196,
+    y: height - 211,
     size: 9,
     font: font,
     color: rgb(0, 0, 0),
@@ -965,7 +973,7 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   // Address
   page.drawText(order.shipping_address.address, {
     x: 20,
-    y: height - 215,
+    y: height - 230,
     size: 11,
     font: font,
     color: rgb(0, 0, 0),
@@ -974,7 +982,7 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   // City, State, ZIP
   page.drawText(`${order.shipping_address.city}, ${order.shipping_address.state} ${order.shipping_address.zipCode}`, {
     x: 20,
-    y: height - 232,
+    y: height - 247,
     size: 11,
     font: font,
     color: rgb(0, 0, 0),
@@ -983,7 +991,7 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   // Country
   page.drawText(order.shipping_address.country.toUpperCase(), {
     x: 20,
-    y: height - 249,
+    y: height - 264,
     size: 11,
     font: boldFont,
     color: rgb(0, 0, 0),
