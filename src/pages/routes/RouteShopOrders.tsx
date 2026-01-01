@@ -66,6 +66,17 @@ const RouteShopOrders = () => {
   const { toast } = useToast();
 
   const getSessionCredentials = () => {
+    // Preferred session format
+    const stored = sessionStorage.getItem("rayn_route_session");
+    if (stored) {
+      try {
+        const session = JSON.parse(stored);
+        return { email: session.email as string | null, token: session.token as string | null };
+      } catch {
+        // ignore
+      }
+    }
+    // Backward-compatible session format
     const email = sessionStorage.getItem("route_email");
     const token = sessionStorage.getItem("route_token");
     return { email, token };
@@ -90,7 +101,11 @@ const RouteShopOrders = () => {
     setIsLoading(true);
     try {
       const { email, token } = getSessionCredentials();
-      if (!email || !token) throw new Error("No session");
+      if (!email || !token) {
+        toast({ title: "Session expired", description: "Please sign in again.", variant: "destructive" });
+        setIsLoading(false);
+        return;
+      }
       
       const { data, error } = await supabase.functions.invoke('manage-shop-orders', {
         body: { admin_email: email, admin_token: token, action: "list" }
@@ -128,7 +143,11 @@ const RouteShopOrders = () => {
 
     try {
       const { email, token } = getSessionCredentials();
-      if (!email || !token) throw new Error("No session");
+      if (!email || !token) {
+        toast({ title: "Session expired", description: "Please sign in again.", variant: "destructive" });
+        setIsSaving(false);
+        return;
+      }
       
       const totalBottles = formData.products.reduce((sum, p) => sum + (p.quantity || 0), 0);
       
@@ -161,7 +180,10 @@ const RouteShopOrders = () => {
   const updateStatus = async (orderId: string, newStatus: string) => {
     try {
       const { email, token } = getSessionCredentials();
-      if (!email || !token) throw new Error("No session");
+      if (!email || !token) {
+        toast({ title: "Session expired", description: "Please sign in again.", variant: "destructive" });
+        return;
+      }
       
       const { error } = await supabase.functions.invoke('manage-shop-orders', {
         body: { admin_email: email, admin_token: token, action: "update_status", order_id: orderId, status: newStatus }
@@ -180,7 +202,11 @@ const RouteShopOrders = () => {
     setIsSaving(true);
     try {
       const { email, token } = getSessionCredentials();
-      if (!email || !token) throw new Error("No session");
+      if (!email || !token) {
+        toast({ title: "Session expired", description: "Please sign in again.", variant: "destructive" });
+        setIsSaving(false);
+        return;
+      }
       
       const { error } = await supabase.functions.invoke('manage-shop-orders', {
         body: { admin_email: email, admin_token: token, action: "create_route", route_name: newRouteName, route_description: newRouteDescription }
@@ -202,7 +228,10 @@ const RouteShopOrders = () => {
   const deleteRoute = async (routeId: string) => {
     try {
       const { email, token } = getSessionCredentials();
-      if (!email || !token) throw new Error("No session");
+      if (!email || !token) {
+        toast({ title: "Session expired", description: "Please sign in again.", variant: "destructive" });
+        return;
+      }
       
       const { error } = await supabase.functions.invoke('manage-shop-orders', {
         body: { admin_email: email, admin_token: token, action: "delete_route", route_id: routeId }
