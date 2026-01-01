@@ -51,12 +51,6 @@ import ShippingAccount from "./pages/shipping/ShippingAccount";
 import ShippingReturns from "./pages/shipping/ShippingReturns";
 import ShippingShopOrders from "./pages/shipping/ShippingShopOrders";
 
-// Route staff pages - eager load child routes for instant switching
-const RouteStaffLayout = lazy(() => import("./pages/routes/RouteStaffLayout"));
-import RouteStaffDashboard from "./pages/routes/RouteStaffDashboard";
-import RouteShopOrders from "./pages/routes/RouteShopOrders";
-import RouteMyRoute from "./pages/routes/RouteMyRoute";
-import RouteAccount from "./pages/routes/RouteAccount";
 
 // Minimal loading fallback
 const PageLoader = () => (
@@ -123,12 +117,6 @@ const App = () => (
                         <Route path="account" element={<ShippingAccount />} />
                         <Route path="returns" element={<ShippingReturns />} />
                         <Route path="shop-orders" element={<ShippingShopOrders />} />
-                      </Route>
-                      <Route path="/routes" element={<RouteStaffLayout />}>
-                        <Route index element={<RouteStaffDashboard />} />
-                        <Route path="shop-orders" element={<RouteShopOrders />} />
-                        <Route path="my-route" element={<RouteMyRoute />} />
-                        <Route path="account" element={<RouteAccount />} />
                       </Route>
                       <Route path="*" element={<NotFound />} />
                     </Routes>
