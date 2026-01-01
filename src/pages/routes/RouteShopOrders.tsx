@@ -28,7 +28,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, RefreshCw, Loader2, Store, Phone, Check, X, Clock, Truck } from "lucide-react";
+import { Plus, RefreshCw, Loader2, Store, Phone, Check, X, Clock, Truck, MapPin, Trash2 } from "lucide-react";
 
 interface ShopOrder {
   id: string;
@@ -47,8 +47,11 @@ const RouteShopOrders = () => {
   const [routes, setRoutes] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isRouteDialogOpen, setIsRouteDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [newRouteName, setNewRouteName] = useState("");
+  const [newRouteDescription, setNewRouteDescription] = useState("");
   
   const [formData, setFormData] = useState({
     shop_name: "",
@@ -172,6 +175,47 @@ const RouteShopOrders = () => {
     }
   };
 
+  const createRoute = async () => {
+    if (!newRouteName.trim()) return;
+    setIsSaving(true);
+    try {
+      const { email, token } = getSessionCredentials();
+      if (!email || !token) throw new Error("No session");
+      
+      const { error } = await supabase.functions.invoke('manage-shop-orders', {
+        body: { admin_email: email, admin_token: token, action: "create_route", route_name: newRouteName, route_description: newRouteDescription }
+      });
+
+      if (error) throw error;
+      toast({ title: "Success", description: "Route created" });
+      setNewRouteName("");
+      setNewRouteDescription("");
+      setIsRouteDialogOpen(false);
+      fetchData();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const deleteRoute = async (routeId: string) => {
+    try {
+      const { email, token } = getSessionCredentials();
+      if (!email || !token) throw new Error("No session");
+      
+      const { error } = await supabase.functions.invoke('manage-shop-orders', {
+        body: { admin_email: email, admin_token: token, action: "delete_route", route_id: routeId }
+      });
+
+      if (error) throw error;
+      toast({ title: "Deleted", description: "Route removed" });
+      fetchData();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
   const filteredOrders = orders.filter(o => statusFilter === "all" || o.status === statusFilter);
 
   const getStatusColor = (status: string) => {
@@ -237,7 +281,13 @@ const RouteShopOrders = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Route</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Route</Label>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setIsRouteDialogOpen(true)}>
+                        <Plus className="w-3 h-3 mr-1" />
+                        Add Route
+                      </Button>
+                    </div>
                     <Select value={formData.route_id || "none"} onValueChange={(v) => setFormData({ ...formData, route_id: v === "none" ? "" : v })}>
                       <SelectTrigger><SelectValue placeholder="Select route" /></SelectTrigger>
                       <SelectContent>
@@ -323,6 +373,56 @@ const RouteShopOrders = () => {
                   Add Order
                 </Button>
               </form>
+            </DialogContent>
+          </Dialog>
+
+          {/* Route Management Dialog */}
+          <Dialog open={isRouteDialogOpen} onOpenChange={setIsRouteDialogOpen}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <MapPin className="w-5 h-5" />
+                  Manage Routes
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>New Route Name *</Label>
+                  <Input
+                    value={newRouteName}
+                    onChange={(e) => setNewRouteName(e.target.value)}
+                    placeholder="e.g., North Zone"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Description</Label>
+                  <Input
+                    value={newRouteDescription}
+                    onChange={(e) => setNewRouteDescription(e.target.value)}
+                    placeholder="Optional description"
+                  />
+                </div>
+                <Button onClick={createRoute} disabled={isSaving || !newRouteName.trim()} className="w-full bg-green-600 hover:bg-green-700">
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+                  Add Route
+                </Button>
+
+                {routes.length > 0 && (
+                  <div className="pt-4 border-t">
+                    <Label className="text-sm text-muted-foreground mb-2 block">Existing Routes</Label>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {routes.map((route) => (
+                        <div key={route.id} className="flex items-center justify-between p-2 rounded bg-muted/50">
+                          <span className="text-sm font-medium">{route.name}</span>
+                          <Button variant="ghost" size="sm" onClick={() => deleteRoute(route.id)} className="text-destructive hover:text-destructive">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </DialogContent>
           </Dialog>
         </div>
