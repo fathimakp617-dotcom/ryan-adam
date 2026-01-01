@@ -1,7 +1,7 @@
 import { useState, useEffect, memo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, CreditCard, Truck, Check, Lock, LogIn, AlertTriangle } from "lucide-react";
+import { ArrowLeft, CreditCard, Truck, Check, Lock, LogIn, AlertTriangle, Smartphone, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,8 +58,8 @@ const Checkout = () => {
     }
   }, [user]);
 
-  // Free shipping for online payment, ₹79 for COD orders under ₹999
-  const shipping = paymentMethod === "razorpay" ? 0 : (totalPrice >= 999 ? 0 : 79);
+  // Free shipping for online payment (UPI/Razorpay), ₹79 for COD orders under ₹999
+  const shipping = (paymentMethod === "razorpay" || paymentMethod === "upi") ? 0 : (totalPrice >= 999 ? 0 : 79);
   const discount = calculateDiscount(totalPrice);
   const orderTotal = totalPrice - discount + shipping;
 
@@ -76,8 +76,8 @@ const Checkout = () => {
 
   const handleConfirmOrder = async () => {
     setShowTermsDialog(false);
-    if (paymentMethod === "razorpay") {
-      await handleRazorpayPayment();
+    if (paymentMethod === "razorpay" || paymentMethod === "upi") {
+      await handleRazorpayPayment(paymentMethod === "upi");
     } else {
       await handleCODOrder();
     }
@@ -292,7 +292,7 @@ const Checkout = () => {
     }
   };
 
-  const handleRazorpayPayment = async () => {
+  const handleRazorpayPayment = async (preferUPI: boolean = false) => {
     setIsProcessing(true);
 
     try {
@@ -323,7 +323,7 @@ const Checkout = () => {
         amount: orderData.order.amount,
         currency: orderData.order.currency,
         name: "Rayn Adam",
-        description: "Luxury Perfume Purchase",
+        description: preferUPI ? "UPI Payment - Luxury Perfume" : "Luxury Perfume Purchase",
         image: "https://uyrudydfpbisawgsepxd.supabase.co/storage/v1/object/public/assets/logo.png",
         order_id: orderData.order.id,
         handler: async (response: any) => {
@@ -333,7 +333,7 @@ const Checkout = () => {
           name: `${formData.firstName} ${formData.lastName}`,
           email: formData.email,
           contact: formData.phone,
-          method: "upi", // Default to UPI
+          method: preferUPI ? "upi" : undefined,
         },
         // Enable saved cards/tokens
         remember_customer: true,
@@ -708,13 +708,13 @@ const Checkout = () => {
 
                   <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-3 mb-6">
                     <div className="flex items-center space-x-3 bg-input border border-border rounded-lg p-4 cursor-pointer hover:border-primary transition-colors">
-                      <RadioGroupItem value="cod" id="cod" />
-                      <Label htmlFor="cod" className="flex items-center gap-2 cursor-pointer flex-1">
-                        <Truck className="w-5 h-5 text-primary" />
+                      <RadioGroupItem value="upi" id="upi" />
+                      <Label htmlFor="upi" className="flex items-center gap-2 cursor-pointer flex-1">
+                        <Smartphone className="w-5 h-5 text-primary" />
                         <div className="flex-1">
-                          <span>Cash on Delivery</span>
-                          <p className="text-xs text-orange-500 font-medium mt-0.5">
-                            Shipping charge must be paid in advance
+                          <span>UPI Payment</span>
+                          <p className="text-xs text-emerald-500 font-medium mt-0.5">
+                            GPay, PhonePe, Paytm • FREE Shipping
                           </p>
                         </div>
                       </Label>
@@ -723,8 +723,24 @@ const Checkout = () => {
                       <RadioGroupItem value="razorpay" id="razorpay" />
                       <Label htmlFor="razorpay" className="flex items-center gap-2 cursor-pointer flex-1">
                         <CreditCard className="w-5 h-5 text-primary" />
-                        Pay Online (Razorpay)
-                        <span className="ml-auto text-xs text-muted-foreground">UPI, Cards, Netbanking</span>
+                        <div className="flex-1">
+                          <span>Card / Netbanking</span>
+                          <p className="text-xs text-emerald-500 font-medium mt-0.5">
+                            Credit/Debit Cards, Net Banking • FREE Shipping
+                          </p>
+                        </div>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-3 bg-input border border-border rounded-lg p-4 cursor-pointer hover:border-primary transition-colors">
+                      <RadioGroupItem value="cod" id="cod" />
+                      <Label htmlFor="cod" className="flex items-center gap-2 cursor-pointer flex-1">
+                        <Truck className="w-5 h-5 text-primary" />
+                        <div className="flex-1">
+                          <span>Cash on Delivery</span>
+                          <p className="text-xs text-orange-500 font-medium mt-0.5">
+                            {shipping > 0 ? `₹${shipping} shipping charge applies` : 'FREE Shipping on orders ₹999+'}
+                          </p>
+                        </div>
                       </Label>
                     </div>
                   </RadioGroup>
