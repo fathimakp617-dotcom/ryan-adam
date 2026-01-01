@@ -259,13 +259,15 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Failed to create order record");
     }
 
-    console.log("Order created:", orderNumber);
+    // Use the actual order number from the database (trigger may have generated a different one)
+    const actualOrderNumber = insertedOrder.order_number;
+    console.log("Order created:", actualOrderNumber);
 
     // Trigger order confirmation email
     try {
       await supabase.functions.invoke('send-order-confirmation', {
         body: {
-          order_number: orderNumber,
+          order_number: actualOrderNumber,
           customer_name: order_data.customer_name,
           customer_email: order_data.customer_email,
           customer_phone: order_data.customer_phone,
@@ -299,7 +301,7 @@ const handler = async (req: Request): Promise<Response> => {
             user_id: order_data.user_id,
             customer_email: order_data.customer_email,
             customer_name: order_data.customer_name,
-            order_number: orderNumber,
+            order_number: actualOrderNumber,
           }),
         }).then(res => {
           console.log("Loyalty coupon generation triggered, status:", res.status);
@@ -315,7 +317,7 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({
         success: true,
         order: {
-          order_number: orderNumber,
+          order_number: actualOrderNumber,
           total,
           payment_id: razorpay_payment_id,
         },
