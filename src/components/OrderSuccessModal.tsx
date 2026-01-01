@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle, X, Download, Mail, RefreshCw, Gift, Copy, Check } from "lucide-react";
+import { CheckCircle, X, Download, Mail, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
 import OrderReceipt from "./OrderReceipt";
 
 interface OrderData {
@@ -29,25 +28,15 @@ interface OrderData {
   user_id: string | null;
 }
 
-interface LoyaltyCoupon {
-  code: string;
-  discount_percent: number;
-  is_bogo: boolean;
-  expires_at: string;
-}
-
 const OrderSuccessModal = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
   const orderNumber = searchParams.get("order");
   const [orderData, setOrderData] = useState<OrderData | null>(null);
-  const [loyaltyCoupon, setLoyaltyCoupon] = useState<LoyaltyCoupon | null>(null);
   const [showReceipt, setShowReceipt] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isResending, setIsResending] = useState(false);
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (orderNumber) {
@@ -82,55 +71,11 @@ const OrderSuccessModal = () => {
           created_at: data.created_at,
           user_id: data.user_id,
         });
-
-        // If user is logged in, fetch their latest loyalty coupon
-        if (data.user_id) {
-          fetchLoyaltyCoupon(data.user_id);
-        }
       }
     } catch (error) {
       console.error("Error fetching order:", error);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const fetchLoyaltyCoupon = async (userId: string) => {
-    try {
-      // Fetch the most recent unused loyalty coupon for this user
-      const { data: coupon, error } = await supabase
-        .from('coupons')
-        .select('code, discount_percent, is_bogo, expires_at')
-        .eq('user_id', userId)
-        .eq('is_active', true)
-        .eq('current_uses', 0)
-        .like('coupon_type', 'loyalty%')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (!error && coupon) {
-        setLoyaltyCoupon({
-          code: coupon.code,
-          discount_percent: coupon.discount_percent,
-          is_bogo: coupon.is_bogo || false,
-          expires_at: coupon.expires_at || '',
-        });
-      }
-    } catch (error) {
-      console.log("No loyalty coupon found");
-    }
-  };
-
-  const handleCopyCoupon = () => {
-    if (loyaltyCoupon) {
-      navigator.clipboard.writeText(loyaltyCoupon.code);
-      setCopied(true);
-      toast({
-        title: "Copied!",
-        description: "Coupon code copied to clipboard",
-      });
-      setTimeout(() => setCopied(false), 2000);
     }
   };
 
@@ -224,43 +169,6 @@ const OrderSuccessModal = () => {
                   <span>Confirmation email sent</span>
                 </div>
 
-                {/* Loyalty Reward Coupon */}
-                {loyaltyCoupon && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="mb-6 p-4 bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/30 rounded-xl"
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <Gift className="w-5 h-5 text-primary" />
-                      <p className="text-sm font-medium text-primary">Your Loyalty Reward!</p>
-                    </div>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      {loyaltyCoupon.is_bogo 
-                        ? "Buy 1 Get 1 FREE on your next order!" 
-                        : `${loyaltyCoupon.discount_percent}% off your next order!`}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 bg-card border border-dashed border-primary/50 rounded-lg px-3 py-2">
-                        <p className="text-sm font-mono font-bold text-foreground tracking-wider">
-                          {loyaltyCoupon.code}
-                        </p>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleCopyCoupon}
-                        className="border-primary/50 text-primary hover:bg-primary/10"
-                      >
-                        {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                      </Button>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground mt-2">
-                      Single use only • Expires in 30 days
-                    </p>
-                  </motion.div>
-                )}
 
                 {isLoading ? (
                   <div className="flex justify-center">
