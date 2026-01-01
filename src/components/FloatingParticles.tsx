@@ -3,9 +3,13 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { Points, PointMaterial } from "@react-three/drei";
 import * as THREE from "three";
 
-// Check for reduced motion preference
+// Check for reduced motion preference and mobile devices
 const prefersReducedMotion = typeof window !== "undefined" 
   ? window.matchMedia("(prefers-reduced-motion: reduce)").matches 
+  : false;
+
+const isMobile = typeof window !== "undefined"
+  ? window.innerWidth < 768
   : false;
 
 const ParticleField = memo(() => {
@@ -51,8 +55,8 @@ const FloatingParticles = memo(() => {
 
   // Defer 3D rendering significantly
   useEffect(() => {
-    // Skip entirely on reduced motion preference
-    if (prefersReducedMotion) return;
+    // Skip entirely on mobile or reduced motion preference
+    if (prefersReducedMotion || isMobile) return;
 
     const timer = setTimeout(() => setShouldRender(true), 500);
     return () => clearTimeout(timer);
