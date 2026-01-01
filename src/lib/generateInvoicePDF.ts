@@ -42,37 +42,42 @@ export const generateInvoicePDF = (data: InvoiceData): jsPDF => {
 
   // Header
   doc.setFillColor(...darkColor);
-  doc.rect(0, 0, pageWidth, 45, "F");
+  doc.rect(0, 0, pageWidth, 55, "F");
 
   doc.setTextColor(...goldColor);
   doc.setFontSize(24);
   doc.setFont("helvetica", "bold");
-  doc.text("RAYN ADAM", pageWidth / 2, 22, { align: "center" });
+  doc.text("RAYN ADAM", pageWidth / 2, 18, { align: "center" });
 
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  doc.text("LUXURY PERFUMES", pageWidth / 2, 32, { align: "center" });
+  doc.text("LUXURY PERFUMES", pageWidth / 2, 28, { align: "center" });
+
+  doc.setTextColor(180, 180, 180);
+  doc.setFontSize(8);
+  doc.text("RAYN ADAM PRIVATE LIMITED", pageWidth / 2, 38, { align: "center" });
+  doc.text("Malappuram – 673634, Kerala, India | TAN: CHNR06383G", pageWidth / 2, 46, { align: "center" });
 
   // Invoice title
   doc.setTextColor(...darkColor);
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
-  doc.text("INVOICE", pageWidth / 2, 60, { align: "center" });
+  doc.text("INVOICE", pageWidth / 2, 70, { align: "center" });
 
   // Order info box
   doc.setFillColor(248, 248, 248);
-  doc.roundedRect(15, 68, pageWidth - 30, 30, 3, 3, "F");
+  doc.roundedRect(15, 78, pageWidth - 30, 30, 3, 3, "F");
 
   doc.setTextColor(...grayColor);
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text("Order Number", 20, 78);
-  doc.text("Date", pageWidth - 20, 78, { align: "right" });
+  doc.text("Order Number", 20, 88);
+  doc.text("Date", pageWidth - 20, 88, { align: "right" });
 
   doc.setTextColor(...goldColor);
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
-  doc.text(data.orderNumber, 20, 88);
+  doc.text(data.orderNumber, 20, 98);
 
   doc.setTextColor(...darkColor);
   doc.setFont("helvetica", "normal");
@@ -81,7 +86,7 @@ export const generateInvoicePDF = (data: InvoiceData): jsPDF => {
     month: "long",
     year: "numeric",
   });
-  doc.text(formattedDate, pageWidth - 20, 88, { align: "right" });
+  doc.text(formattedDate, pageWidth - 20, 98, { align: "right" });
 
   // Items table
   const tableData = data.items.map((item) => [
@@ -92,7 +97,7 @@ export const generateInvoicePDF = (data: InvoiceData): jsPDF => {
   ]);
 
   autoTable(doc, {
-    startY: 108,
+    startY: 118,
     head: [["Item", "Qty", "Unit Price", "Total"]],
     body: tableData,
     headStyles: {
