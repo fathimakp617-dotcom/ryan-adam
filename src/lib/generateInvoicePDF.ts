@@ -369,7 +369,7 @@ export const generateShippingLabelPDF = (order: ShippingLabelOrder): void => {
   doc.text(`ITEMS: ${itemCount}`, 15, yPos);
 
   // From section at bottom
-  const fromY = pageHeight - 60;
+  const fromY = pageHeight - 75;
   doc.setDrawColor(200, 200, 200);
   doc.line(15, fromY - 10, pageWidth - 15, fromY - 10);
 
@@ -379,9 +379,12 @@ export const generateShippingLabelPDF = (order: ShippingLabelOrder): void => {
 
   doc.setTextColor(...darkColor);
   doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
   doc.text("RAYN ADAM PRIVATE LIMITED", 15, fromY + 12);
-  doc.text("Malappuram – 673634, Kerala", 15, fromY + 24);
-  doc.text("+91 99466 47442", 15, fromY + 36);
+  doc.setFont("helvetica", "normal");
+  doc.text("Cheriyamundakkal, Koppam, Malappuram", 15, fromY + 24);
+  doc.text("Kerala – 673634, India", 15, fromY + 36);
+  doc.text("Phone: +91 99466 47442", 15, fromY + 48);
 
   // Save
   doc.save(`shipping-label-${order.order_number}.pdf`);
