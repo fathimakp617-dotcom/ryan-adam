@@ -1,18 +1,33 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Simple password hashing using Web Crypto API
-async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+// Validate session token from database
+async function validateSession(supabase: any, email: string, token: string): Promise<boolean> {
+  if (!email || !token) return false;
+  
+  const { data: session } = await supabase
+    .from("staff_sessions")
+    .select("id, expires_at")
+    .eq("email", email.toLowerCase())
+    .eq("session_token", token)
+    .maybeSingle();
+  
+  if (!session) return false;
+  
+  // Check if session is expired
+  if (new Date(session.expires_at) < new Date()) {
+    // Clean up expired session
+    await supabase.from("staff_sessions").delete().eq("id", session.id);
+    return false;
+  }
+  
+  return true;
 }
 
 serve(async (req) => {
@@ -21,35 +36,47 @@ serve(async (req) => {
   }
 
   try {
-    const { action, admin_email, email, name, role, password, staff_id, staff_email } = await req.json();
+    const { action, admin_email, admin_token, email, name, role, password, staff_id, staff_email } = await req.json();
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const adminEmailsEnv = Deno.env.get("ADMIN_EMAILS") || "";
     const mainAdmin = "anfaslenova@gmail.com";
 
-    // Verify admin access
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    // Verify admin access - check email is in allowed list
     const authorizedAdmins = adminEmailsEnv.split(",").map((e) => e.trim().toLowerCase());
-    if (!authorizedAdmins.includes(admin_email.toLowerCase())) {
+    let isAuthorized = authorizedAdmins.includes(admin_email?.toLowerCase());
+    
+    if (!isAuthorized) {
       // Also check database for admin
-      const supabase = createClient(supabaseUrl, serviceRoleKey);
       const { data: dbAdmin } = await supabase
         .from("staff_members")
         .select("role")
-        .eq("email", admin_email.toLowerCase())
+        .eq("email", admin_email?.toLowerCase())
         .eq("is_active", true)
         .eq("role", "admin")
         .maybeSingle();
       
-      if (!dbAdmin) {
-        return new Response(
-          JSON.stringify({ error: "Unauthorized - Admin access required" }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+      isAuthorized = !!dbAdmin;
     }
 
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    if (!isAuthorized) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - Admin access required" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate session token for sensitive operations
+    if (admin_token && !await validateSession(supabase, admin_email, admin_token)) {
+      console.log(`Invalid or expired session for: ${admin_email}`);
+      return new Response(
+        JSON.stringify({ error: "Session expired. Please log in again." }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     switch (action) {
       case "list": {
@@ -240,7 +267,8 @@ serve(async (req) => {
           );
         }
 
-        const passwordHash = await hashPassword(password);
+        // Use bcrypt for password hashing with automatic salt
+        const passwordHash = await bcrypt.hash(password);
 
         const { data, error } = await supabase
           .from("staff_members")
@@ -300,7 +328,8 @@ serve(async (req) => {
           );
         }
 
-        const passwordHash = await hashPassword(password);
+        // Use bcrypt for password hashing
+        const passwordHash = await bcrypt.hash(password);
 
         // Get staff member info for notification
         const { data: staffMember } = await supabase
@@ -315,6 +344,14 @@ serve(async (req) => {
           .eq("id", staff_id);
 
         if (error) throw error;
+
+        // Invalidate all sessions for this staff member
+        if (staffMember) {
+          await supabase
+            .from("staff_sessions")
+            .delete()
+            .eq("email", staffMember.email.toLowerCase());
+        }
 
         console.log(`Password updated for staff ${staff_id} by ${admin_email}`);
 
@@ -385,6 +422,14 @@ serve(async (req) => {
 
         if (error) throw error;
 
+        // If blocking, invalidate all sessions
+        if (!newStatus) {
+          await supabase
+            .from("staff_sessions")
+            .delete()
+            .eq("email", current.email.toLowerCase());
+        }
+
         console.log(`Staff ${staff_id} (${current.email}) ${newStatus ? "unblocked" : "blocked"} by ${admin_email}`);
 
         // Send block/unblock notification to main admin only (not to the blocked staff)
@@ -433,6 +478,14 @@ serve(async (req) => {
             JSON.stringify({ error: "Cannot delete the main admin account" }),
             { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
+        }
+
+        // Delete sessions first
+        if (staffToDelete) {
+          await supabase
+            .from("staff_sessions")
+            .delete()
+            .eq("email", staffToDelete.email.toLowerCase());
         }
 
         const { error } = await supabase

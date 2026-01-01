@@ -18,8 +18,34 @@ const isValidPhone = (phone: string): boolean => {
   return phoneRegex.test(phone);
 };
 
+// Improved sanitization for customer names - allow Unicode letters, spaces, hyphens, apostrophes, periods
+const sanitizeName = (str: string, maxLength: number): string => {
+  return str.trim()
+    .slice(0, maxLength)
+    // Remove control characters and potentially dangerous chars but allow Unicode letters
+    .replace(/[\x00-\x1f\x7f<>{}[\]\\`]/g, '')
+    // Normalize multiple spaces
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+// Improved sanitization for addresses - more permissive for special chars but still safe
+const sanitizeAddress = (str: string, maxLength: number): string => {
+  return str.trim()
+    .slice(0, maxLength)
+    // Remove control characters, angle brackets, and script-related chars
+    .replace(/[\x00-\x1f\x7f<>{}[\]\\`]/g, '')
+    // Normalize multiple spaces
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+// General string sanitization
 const sanitizeString = (str: string, maxLength: number): string => {
-  return str.trim().slice(0, maxLength).replace(/[<>]/g, '');
+  return str.trim()
+    .slice(0, maxLength)
+    .replace(/[\x00-\x1f\x7f<>{}[\]\\`]/g, '')
+    .trim();
 };
 
 // Product prices - server-side source of truth
@@ -106,7 +132,8 @@ serve(async (req) => {
       );
     }
 
-    const customerName = sanitizeString(orderRequest.customer_name, 100);
+    // Use improved name sanitization
+    const customerName = sanitizeName(orderRequest.customer_name, 100);
     if (customerName.length < 2) {
       console.error("Customer name too short");
       return new Response(
@@ -115,13 +142,13 @@ serve(async (req) => {
       );
     }
 
-    // Validate shipping address
+    // Validate shipping address with improved sanitization
     const shippingAddress: ShippingAddress = {
-      address: sanitizeString(orderRequest.shipping_address.address || '', 200),
-      city: sanitizeString(orderRequest.shipping_address.city || '', 100),
-      state: sanitizeString(orderRequest.shipping_address.state || '', 100),
-      zipCode: sanitizeString(orderRequest.shipping_address.zipCode || '', 20),
-      country: sanitizeString(orderRequest.shipping_address.country || '', 100),
+      address: sanitizeAddress(orderRequest.shipping_address.address || '', 200),
+      city: sanitizeName(orderRequest.shipping_address.city || '', 100),
+      state: sanitizeName(orderRequest.shipping_address.state || '', 100),
+      zipCode: sanitizeString(orderRequest.shipping_address.zipCode || '', 20).replace(/[^a-zA-Z0-9\s\-]/g, ''),
+      country: sanitizeName(orderRequest.shipping_address.country || '', 100),
     };
 
     if (!shippingAddress.address || !shippingAddress.city || 
@@ -177,7 +204,7 @@ serve(async (req) => {
 
       validatedItems.push({
         productId: item.productId,
-        name: sanitizeString(item.name || '', 100),
+        name: sanitizeName(item.name || '', 100),
         price: serverPrice,
         quantity: quantity,
       });
@@ -315,7 +342,6 @@ serve(async (req) => {
 
     // Send order confirmation email (fire and forget)
     try {
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
       const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
       
       const emailPayload = {

@@ -1,18 +1,24 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
+import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Simple password hashing using Web Crypto API
-async function hashPassword(password: string): Promise<string> {
+// Legacy SHA-256 hash for migration (will be replaced on next login)
+async function legacyHashPassword(password: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(password);
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// Check if hash is bcrypt format (starts with $2a$, $2b$, or $2y$)
+function isBcryptHash(hash: string): boolean {
+  return /^\$2[aby]\$\d{2}\$/.test(hash);
 }
 
 serve(async (req) => {
@@ -61,17 +67,23 @@ serve(async (req) => {
         );
       }
 
-      // Verify password - check if using env-based fallback or actual hash
-      const passwordHash = await hashPassword(password);
       let passwordValid = false;
+      let needsRehash = false;
       
       if (dbStaff.password_hash === "env_based_no_password") {
         // Fallback to ADMIN_PASSWORD from environment for legacy accounts
         passwordValid = adminPassword ? password === adminPassword : false;
+        needsRehash = passwordValid; // Rehash on next successful login
         console.log(`Using env-based password verification for: ${normalizedEmail}`);
+      } else if (isBcryptHash(dbStaff.password_hash)) {
+        // Bcrypt hash - use bcrypt.compare
+        passwordValid = await bcrypt.compare(password, dbStaff.password_hash);
       } else {
-        // Use stored password hash
-        passwordValid = passwordHash === dbStaff.password_hash;
+        // Legacy SHA-256 hash - verify and mark for rehash
+        const legacyHash = await legacyHashPassword(password);
+        passwordValid = legacyHash === dbStaff.password_hash;
+        needsRehash = passwordValid; // Rehash on next successful login
+        console.log(`Using legacy SHA-256 verification for: ${normalizedEmail}`);
       }
       
       if (!passwordValid) {
@@ -82,11 +94,45 @@ serve(async (req) => {
         );
       }
 
-      // Generate session token
+      // Rehash password to bcrypt if needed
+      if (needsRehash) {
+        try {
+          const bcryptHash = await bcrypt.hash(password);
+          await supabaseClient
+            .from("staff_members")
+            .update({ password_hash: bcryptHash })
+            .eq("id", dbStaff.id);
+          console.log(`Password upgraded to bcrypt for: ${normalizedEmail}`);
+        } catch (rehashError) {
+          console.error("Failed to rehash password:", rehashError);
+        }
+      }
+
+      // Generate secure session token
       const array = new Uint8Array(32);
       crypto.getRandomValues(array);
       const sessionToken = Array.from(array).map(b => b.toString(16).padStart(2, "0")).join("");
-      const sessionExpiry = Date.now() + 24 * 60 * 60 * 1000;
+      const sessionExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+      // Store session in database for validation
+      try {
+        // Clean up old sessions for this user
+        await supabaseClient
+          .from("staff_sessions")
+          .delete()
+          .eq("email", normalizedEmail);
+        
+        // Insert new session
+        await supabaseClient
+          .from("staff_sessions")
+          .insert({
+            email: normalizedEmail,
+            session_token: sessionToken,
+            expires_at: sessionExpiry.toISOString(),
+          });
+      } catch (sessionError) {
+        console.error("Failed to store session:", sessionError);
+      }
 
       console.log(`${dbStaff.role.toUpperCase()} login successful for DB staff: ${normalizedEmail}`);
 
@@ -98,7 +144,7 @@ serve(async (req) => {
           action_type: "login",
           action_details: {
             login_time: new Date().toISOString(),
-            session_expiry: new Date(sessionExpiry).toISOString(),
+            session_expiry: sessionExpiry.toISOString(),
             source: "database",
           },
         });
@@ -111,7 +157,7 @@ serve(async (req) => {
           success: true, 
           message: "Login successful",
           session_token: sessionToken,
-          session_expiry: sessionExpiry,
+          session_expiry: sessionExpiry.getTime(),
           email: normalizedEmail,
           role: dbStaff.role,
         }),
@@ -157,11 +203,31 @@ serve(async (req) => {
       );
     }
 
-    // Generate session token
+    // Generate secure session token
     const array = new Uint8Array(32);
     crypto.getRandomValues(array);
     const sessionToken = Array.from(array).map(b => b.toString(16).padStart(2, "0")).join("");
-    const sessionExpiry = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+    const sessionExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    // Store session in database for validation
+    try {
+      // Clean up old sessions for this user
+      await supabaseClient
+        .from("staff_sessions")
+        .delete()
+        .eq("email", normalizedEmail);
+      
+      // Insert new session
+      await supabaseClient
+        .from("staff_sessions")
+        .insert({
+          email: normalizedEmail,
+          session_token: sessionToken,
+          expires_at: sessionExpiry.toISOString(),
+        });
+    } catch (sessionError) {
+      console.error("Failed to store session:", sessionError);
+    }
 
     console.log(`${role.toUpperCase()} login successful for: ${normalizedEmail}`);
 
@@ -173,7 +239,7 @@ serve(async (req) => {
         action_type: "login",
         action_details: {
           login_time: new Date().toISOString(),
-          session_expiry: new Date(sessionExpiry).toISOString(),
+          session_expiry: sessionExpiry.toISOString(),
           source: "environment",
         },
       });
@@ -187,7 +253,7 @@ serve(async (req) => {
         success: true, 
         message: "Login successful",
         session_token: sessionToken,
-        session_expiry: sessionExpiry,
+        session_expiry: sessionExpiry.getTime(),
         email: normalizedEmail,
         role: role,
       }),

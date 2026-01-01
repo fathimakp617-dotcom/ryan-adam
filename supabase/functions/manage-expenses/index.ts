@@ -6,6 +6,27 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Validate session token from database
+async function validateSession(supabase: any, email: string, token: string): Promise<boolean> {
+  if (!email || !token) return false;
+  
+  const { data: session } = await supabase
+    .from("staff_sessions")
+    .select("id, expires_at")
+    .eq("email", email.toLowerCase())
+    .eq("session_token", token)
+    .maybeSingle();
+  
+  if (!session) return false;
+  
+  if (new Date(session.expires_at) < new Date()) {
+    await supabase.from("staff_sessions").delete().eq("id", session.id);
+    return false;
+  }
+  
+  return true;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -22,6 +43,11 @@ serve(async (req) => {
     const adminEmails = (Deno.env.get("ADMIN_EMAILS") || "").toLowerCase().split(",").map(e => e.trim());
     if (!adminEmails.includes(admin_email?.toLowerCase())) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Validate session token
+    if (!await validateSession(supabase, admin_email, admin_token)) {
+      return new Response(JSON.stringify({ error: "Session expired. Please log in again." }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     if (action === "list") {
