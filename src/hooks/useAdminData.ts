@@ -88,6 +88,7 @@ export const useAdminOrders = () => {
 // ============ CUSTOMERS ============
 export interface CustomerData {
   email: string;
+  phone: string | null;
   created_at: string;
 }
 

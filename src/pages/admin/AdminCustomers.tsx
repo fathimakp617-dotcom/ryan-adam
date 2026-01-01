@@ -33,12 +33,13 @@ const AdminCustomers = () => {
   );
 
   const exportToCSV = () => {
-    const headers = ["Email", "Registered On"];
+    const headers = ["Email", "Phone", "Registered On"];
     const csvContent = [
       headers.join(","),
       ...filteredCustomers.map((customer) =>
         [
           `"${customer.email}"`,
+          `"${customer.phone || "N/A"}"`,
           `"${formatDate(customer.created_at)}"`,
         ].join(",")
       ),
@@ -133,13 +134,14 @@ const AdminCustomers = () => {
             <TableRow className="bg-muted/50">
               <TableHead className="w-12">#</TableHead>
               <TableHead>Email</TableHead>
+              <TableHead>Phone</TableHead>
               <TableHead className="text-right">Registered On</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredCustomers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                   {searchTerm ? "No customers found matching your search" : "No registered customers yet"}
                 </TableCell>
               </TableRow>
@@ -148,6 +150,7 @@ const AdminCustomers = () => {
                 <TableRow key={customer.email} className="hover:bg-muted/30">
                   <TableCell className="text-muted-foreground">{index + 1}</TableCell>
                   <TableCell className="font-medium">{customer.email}</TableCell>
+                  <TableCell className="text-muted-foreground">{customer.phone || "—"}</TableCell>
                   <TableCell className="text-right text-muted-foreground">
                     {formatDate(customer.created_at)}
                   </TableCell>

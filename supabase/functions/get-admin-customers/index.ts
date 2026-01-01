@@ -42,9 +42,29 @@ serve(async (req) => {
       throw authError;
     }
 
-    // Map to simple customer data with email and registration date
+    // Fetch profiles to get phone numbers
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("user_id, phone");
+
+    if (profilesError) {
+      console.error("Error fetching profiles:", profilesError);
+    }
+
+    // Create a map of user_id to phone
+    const phoneMap = new Map<string, string>();
+    if (profiles) {
+      profiles.forEach((p) => {
+        if (p.phone) {
+          phoneMap.set(p.user_id, p.phone);
+        }
+      });
+    }
+
+    // Map to customer data with email, phone, and registration date
     const customers = authUsers.users.map((user) => ({
       email: user.email || "No email",
+      phone: phoneMap.get(user.id) || null,
       created_at: user.created_at,
     })).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
