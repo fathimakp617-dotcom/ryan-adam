@@ -58,7 +58,7 @@ const Checkout = () => {
     }
   }, [user]);
 
-  const shipping = totalPrice >= 999 ? 0 : 99;
+  const shipping = totalPrice >= 999 ? 0 : 79;
   const discount = calculateDiscount(totalPrice);
   const orderTotal = totalPrice - discount + shipping;
 

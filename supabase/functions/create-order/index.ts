@@ -48,16 +48,16 @@ const sanitizeString = (str: string, maxLength: number): string => {
     .trim();
 };
 
-// Product prices - server-side source of truth
+// Product prices - server-side source of truth (all prices include taxes)
 const PRODUCT_PRICES: Record<string, number> = {
-  "noir-intense": 499,
-  "blanc-elegance": 499,
-  "rouge-passion": 499,
-  "oud-royal": 599,
-  "velvet-night": 549,
-  "divine-rose": 529,
-  "amber-elixir": 499,
-  "citrus-aura": 449,
+  "noir-intense": 444,
+  "blanc-elegance": 444,
+  "rouge-passion": 444,
+  "oud-royal": 444,
+  "velvet-night": 444,
+  "divine-rose": 444,
+  "amber-elixir": 444,
+  "citrus-aura": 444,
 };
 
 const VALID_PRODUCT_IDS = Object.keys(PRODUCT_PRICES);
@@ -221,7 +221,7 @@ serve(async (req) => {
     }
 
     // Calculate shipping (free over 999)
-    const shipping = subtotal >= 999 ? 0 : 99;
+    const shipping = subtotal >= 999 ? 0 : 79;
 
     // Initialize Supabase client with service role for inserting
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
