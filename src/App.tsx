@@ -67,8 +67,8 @@ const PageLoader = () => (
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 10 * 60 * 1000, // 10 minutes - data stays fresh longer
-      gcTime: 15 * 60 * 1000, // 15 minutes cache
+      staleTime: 15 * 60 * 1000, // 15 minutes - data stays fresh longer
+      gcTime: 20 * 60 * 1000, // 20 minutes cache
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
       retry: 1,

@@ -375,7 +375,7 @@ const Account = () => {
     const now = new Date();
     const daysSinceOrder = Math.floor((now.getTime() - deliveryDate.getTime()) / (1000 * 60 * 60 * 24));
     
-    return daysSinceOrder <= 30; // Allow 30 days from order for return (buffer for delivery time)
+    return daysSinceOrder <= 7; // Allow 7 days from order for return
   };
 
   const handleReturnRequest = async (data: { reason: string; details: string; images: string[] }) => {
