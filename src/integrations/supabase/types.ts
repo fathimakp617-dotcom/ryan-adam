@@ -442,51 +442,6 @@ export type Database = {
         }
         Relationships: []
       }
-      shop_orders: {
-        Row: {
-          contact_name: string | null
-          contact_phone: string | null
-          created_at: string
-          created_by: string | null
-          id: string
-          notes: string | null
-          order_date: string
-          products: Json
-          shop_name: string
-          status: string | null
-          total_bottles: number | null
-          updated_at: string
-        }
-        Insert: {
-          contact_name?: string | null
-          contact_phone?: string | null
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          notes?: string | null
-          order_date?: string
-          products?: Json
-          shop_name: string
-          status?: string | null
-          total_bottles?: number | null
-          updated_at?: string
-        }
-        Update: {
-          contact_name?: string | null
-          contact_phone?: string | null
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          notes?: string | null
-          order_date?: string
-          products?: Json
-          shop_name?: string
-          status?: string | null
-          total_bottles?: number | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       staff_members: {
         Row: {
           created_at: string

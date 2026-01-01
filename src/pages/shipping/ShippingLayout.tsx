@@ -17,7 +17,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Package, LayoutDashboard, LogOut, ArrowLeft, Mail, Lock, Loader2, Truck, User, RotateCcw, Store } from "lucide-react";
+import { Package, LayoutDashboard, LogOut, ArrowLeft, Mail, Lock, Loader2, Truck, User, RotateCcw } from "lucide-react";
 import { motion } from "framer-motion";
 
 const SHIPPING_SESSION_KEY = "rayn_shipping_session";
@@ -229,7 +229,6 @@ const ShippingLayout = () => {
     { title: "Dashboard", url: "/shipping", icon: LayoutDashboard },
     { title: "Orders", url: "/shipping/orders", icon: Package },
     { title: "Returns", url: "/shipping/returns", icon: RotateCcw },
-    { title: "Shop Orders", url: "/shipping/shop-orders", icon: Store },
     { title: "My Account", url: "/shipping/account", icon: User },
   ];
 
