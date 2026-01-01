@@ -1,4 +1,4 @@
-import { useRef, useMemo, useState, useEffect, memo } from "react";
+import { useRef, useState, useEffect, memo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Points, PointMaterial } from "@react-three/drei";
 import * as THREE from "three";
@@ -12,20 +12,17 @@ const isMobile = typeof window !== "undefined"
   ? window.innerWidth < 768
   : false;
 
+// Static particle positions to prevent buffer resize errors
+const PARTICLE_COUNT = 150;
+const staticParticles = new Float32Array(PARTICLE_COUNT * 3);
+for (let i = 0; i < PARTICLE_COUNT; i++) {
+  staticParticles[i * 3] = (Math.random() - 0.5) * 20;
+  staticParticles[i * 3 + 1] = (Math.random() - 0.5) * 20;
+  staticParticles[i * 3 + 2] = (Math.random() - 0.5) * 20;
+}
+
 const ParticleField = memo(() => {
   const ref = useRef<THREE.Points>(null);
-
-  // Ultra-minimal particle count for performance
-  const particles = useMemo(() => {
-    const count = 150; // Reduced from 400 for faster rendering
-    const positions = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 20;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 20;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 20;
-    }
-    return positions;
-  }, []);
 
   useFrame((state) => {
     if (ref.current && !prefersReducedMotion) {
@@ -35,7 +32,7 @@ const ParticleField = memo(() => {
   });
 
   return (
-    <Points ref={ref} positions={particles} stride={3} frustumCulled>
+    <Points ref={ref} positions={staticParticles} stride={3} frustumCulled>
       <PointMaterial
         transparent
         color="#a87c39"

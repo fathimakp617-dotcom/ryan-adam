@@ -244,14 +244,14 @@ const AdminShopOrders = () => {
                   <div className="space-y-2">
                     <Label>Route</Label>
                     <Select
-                      value={formData.route_id}
-                      onValueChange={(v) => setFormData({ ...formData, route_id: v })}
+                      value={formData.route_id || "none"}
+                      onValueChange={(v) => setFormData({ ...formData, route_id: v === "none" ? "" : v })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select route" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">No route</SelectItem>
+                        <SelectItem value="none">No route</SelectItem>
                         {routes.map((route) => (
                           <SelectItem key={route.id} value={route.id}>{route.name}</SelectItem>
                         ))}
