@@ -30,21 +30,14 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Plus, RefreshCw, Loader2, Trash2, Fuel, Package, Users, Wrench, Megaphone, Zap, MoreHorizontal, Calendar } from "lucide-react";
 
-interface Route {
-  id: string;
-  name: string;
-}
-
 interface Expense {
   id: string;
-  route_id: string | null;
   category: string;
   amount: number;
   description: string;
   expense_date: string;
   staff_email: string | null;
   created_at: string;
-  route?: Route;
 }
 
 const CATEGORIES = [
@@ -59,7 +52,6 @@ const CATEGORIES = [
 
 const AdminExpenses = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [routes, setRoutes] = useState<Route[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -73,7 +65,6 @@ const AdminExpenses = () => {
     amount: "",
     description: "",
     expense_date: new Date().toISOString().split("T")[0],
-    route_id: "",
   });
 
   const { toast } = useToast();
@@ -101,7 +92,6 @@ const AdminExpenses = () => {
       if (error) throw error;
       
       setExpenses(data?.expenses || []);
-      setRoutes(data?.routes || []);
     } catch (error) {
       console.error("Error fetching expenses:", error);
       toast({
@@ -134,7 +124,6 @@ const AdminExpenses = () => {
             amount: parseFloat(formData.amount),
             description: formData.description,
             expense_date: formData.expense_date,
-            route_id: formData.route_id || null,
           },
         }
       });
@@ -152,7 +141,6 @@ const AdminExpenses = () => {
         amount: "",
         description: "",
         expense_date: new Date().toISOString().split("T")[0],
-        route_id: "",
       });
       fetchData();
     } catch (error: any) {
@@ -310,26 +298,6 @@ const AdminExpenses = () => {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Route (Optional)</Label>
-                  <Select
-                    value={formData.route_id || "none"}
-                    onValueChange={(v) => setFormData({ ...formData, route_id: v === "none" ? "" : v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select route" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No route</SelectItem>
-                      {routes.map((route) => (
-                        <SelectItem key={route.id} value={route.id}>
-                          {route.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
                 <Button type="submit" disabled={isSaving} className="w-full">
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                   Add Expense
@@ -399,7 +367,6 @@ const AdminExpenses = () => {
             <TableRow className="bg-muted/50">
               <TableHead>Category</TableHead>
               <TableHead>Description</TableHead>
-              <TableHead>Route</TableHead>
               <TableHead>Date</TableHead>
               <TableHead className="text-right">Amount</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -408,7 +375,7 @@ const AdminExpenses = () => {
           <TableBody>
             {filteredExpenses.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                   No expenses found
                 </TableCell>
               </TableRow>
@@ -424,7 +391,6 @@ const AdminExpenses = () => {
                       </div>
                     </TableCell>
                     <TableCell className="max-w-[200px] truncate">{expense.description}</TableCell>
-                    <TableCell>{expense.route?.name || "-"}</TableCell>
                     <TableCell>{formatDate(expense.expense_date)}</TableCell>
                     <TableCell className="text-right font-medium">₹{expense.amount.toLocaleString()}</TableCell>
                     <TableCell className="text-right">

@@ -23,26 +23,23 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, RefreshCw, Loader2, Store, Phone, MapPin, Check, X, Clock, Truck } from "lucide-react";
-import { useShopOrders, useInvalidateAdminData, type ShopOrder, type Route } from "@/hooks/useAdminData";
+import { Plus, RefreshCw, Loader2, Store, Phone, Check, X, Clock, Truck } from "lucide-react";
+import { useShopOrders, useInvalidateAdminData, type ShopOrder } from "@/hooks/useAdminData";
 
 const AdminShopOrders = () => {
   const { data, isLoading: loading, error } = useShopOrders('admin');
   const { invalidateShopOrders } = useInvalidateAdminData();
   const shopOrders = data?.shopOrders || [];
-  const routes = data?.routes || [];
   
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
-  const [routeFilter, setRouteFilter] = useState("all");
   
   // Form state
   const [formData, setFormData] = useState({
@@ -52,7 +49,6 @@ const AdminShopOrders = () => {
     products: [{ name: "", quantity: 1 }],
     notes: "",
     order_date: new Date().toISOString().split("T")[0],
-    route_id: "",
   });
 
   const { toast } = useToast();
@@ -118,7 +114,6 @@ const AdminShopOrders = () => {
           shop_order: {
             ...formData,
             total_bottles: totalBottles,
-            route_id: formData.route_id || null,
           },
         }
       });
@@ -134,7 +129,6 @@ const AdminShopOrders = () => {
         products: [{ name: "", quantity: 1 }],
         notes: "",
         order_date: new Date().toISOString().split("T")[0],
-        route_id: "",
       });
       fetchData();
     } catch (error: any) {
@@ -172,7 +166,6 @@ const AdminShopOrders = () => {
 
   const filteredOrders = shopOrders.filter(o => {
     if (statusFilter !== "all" && o.status !== statusFilter) return false;
-    if (routeFilter !== "all" && o.route_id !== routeFilter) return false;
     return true;
   });
 
@@ -196,7 +189,7 @@ const AdminShopOrders = () => {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -213,7 +206,7 @@ const AdminShopOrders = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Shop Orders</h1>
-          <p className="text-muted-foreground">Track orders from retail shops on routes</p>
+          <p className="text-muted-foreground">Track orders from retail shops</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={fetchData} variant="outline" size="sm">
@@ -232,33 +225,14 @@ const AdminShopOrders = () => {
                 <DialogTitle>Add Shop Order</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Shop Name *</Label>
-                    <Input
-                      value={formData.shop_name}
-                      onChange={(e) => setFormData({ ...formData, shop_name: e.target.value })}
-                      placeholder="Shop name"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Route</Label>
-                    <Select
-                      value={formData.route_id || "none"}
-                      onValueChange={(v) => setFormData({ ...formData, route_id: v === "none" ? "" : v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select route" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">No route</SelectItem>
-                        {routes.map((route) => (
-                          <SelectItem key={route.id} value={route.id}>{route.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="space-y-2">
+                  <Label>Shop Name *</Label>
+                  <Input
+                    value={formData.shop_name}
+                    onChange={(e) => setFormData({ ...formData, shop_name: e.target.value })}
+                    placeholder="Shop name"
+                    required
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -369,31 +343,18 @@ const AdminShopOrders = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="All status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="confirmed">Confirmed</SelectItem>
-            <SelectItem value="delivered">Delivered</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={routeFilter} onValueChange={setRouteFilter}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="All routes" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Routes</SelectItem>
-            {routes.map((route) => (
-              <SelectItem key={route.id} value={route.id}>{route.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <SelectTrigger className="w-full sm:w-48">
+          <SelectValue placeholder="All status" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Status</SelectItem>
+          <SelectItem value="pending">Pending</SelectItem>
+          <SelectItem value="confirmed">Confirmed</SelectItem>
+          <SelectItem value="delivered">Delivered</SelectItem>
+          <SelectItem value="cancelled">Cancelled</SelectItem>
+        </SelectContent>
+      </Select>
 
       {/* Orders Table */}
       <div className="border rounded-lg overflow-hidden">
@@ -403,7 +364,6 @@ const AdminShopOrders = () => {
               <TableHead>Shop</TableHead>
               <TableHead>Contact</TableHead>
               <TableHead>Products</TableHead>
-              <TableHead>Route</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -411,7 +371,7 @@ const AdminShopOrders = () => {
           <TableBody>
             {filteredOrders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                   No shop orders found
                 </TableCell>
               </TableRow>
@@ -447,14 +407,6 @@ const AdminShopOrders = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {order.route_id && routes.find(r => r.id === order.route_id) ? (
-                        <div className="flex items-center gap-1 text-sm">
-                          <MapPin className="w-3 h-3" />
-                          {routes.find(r => r.id === order.route_id)?.name}
-                        </div>
-                      ) : "-"}
-                    </TableCell>
-                    <TableCell>
                       <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
                         <StatusIcon className="w-3 h-3" />
                         {order.status}
@@ -465,7 +417,7 @@ const AdminShopOrders = () => {
                         value={order.status}
                         onValueChange={(v) => updateStatus(order.id, v)}
                       >
-                        <SelectTrigger className="w-32 h-8">
+                        <SelectTrigger className="w-32">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>

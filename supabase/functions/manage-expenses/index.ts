@@ -52,15 +52,7 @@ serve(async (req) => {
 
     if (action === "list") {
       const { data: expenses } = await supabase.from("expenses").select("*").order("expense_date", { ascending: false });
-      const { data: routes } = await supabase.from("routes").select("id, name").eq("is_active", true);
-      
-      // Join routes to expenses
-      const expensesWithRoutes = (expenses || []).map(e => ({
-        ...e,
-        route: routes?.find(r => r.id === e.route_id)
-      }));
-
-      return new Response(JSON.stringify({ expenses: expensesWithRoutes, routes }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ expenses: expenses || [] }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     if (action === "create") {
