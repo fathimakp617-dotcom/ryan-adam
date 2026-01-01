@@ -27,10 +27,9 @@ export async function validateSession(supabase: any, email: string, token: strin
 }
 
 // Check if email is in allowed admin/shipping list
-export function isEmailAuthorized(email: string, adminEmails: string[], shippingEmails: string[] = [], routeEmails: string[] = []): boolean {
+export function isEmailAuthorized(email: string, adminEmails: string[], shippingEmails: string[] = []): boolean {
   if (!email) return false;
   const normalizedEmail = email.toLowerCase().trim();
   return adminEmails.includes(normalizedEmail) || 
-         shippingEmails.includes(normalizedEmail) || 
-         routeEmails.includes(normalizedEmail);
+         shippingEmails.includes(normalizedEmail);
 }
