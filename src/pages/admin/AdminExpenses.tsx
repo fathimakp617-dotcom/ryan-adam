@@ -252,7 +252,7 @@ const AdminExpenses = () => {
                 Add Expense
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent aria-describedby={undefined}>
               <DialogHeader>
                 <DialogTitle>Add New Expense</DialogTitle>
               </DialogHeader>

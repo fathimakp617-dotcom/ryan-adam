@@ -447,7 +447,7 @@ const AdminCoupons = () => {
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>{selectedCoupon ? "Edit Coupon" : "Create Coupon"}</DialogTitle>
           </DialogHeader>

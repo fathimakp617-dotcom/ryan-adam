@@ -233,7 +233,7 @@ const ShippingReturns = () => {
 
       {/* Return Details Dialog */}
       <Dialog open={!!selectedReturn} onOpenChange={() => setSelectedReturn(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Return Request - {selectedReturn?.order_number}</DialogTitle>
           </DialogHeader>
