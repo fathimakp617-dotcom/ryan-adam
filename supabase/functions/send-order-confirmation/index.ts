@@ -1084,10 +1084,11 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Customer email sent successfully:", emailResponse);
 
     // Send admin notification email for packing and shipping
-    const adminEmail = Deno.env.get("ADMIN_ORDER_EMAIL");
-    console.log("Admin email configured:", adminEmail ? "YES" : "NO");
+    const adminOrderEmailRaw = Deno.env.get("ADMIN_ORDER_EMAIL") || "";
+    const adminEmails = adminOrderEmailRaw.split(",").map(e => e.trim().toLowerCase()).filter(e => e.length > 0);
+    console.log("Admin emails configured:", adminEmails.length > 0 ? adminEmails.join(", ") : "NONE");
     
-    if (adminEmail) {
+    if (adminEmails.length > 0) {
       try {
         console.log("Generating admin email HTML...");
         const adminEmailHTML = generateAdminOrderEmailHTML(orderData);
@@ -1098,26 +1099,33 @@ const handler = async (req: Request): Promise<Response> => {
         const shippingLabelBase64 = btoa(String.fromCharCode(...shippingLabelPdf));
         console.log("Shipping label PDF generated, size:", shippingLabelPdf.length);
         
-        console.log("Sending admin notification email to:", adminEmail);
-        const adminEmailResponse = await resend.emails.send({
-          from: "Rayn Adam Shipping <shipping@raynadamperfume.com>",
-          to: [adminEmail],
-          subject: `🚚 NEW ORDER - ${orderData.order_number} - ${orderData.customer_name}`,
-          html: adminEmailHTML,
-          attachments: [
-            {
-              filename: `invoice-${orderData.order_number}.pdf`,
-              content: invoicePdfBase64,
-            },
-            {
-              filename: `shipping-label-${orderData.order_number}.pdf`,
-              content: shippingLabelBase64,
-            },
-          ],
-        });
-        console.log("Admin notification email sent successfully:", JSON.stringify(adminEmailResponse));
+        // Send to all admin emails
+        for (const adminEmail of adminEmails) {
+          try {
+            console.log("Sending admin notification email to:", adminEmail);
+            const adminEmailResponse = await resend.emails.send({
+              from: "Rayn Adam Shipping <shipping@raynadamperfume.com>",
+              to: [adminEmail],
+              subject: `🚚 NEW ORDER - ${orderData.order_number} - ${orderData.customer_name}`,
+              html: adminEmailHTML,
+              attachments: [
+                {
+                  filename: `invoice-${orderData.order_number}.pdf`,
+                  content: invoicePdfBase64,
+                },
+                {
+                  filename: `shipping-label-${orderData.order_number}.pdf`,
+                  content: shippingLabelBase64,
+                },
+              ],
+            });
+            console.log(`Admin notification sent to ${adminEmail}:`, JSON.stringify(adminEmailResponse));
+          } catch (emailError: any) {
+            console.error(`Failed to send admin notification to ${adminEmail}:`, emailError.message);
+          }
+        }
       } catch (adminError: any) {
-        console.error("Failed to send admin notification email:", adminError.message);
+        console.error("Failed to generate admin notification email:", adminError.message);
         console.error("Admin email error details:", JSON.stringify(adminError));
       }
     } else {
