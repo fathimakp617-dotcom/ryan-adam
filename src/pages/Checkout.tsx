@@ -180,20 +180,51 @@ const Checkout = () => {
         currency: orderData.order.currency,
         name: "Rayn Adam",
         description: "COD Shipping Charge",
+        image: "https://uyrudydfpbisawgsepxd.supabase.co/storage/v1/object/public/assets/logo.png",
         order_id: orderData.order.id,
         handler: async (response: any) => {
-          // Verify shipping payment and create COD order
           await verifyCODShippingAndCreateOrder(response);
         },
         prefill: {
           name: `${formData.firstName} ${formData.lastName}`,
           email: formData.email,
           contact: formData.phone,
+          method: "upi",
+        },
+        remember_customer: true,
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: "Pay via UPI",
+                instruments: [
+                  { method: "upi", flows: ["qrcode", "collect", "intent"] },
+                  { method: "upi", apps: ["google_pay", "phonepe", "paytm"] },
+                ],
+              },
+              cards: {
+                name: "Card Payment",
+                instruments: [
+                  { method: "card", types: ["credit", "debit"] },
+                ],
+              },
+            },
+            sequence: ["block.upi", "block.cards"],
+            preferences: {
+              show_default_blocks: true,
+            },
+          },
         },
         theme: {
-          color: "#c9a962",
+          color: "#a87c39",
+          backdrop_color: "rgba(28, 28, 28, 0.95)",
+          hide_topbar: false,
         },
         modal: {
+          confirm_close: true,
+          escape: false,
+          animation: true,
+          backdropclose: false,
           ondismiss: () => {
             setIsProcessing(false);
             toast({
@@ -202,6 +233,10 @@ const Checkout = () => {
               variant: "destructive",
             });
           },
+        },
+        retry: {
+          enabled: true,
+          max_count: 3,
         },
       };
 
@@ -288,6 +323,7 @@ const Checkout = () => {
         currency: orderData.order.currency,
         name: "Rayn Adam",
         description: "Luxury Perfume Purchase",
+        image: "https://uyrudydfpbisawgsepxd.supabase.co/storage/v1/object/public/assets/logo.png",
         order_id: orderData.order.id,
         handler: async (response: any) => {
           await verifyAndCompleteOrder(response);
@@ -296,11 +332,56 @@ const Checkout = () => {
           name: `${formData.firstName} ${formData.lastName}`,
           email: formData.email,
           contact: formData.phone,
+          method: "upi", // Default to UPI
+        },
+        // Enable saved cards/tokens
+        remember_customer: true,
+        // Customize payment methods display
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: "Pay via UPI",
+                instruments: [
+                  { method: "upi", flows: ["qrcode", "collect", "intent"] },
+                  { method: "upi", apps: ["google_pay", "phonepe", "paytm"] },
+                ],
+              },
+              cards: {
+                name: "Card Payment",
+                instruments: [
+                  { method: "card", types: ["credit", "debit"] },
+                ],
+              },
+              wallets: {
+                name: "Digital Wallets",
+                instruments: [
+                  { method: "wallet", wallets: ["paytm", "phonepe", "amazonpay"] },
+                ],
+              },
+              netbanking: {
+                name: "Net Banking",
+                instruments: [
+                  { method: "netbanking" },
+                ],
+              },
+            },
+            sequence: ["block.upi", "block.cards", "block.wallets", "block.netbanking"],
+            preferences: {
+              show_default_blocks: true,
+            },
+          },
         },
         theme: {
-          color: "#c9a962",
+          color: "#a87c39", // Gold primary
+          backdrop_color: "rgba(28, 28, 28, 0.95)", // Dark charcoal
+          hide_topbar: false,
         },
         modal: {
+          confirm_close: true,
+          escape: false,
+          animation: true,
+          backdropclose: false,
           ondismiss: () => {
             setIsProcessing(false);
             toast({
@@ -309,6 +390,15 @@ const Checkout = () => {
               variant: "destructive",
             });
           },
+        },
+        readonly: {
+          contact: false,
+          email: false,
+        },
+        send_sms_hash: true,
+        retry: {
+          enabled: true,
+          max_count: 3,
         },
       };
 
