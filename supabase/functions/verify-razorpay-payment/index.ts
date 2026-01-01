@@ -143,32 +143,85 @@ const handler = async (req: Request): Promise<Response> => {
     let discount = 0;
     // Free shipping for online payments
     const shipping = 0;
+    let validCouponCode: string | null = null;
+    let validAffiliateCode: string | null = null;
 
     // Apply coupon if provided
     if (order_data.coupon_code) {
-      const { data: couponData } = await supabase
-        .rpc('validate_coupon_code', { coupon_code: order_data.coupon_code });
+      console.log("Validating coupon for online payment:", order_data.coupon_code);
       
-      if (couponData && couponData.length > 0 && couponData[0].is_valid) {
-        const coupon = couponData[0];
-        if (coupon.discount_amount) {
-          discount = coupon.discount_amount;
-        } else if (coupon.discount_percent) {
-          discount = Math.round(subtotal * (coupon.discount_percent / 100));
+      // First get the full coupon details to update usage
+      const { data: couponRecord, error: couponError } = await supabase
+        .from('coupons')
+        .select('*')
+        .eq('code', order_data.coupon_code.toUpperCase())
+        .eq('is_active', true)
+        .single();
+      
+      if (!couponError && couponRecord) {
+        // Check expiry
+        if (!couponRecord.expires_at || new Date(couponRecord.expires_at) > new Date()) {
+          // Check usage limit
+          if (!couponRecord.max_uses || (couponRecord.current_uses || 0) < couponRecord.max_uses) {
+            // Check minimum order
+            if (!couponRecord.min_order_amount || subtotal >= couponRecord.min_order_amount) {
+              // Apply discount
+              if (couponRecord.discount_amount) {
+                discount = couponRecord.discount_amount;
+              } else if (couponRecord.discount_percent) {
+                discount = Math.round(subtotal * (couponRecord.discount_percent / 100));
+              }
+              validCouponCode = couponRecord.code;
+              console.log("Coupon applied successfully, discount:", discount);
+
+              // Increment coupon usage
+              await supabase
+                .from('coupons')
+                .update({ current_uses: (couponRecord.current_uses || 0) + 1 })
+                .eq('id', couponRecord.id);
+              
+              console.log("Coupon usage incremented");
+            } else {
+              console.log("Coupon minimum order not met");
+            }
+          } else {
+            console.log("Coupon usage limit reached");
+          }
+        } else {
+          console.log("Coupon expired");
         }
+      } else {
+        console.log("Coupon not found or inactive:", couponError?.message);
       }
     }
 
-    // Apply affiliate discount if provided
-    if (order_data.affiliate_code && !order_data.coupon_code) {
-      const { data: affiliateData } = await supabase
-        .rpc('validate_affiliate_code', { affiliate_code: order_data.affiliate_code });
+    // Apply affiliate discount if provided (only if no coupon was applied)
+    if (order_data.affiliate_code && !validCouponCode) {
+      console.log("Validating affiliate code:", order_data.affiliate_code);
       
-      if (affiliateData && affiliateData.length > 0) {
-        const affiliate = affiliateData[0];
-        if (affiliate.discount_percent) {
-          discount = Math.round(subtotal * (affiliate.discount_percent / 100));
-        }
+      const { data: affiliate, error: affiliateError } = await supabase
+        .from('affiliates')
+        .select('*')
+        .eq('code', order_data.affiliate_code.toUpperCase())
+        .eq('is_active', true)
+        .single();
+      
+      if (!affiliateError && affiliate) {
+        discount = Math.round(subtotal * ((affiliate.coupon_discount_percent || 10) / 100));
+        validAffiliateCode = affiliate.code;
+        console.log("Affiliate discount applied:", discount);
+
+        // Update affiliate stats
+        const commission = Math.round(subtotal * ((affiliate.commission_percent || 10) / 100));
+        await supabase
+          .from('affiliates')
+          .update({
+            total_referrals: (affiliate.total_referrals || 0) + 1,
+            total_earnings: (affiliate.total_earnings || 0) + commission,
+          })
+          .eq('id', affiliate.id);
+        
+        console.log("Affiliate stats updated");
       }
     }
 
@@ -195,8 +248,8 @@ const handler = async (req: Request): Promise<Response> => {
         payment_method: 'razorpay',
         payment_status: 'paid',
         order_status: 'confirmed',
-        coupon_code: order_data.coupon_code || null,
-        affiliate_code: order_data.affiliate_code || null,
+        coupon_code: validCouponCode,
+        affiliate_code: validAffiliateCode,
       })
       .select()
       .single();
@@ -223,10 +276,39 @@ const handler = async (req: Request): Promise<Response> => {
           total,
           shipping_address: order_data.shipping_address,
           payment_method: 'razorpay',
+          coupon_code: validCouponCode,
+          affiliate_code: validAffiliateCode,
         },
       });
     } catch (emailError) {
       console.error("Failed to send confirmation email:", emailError);
+    }
+
+    // Generate loyalty coupon for the customer (fire and forget)
+    if (order_data.user_id) {
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+        fetch(`${supabaseUrl}/functions/v1/generate-loyalty-coupon`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseAnonKey}`,
+          },
+          body: JSON.stringify({
+            user_id: order_data.user_id,
+            customer_email: order_data.customer_email,
+            customer_name: order_data.customer_name,
+            order_number: orderNumber,
+          }),
+        }).then(res => {
+          console.log("Loyalty coupon generation triggered, status:", res.status);
+        }).catch(err => {
+          console.error("Failed to trigger loyalty coupon:", err);
+        });
+      } catch (loyaltyError) {
+        console.error("Error initiating loyalty coupon generation:", loyaltyError);
+      }
     }
 
     return new Response(
