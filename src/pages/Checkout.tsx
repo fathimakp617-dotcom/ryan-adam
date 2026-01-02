@@ -339,41 +339,19 @@ const Checkout = () => {
         },
         // Enable saved cards/tokens
         remember_customer: true,
-        // Customize payment methods display
-        config: {
-          display: {
-            blocks: {
-              upi: {
-                name: "Pay via UPI",
-                instruments: [
-                  { method: "upi", flows: ["qrcode", "collect", "intent"] },
-                  { method: "upi", apps: ["google_pay", "phonepe", "paytm"] },
-                ],
-              },
-              cards: {
-                name: "Card Payment",
-                instruments: [
-                  { method: "card", types: ["credit", "debit"] },
-                ],
-              },
-              wallets: {
-                name: "Digital Wallets",
-                instruments: [
-                  { method: "wallet", wallets: ["paytm", "phonepe", "amazonpay"] },
-                ],
-              },
-              netbanking: {
-                name: "Net Banking",
-                instruments: [
-                  { method: "netbanking" },
-                ],
-              },
-            },
-            sequence: ["block.upi", "block.cards", "block.wallets", "block.netbanking"],
-            preferences: {
-              show_default_blocks: true,
-            },
-          },
+        // Show only the selected payment method
+        method: isUPI ? {
+          upi: true,
+          card: false,
+          netbanking: false,
+          wallet: false,
+          paylater: false,
+        } : {
+          upi: false,
+          card: true,
+          netbanking: true,
+          wallet: true,
+          paylater: false,
         },
         theme: {
           color: "#a87c39", // Gold primary
