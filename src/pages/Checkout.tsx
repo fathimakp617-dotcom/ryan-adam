@@ -1,7 +1,7 @@
 import { useState, useEffect, memo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, CreditCard, Truck, Check, Lock, LogIn, AlertTriangle, Smartphone, Wallet } from "lucide-react";
+import { ArrowLeft, CreditCard, Truck, Check, Lock, LogIn, AlertTriangle, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,8 +58,8 @@ const Checkout = () => {
     }
   }, [user]);
 
-  // Free shipping for online payment (UPI/Razorpay), ₹79 for COD orders under ₹999
-  const shipping = (paymentMethod === "razorpay" || paymentMethod === "upi") ? 0 : (totalPrice >= 999 ? 0 : 79);
+  // Free shipping for online payment (UPI/Card), ₹79 for COD orders under ₹999
+  const shipping = (paymentMethod === "upi" || paymentMethod === "card") ? 0 : (totalPrice >= 999 ? 0 : 79);
   const discount = calculateDiscount(totalPrice);
   const orderTotal = totalPrice - discount + shipping;
 
@@ -76,8 +76,8 @@ const Checkout = () => {
 
   const handleConfirmOrder = async () => {
     setShowTermsDialog(false);
-    if (paymentMethod === "razorpay" || paymentMethod === "upi") {
-      await handleRazorpayPayment(paymentMethod === "upi");
+    if (paymentMethod === "upi" || paymentMethod === "card") {
+      await handleRazorpayPayment(paymentMethod);
     } else {
       await handleCODOrder();
     }
@@ -292,7 +292,7 @@ const Checkout = () => {
     }
   };
 
-  const handleRazorpayPayment = async (preferUPI: boolean = false) => {
+  const handleRazorpayPayment = async (method: "upi" | "card" = "upi") => {
     setIsProcessing(true);
 
     try {
@@ -318,12 +318,14 @@ const Checkout = () => {
         await loadRazorpayScript();
       }
 
+      const isUPI = method === "upi";
+      
       const options = {
         key: orderData.key_id,
         amount: orderData.order.amount,
         currency: orderData.order.currency,
         name: "Rayn Adam",
-        description: preferUPI ? "UPI Payment - Luxury Perfume" : "Luxury Perfume Purchase",
+        description: isUPI ? "UPI Payment - Luxury Perfume" : "Card/Netbanking - Luxury Perfume",
         image: "https://uyrudydfpbisawgsepxd.supabase.co/storage/v1/object/public/assets/logo.png",
         order_id: orderData.order.id,
         handler: async (response: any) => {
@@ -333,7 +335,7 @@ const Checkout = () => {
           name: `${formData.firstName} ${formData.lastName}`,
           email: formData.email,
           contact: formData.phone,
-          method: preferUPI ? "upi" : undefined,
+          method: isUPI ? "upi" : "card",
         },
         // Enable saved cards/tokens
         remember_customer: true,
@@ -712,16 +714,16 @@ const Checkout = () => {
                       <Label htmlFor="upi" className="flex items-center gap-2 cursor-pointer flex-1">
                         <Smartphone className="w-5 h-5 text-primary" />
                         <div className="flex-1">
-                          <span>UPI Payment</span>
+                          <span>UPI</span>
                           <p className="text-xs text-emerald-500 font-medium mt-0.5">
-                            GPay, PhonePe, Paytm • FREE Shipping
+                            GPay, PhonePe, Paytm, QR Code • FREE Shipping
                           </p>
                         </div>
                       </Label>
                     </div>
                     <div className="flex items-center space-x-3 bg-input border border-border rounded-lg p-4 cursor-pointer hover:border-primary transition-colors">
-                      <RadioGroupItem value="razorpay" id="razorpay" />
-                      <Label htmlFor="razorpay" className="flex items-center gap-2 cursor-pointer flex-1">
+                      <RadioGroupItem value="card" id="card" />
+                      <Label htmlFor="card" className="flex items-center gap-2 cursor-pointer flex-1">
                         <CreditCard className="w-5 h-5 text-primary" />
                         <div className="flex-1">
                           <span>Card / Netbanking</span>
