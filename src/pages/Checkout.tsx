@@ -339,10 +339,40 @@ const Checkout = () => {
         },
         // Enable saved cards/tokens
         remember_customer: true,
-        // Restrict methods so Razorpay shows the right UI
-        method: isUPI
-          ? { upi: true }
-          : { card: true, netbanking: true, wallet: true },
+        // Keep fallback methods enabled to avoid "no appropriate payment method found".
+        // We only *prioritize* UPI in the UI when the user selects it.
+        method: {
+          upi: true,
+          card: true,
+          netbanking: true,
+          wallet: true,
+          paylater: false,
+        },
+        config: {
+          display: {
+            hide: [{ method: "paylater" }],
+            blocks: {
+              upi: {
+                name: "UPI",
+                instruments: [{ method: "upi" }],
+              },
+              cards: {
+                name: "Cards",
+                instruments: [{ method: "card" }],
+              },
+              banks: {
+                name: "Netbanking",
+                instruments: [{ method: "netbanking" }],
+              },
+            },
+            sequence: isUPI
+              ? ["block.upi", "block.cards", "block.banks"]
+              : ["block.cards", "block.banks", "block.upi"],
+            preferences: {
+              show_default_blocks: false,
+            },
+          },
+        },
         theme: {
           color: "#a87c39",
           backdrop_color: "rgba(28, 28, 28, 0.95)",
