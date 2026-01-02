@@ -319,7 +319,8 @@ const Checkout = () => {
       }
 
       const isUPI = method === "upi";
-      
+      const contactDigits = (formData.phone || "").replace(/\D/g, "");
+
       const options = {
         key: orderData.key_id,
         amount: orderData.order.amount,
@@ -334,28 +335,17 @@ const Checkout = () => {
         prefill: {
           name: `${formData.firstName} ${formData.lastName}`,
           email: formData.email,
-          contact: formData.phone,
-          method: isUPI ? "upi" : "card",
+          contact: contactDigits,
         },
         // Enable saved cards/tokens
         remember_customer: true,
-        // Show only the selected payment method
-        method: isUPI ? {
-          upi: true,
-          card: false,
-          netbanking: false,
-          wallet: false,
-          paylater: false,
-        } : {
-          upi: false,
-          card: true,
-          netbanking: true,
-          wallet: true,
-          paylater: false,
-        },
+        // Restrict methods so Razorpay shows the right UI
+        method: isUPI
+          ? { upi: true }
+          : { card: true, netbanking: true, wallet: true },
         theme: {
-          color: "#a87c39", // Gold primary
-          backdrop_color: "rgba(28, 28, 28, 0.95)", // Dark charcoal
+          color: "#a87c39",
+          backdrop_color: "rgba(28, 28, 28, 0.95)",
           hide_topbar: false,
         },
         modal: {
@@ -384,6 +374,15 @@ const Checkout = () => {
       };
 
       const razorpay = new window.Razorpay(options);
+      razorpay.on('payment.failed', (resp: any) => {
+        const msg = resp?.error?.description || resp?.error?.reason || "Payment failed. Please try again.";
+        console.error("Razorpay payment.failed:", resp);
+        toast({
+          title: resp?.error?.code || "Payment Failed",
+          description: msg,
+          variant: "destructive",
+        });
+      });
       razorpay.open();
     } catch (error) {
       console.error("Razorpay error:", error);
