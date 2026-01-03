@@ -42,13 +42,6 @@ import AdminReturns from "./pages/admin/AdminReturns";
 import AdminExpenses from "./pages/admin/AdminExpenses";
 import AdminReviewsPage from "./pages/admin/AdminReviewsPage";
 
-// Shipping pages - eager load child routes for instant switching
-const ShippingLayout = lazy(() => import("./pages/shipping/ShippingLayout"));
-import ShippingDashboard from "./pages/shipping/ShippingDashboard";
-import ShippingOrders from "./pages/shipping/ShippingOrders";
-import ShippingAccount from "./pages/shipping/ShippingAccount";
-import ShippingReturns from "./pages/shipping/ShippingReturns";
-
 
 // Minimal loading fallback
 const PageLoader = () => (
@@ -107,12 +100,6 @@ const App = () => (
                         <Route path="returns" element={<AdminReturns />} />
                         <Route path="expenses" element={<AdminExpenses />} />
                         <Route path="reviews" element={<AdminReviewsPage />} />
-                      </Route>
-                      <Route path="/shipping" element={<ShippingLayout />}>
-                        <Route index element={<ShippingDashboard />} />
-                        <Route path="orders" element={<ShippingOrders />} />
-                        <Route path="account" element={<ShippingAccount />} />
-                        <Route path="returns" element={<ShippingReturns />} />
                       </Route>
                       <Route path="*" element={<NotFound />} />
                     </Routes>
