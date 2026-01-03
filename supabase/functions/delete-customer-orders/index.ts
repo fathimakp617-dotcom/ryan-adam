@@ -12,6 +12,32 @@ interface DeleteCustomerRequest {
   admin_token: string;
 }
 
+// Session validation helper
+async function validateSession(supabase: any, email: string, token: string): Promise<boolean> {
+  if (!email || !token) return false;
+  
+  try {
+    const { data: session } = await supabase
+      .from("staff_sessions")
+      .select("id, expires_at")
+      .eq("email", email.toLowerCase())
+      .eq("session_token", token)
+      .maybeSingle();
+    
+    if (!session) return false;
+    
+    if (new Date(session.expires_at) < new Date()) {
+      await supabase.from("staff_sessions").delete().eq("id", session.id);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Session validation error:", error);
+    return false;
+  }
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -44,14 +70,23 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Validate session token
+    if (!await validateSession(supabaseClient, admin_email, admin_token)) {
+      console.log(`Invalid session for: ${admin_email}`);
+      return new Response(
+        JSON.stringify({ error: "Session expired. Please log in again." }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (!customer_email) {
       return new Response(
         JSON.stringify({ error: "Customer email is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get count of orders to delete
     const { data: orders, error: countError } = await supabaseClient

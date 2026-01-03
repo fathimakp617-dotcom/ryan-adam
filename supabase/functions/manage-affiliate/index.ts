@@ -6,6 +6,32 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Session validation helper
+async function validateSession(supabase: any, email: string, token: string): Promise<boolean> {
+  if (!email || !token) return false;
+  
+  try {
+    const { data: session } = await supabase
+      .from("staff_sessions")
+      .select("id, expires_at")
+      .eq("email", email.toLowerCase())
+      .eq("session_token", token)
+      .maybeSingle();
+    
+    if (!session) return false;
+    
+    if (new Date(session.expires_at) < new Date()) {
+      await supabase.from("staff_sessions").delete().eq("id", session.id);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Session validation error:", error);
+    return false;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -34,6 +60,15 @@ serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Validate session token
+    if (!await validateSession(supabase, admin_email, admin_token)) {
+      console.log(`Invalid session for: ${admin_email}`);
+      return new Response(
+        JSON.stringify({ error: "Session expired. Please log in again." }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     console.log(`Admin action: ${action} by ${admin_email}`);
 
