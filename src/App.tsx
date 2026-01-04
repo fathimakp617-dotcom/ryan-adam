@@ -18,6 +18,7 @@ import Index from "./pages/Index";
 // Lazy load non-critical pages
 const Shop = lazy(() => import("./pages/Shop"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const ShopifyProductDetail = lazy(() => import("./pages/ShopifyProductDetail"));
 const Wishlist = lazy(() => import("./pages/Wishlist"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -80,6 +81,7 @@ const App = () => (
                       <Route path="/" element={<Index />} />
                       <Route path="/shop" element={<Shop />} />
                       <Route path="/product/:id" element={<ProductDetail />} />
+                      <Route path="/shopify-product/:handle" element={<ShopifyProductDetail />} />
                       <Route path="/wishlist" element={<Wishlist />} />
                       <Route path="/checkout" element={<Checkout />} />
                       <Route path="/auth" element={<Auth />} />
