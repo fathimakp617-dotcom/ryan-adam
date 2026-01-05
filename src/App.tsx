@@ -18,7 +18,6 @@ import Index from "./pages/Index";
 // Lazy load non-critical pages
 const Shop = lazy(() => import("./pages/Shop"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
-const ShopifyProductDetail = lazy(() => import("./pages/ShopifyProductDetail"));
 const Wishlist = lazy(() => import("./pages/Wishlist"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -42,6 +41,13 @@ import AdminCoupons from "./pages/admin/AdminCoupons";
 import AdminReturns from "./pages/admin/AdminReturns";
 import AdminExpenses from "./pages/admin/AdminExpenses";
 import AdminReviewsPage from "./pages/admin/AdminReviewsPage";
+
+// Shipping pages - eager load child routes for instant switching
+const ShippingLayout = lazy(() => import("./pages/shipping/ShippingLayout"));
+import ShippingDashboard from "./pages/shipping/ShippingDashboard";
+import ShippingOrders from "./pages/shipping/ShippingOrders";
+import ShippingAccount from "./pages/shipping/ShippingAccount";
+import ShippingReturns from "./pages/shipping/ShippingReturns";
 
 
 // Minimal loading fallback
@@ -81,7 +87,6 @@ const App = () => (
                       <Route path="/" element={<Index />} />
                       <Route path="/shop" element={<Shop />} />
                       <Route path="/product/:id" element={<ProductDetail />} />
-                      <Route path="/shopify-product/:handle" element={<ShopifyProductDetail />} />
                       <Route path="/wishlist" element={<Wishlist />} />
                       <Route path="/checkout" element={<Checkout />} />
                       <Route path="/auth" element={<Auth />} />
@@ -102,6 +107,12 @@ const App = () => (
                         <Route path="returns" element={<AdminReturns />} />
                         <Route path="expenses" element={<AdminExpenses />} />
                         <Route path="reviews" element={<AdminReviewsPage />} />
+                      </Route>
+                      <Route path="/shipping" element={<ShippingLayout />}>
+                        <Route index element={<ShippingDashboard />} />
+                        <Route path="orders" element={<ShippingOrders />} />
+                        <Route path="account" element={<ShippingAccount />} />
+                        <Route path="returns" element={<ShippingReturns />} />
                       </Route>
                       <Route path="*" element={<NotFound />} />
                     </Routes>
