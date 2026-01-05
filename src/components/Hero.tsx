@@ -2,29 +2,29 @@ import { useState, useEffect, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import velvetNightMain from "@/assets/perfumes/velvet-night/main.jpg";
-import divineRoseMain from "@/assets/perfumes/divine-rose/main.jpg";
-import amberElixirMain from "@/assets/perfumes/amber-elixir/main.jpg";
-import citrusAuraMain from "@/assets/perfumes/citrus-aura/main.jpg";
+import eliteMain from "@/assets/products/elite.jpg";
+import amberCrownMain from "@/assets/products/amber-crown.jpg";
+import legacyMain from "@/assets/products/legacy.jpg";
+import comboMain from "@/assets/products/combo.jpg";
 
 const slides = [
   {
-    image: velvetNightMain,
+    image: eliteMain,
     title: "ELITE",
     subtitle: "Smooth & Seductive",
   },
   {
-    image: divineRoseMain,
+    image: amberCrownMain,
     title: "AMBER CROWN",
     subtitle: "Romantic & Enchanting",
   },
   {
-    image: amberElixirMain,
+    image: legacyMain,
     title: "LEGACY",
     subtitle: "Warm & Captivating",
   },
   {
-    image: citrusAuraMain,
+    image: comboMain,
     title: "COMBO",
     subtitle: "Fresh & Invigorating",
   },
@@ -33,7 +33,7 @@ const slides = [
 // Preload first image immediately
 const preloadFirstImage = () => {
   const img = new Image();
-  img.src = velvetNightMain;
+  img.src = eliteMain;
 };
 preloadFirstImage();
 
