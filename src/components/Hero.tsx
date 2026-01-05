@@ -2,32 +2,38 @@ import { useState, useEffect, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import noirIntense from "@/assets/perfumes/noir-intense.jpg";
-import blancElegance from "@/assets/perfumes/blanc-elegance.jpg";
-import rougePassion from "@/assets/perfumes/rouge-passion.jpg";
+import blancElegance from "@/assets/products/blanc-elegance.jpg";
+import noirIntense from "@/assets/products/noir-intense.jpg";
+import rougePassion from "@/assets/products/rouge-passion.jpg";
+import elite from "@/assets/products/elite.jpg";
 
 const slides = [
-  {
-    image: noirIntense,
-    title: "NOIR",
-    subtitle: "Bold & Mysterious",
-  },
   {
     image: blancElegance,
     title: "BLANC",
     subtitle: "Fresh & Elegant",
   },
   {
+    image: noirIntense,
+    title: "NOIR",
+    subtitle: "Bold & Mysterious",
+  },
+  {
     image: rougePassion,
     title: "ROUGE",
     subtitle: "Rich & Sensual",
+  },
+  {
+    image: elite,
+    title: "ELITE",
+    subtitle: "Majestic & Opulent",
   },
 ];
 
 // Preload first image immediately
 const preloadFirstImage = () => {
   const img = new Image();
-  img.src = noirIntense;
+  img.src = blancElegance;
 };
 preloadFirstImage();
 
