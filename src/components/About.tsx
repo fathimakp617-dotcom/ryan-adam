@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import blancElegance from "@/assets/perfumes/blanc-elegance.jpg";
+import blancElegance from "@/assets/products/blanc-elegance.jpg";
 import { fadeInUp, fadeInLeft, fadeInRight, staggerContainer, staggerItem, lineReveal } from "@/lib/animations";
 
 const About = () => {
