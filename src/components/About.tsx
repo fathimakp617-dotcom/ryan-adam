@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import blancElegance from "@/assets/products/blanc-elegance.jpg";
+import citrusAuraMain from "@/assets/perfumes/citrus-aura/main.jpg";
 import { fadeInUp, fadeInLeft, fadeInRight, staggerContainer, staggerItem, lineReveal } from "@/lib/animations";
 
 const About = () => {
@@ -36,7 +36,7 @@ const About = () => {
               />
               
               <motion.img
-                src={blancElegance}
+                src={citrusAuraMain}
                 alt="The Art of Perfumery"
                 className="w-full object-cover relative z-10"
                 whileHover={{ scale: 1.02 }}

@@ -2,38 +2,38 @@ import { useState, useEffect, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import blancElegance from "@/assets/products/blanc-elegance.jpg";
-import noirIntense from "@/assets/products/noir-intense.jpg";
-import rougePassion from "@/assets/products/rouge-passion.jpg";
-import elite from "@/assets/products/elite.jpg";
+import velvetNightMain from "@/assets/perfumes/velvet-night/main.jpg";
+import divineRoseMain from "@/assets/perfumes/divine-rose/main.jpg";
+import amberElixirMain from "@/assets/perfumes/amber-elixir/main.jpg";
+import citrusAuraMain from "@/assets/perfumes/citrus-aura/main.jpg";
 
 const slides = [
   {
-    image: blancElegance,
-    title: "BLANC",
-    subtitle: "Fresh & Elegant",
-  },
-  {
-    image: noirIntense,
-    title: "NOIR",
-    subtitle: "Bold & Mysterious",
-  },
-  {
-    image: rougePassion,
-    title: "ROUGE",
-    subtitle: "Rich & Sensual",
-  },
-  {
-    image: elite,
+    image: velvetNightMain,
     title: "ELITE",
-    subtitle: "Majestic & Opulent",
+    subtitle: "Smooth & Seductive",
+  },
+  {
+    image: divineRoseMain,
+    title: "AMBER CROWN",
+    subtitle: "Romantic & Enchanting",
+  },
+  {
+    image: amberElixirMain,
+    title: "LEGACY",
+    subtitle: "Warm & Captivating",
+  },
+  {
+    image: citrusAuraMain,
+    title: "COMBO",
+    subtitle: "Fresh & Invigorating",
   },
 ];
 
 // Preload first image immediately
 const preloadFirstImage = () => {
   const img = new Image();
-  img.src = blancElegance;
+  img.src = velvetNightMain;
 };
 preloadFirstImage();
 
