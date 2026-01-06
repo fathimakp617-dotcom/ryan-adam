@@ -27,6 +27,7 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const RefundPolicy = lazy(() => import("./pages/RefundPolicy"));
 const ShippingPolicy = lazy(() => import("./pages/ShippingPolicy"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Contact = lazy(() => import("./pages/Contact"));
 
 // Admin pages - eager load child routes for instant switching
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
@@ -95,6 +96,7 @@ const App = () => (
                       <Route path="/privacy" element={<PrivacyPolicy />} />
                       <Route path="/refund-policy" element={<RefundPolicy />} />
                       <Route path="/shipping-policy" element={<ShippingPolicy />} />
+                      <Route path="/contact" element={<Contact />} />
                       <Route path="/admin" element={<AdminLayout />}>
                         <Route index element={<AdminDashboard />} />
                         <Route path="orders" element={<AdminOrders />} />
