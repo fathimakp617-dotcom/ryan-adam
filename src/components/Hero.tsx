@@ -1,11 +1,14 @@
 import { useState, useEffect, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { MessageCircle } from "lucide-react";
+import { generateWhatsAppLinkSimple } from "@/lib/whatsapp";
 import eliteMain from "@/assets/products/elite.jpg";
 import amberCrownMain from "@/assets/products/amber-crown.jpg";
 import legacyMain from "@/assets/products/legacy.jpg";
 import comboMain from "@/assets/products/combo.jpg";
+
+const whatsappLink = generateWhatsAppLinkSimple();
 
 const slides = [
   {
@@ -145,13 +148,15 @@ const Hero = memo(() => {
             <div
               className="flex flex-col sm:flex-row gap-4"
             >
-              <Button
-                size="lg"
-                disabled
-                className="w-full sm:w-auto bg-primary/50 text-primary-foreground px-8 sm:px-10 py-5 sm:py-6 text-sm tracking-widest font-medium cursor-not-allowed"
-              >
-                COMING SOON
-              </Button>
+              <a href={whatsappLink} target="_blank" rel="noopener noreferrer">
+                <Button
+                  size="lg"
+                  className="w-full sm:w-auto bg-[#25D366] hover:bg-[#20bd5a] text-white px-8 sm:px-10 py-5 sm:py-6 text-sm tracking-widest font-medium transition-all duration-300 hover:shadow-[0_0_30px_rgba(37,211,102,0.4)] flex items-center gap-2"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  BUY ON WHATSAPP
+                </Button>
+              </a>
               <a href="#collection">
                 <Button
                   variant="outline"

@@ -2,7 +2,7 @@ import { useState, useEffect, memo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Minus, Plus, Heart, Share2, Truck, Shield, RotateCcw, Star } from "lucide-react";
+import { ArrowLeft, Heart, Share2, Truck, Shield, RotateCcw, Star, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/Navbar";
@@ -17,6 +17,7 @@ import { useWishlist } from "@/contexts/WishlistContext";
 import { fadeInUp, fadeInLeft, staggerContainer, staggerItem } from "@/lib/animations";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { generateWhatsAppLink } from "@/lib/whatsapp";
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -268,16 +269,23 @@ const ProductDetail = () => {
                   </div>
                 </motion.div>
 
-                {/* Coming Soon */}
+                {/* Buy on WhatsApp */}
                 <motion.div variants={staggerItem} className="space-y-4 pt-4">
                   <div className="flex flex-col sm:flex-row gap-4">
-                    <Button
-                      size="lg"
-                      disabled
-                      className="flex-1 bg-primary/50 text-primary-foreground py-6 text-sm tracking-widest font-medium cursor-not-allowed"
+                    <a 
+                      href={generateWhatsAppLink(product.name, formatPrice(product.price))} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex-1"
                     >
-                      COMING SOON
-                    </Button>
+                      <Button
+                        size="lg"
+                        className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white py-6 text-sm tracking-widest font-medium transition-all duration-300 hover:shadow-[0_0_30px_rgba(37,211,102,0.4)] flex items-center justify-center gap-2"
+                      >
+                        <MessageCircle className="w-5 h-5" />
+                        BUY ON WHATSAPP
+                      </Button>
+                    </a>
                     <Button
                       size="lg"
                       variant="outline"
