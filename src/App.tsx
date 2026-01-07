@@ -24,9 +24,8 @@ const Auth = lazy(() => import("./pages/Auth"));
 const Account = lazy(() => import("./pages/Account"));
 const Terms = lazy(() => import("./pages/Terms"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
-const RefundPolicy = lazy(() => import("./pages/RefundPolicy"));
+const CancellationRefundPolicy = lazy(() => import("./pages/CancellationRefundPolicy"));
 const ShippingPolicy = lazy(() => import("./pages/ShippingPolicy"));
-const CancellationPolicy = lazy(() => import("./pages/CancellationPolicy"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Contact = lazy(() => import("./pages/Contact"));
 
@@ -95,9 +94,10 @@ const App = () => (
                       <Route path="/account" element={<Account />} />
                       <Route path="/terms" element={<Terms />} />
                       <Route path="/privacy" element={<PrivacyPolicy />} />
-                      <Route path="/refund-policy" element={<RefundPolicy />} />
+                      <Route path="/cancellation-refund-policy" element={<CancellationRefundPolicy />} />
+                      <Route path="/refund-policy" element={<CancellationRefundPolicy />} />
+                      <Route path="/cancellation-policy" element={<CancellationRefundPolicy />} />
                       <Route path="/shipping-policy" element={<ShippingPolicy />} />
-                      <Route path="/cancellation-policy" element={<CancellationPolicy />} />
                       <Route path="/contact" element={<Contact />} />
                       <Route path="/admin" element={<AdminLayout />}>
                         <Route index element={<AdminDashboard />} />
