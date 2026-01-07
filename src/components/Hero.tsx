@@ -73,7 +73,7 @@ const Hero = memo(() => {
   return (
     <section
       id="home"
-      className="relative min-h-screen flex items-end sm:items-center overflow-hidden pb-28 sm:pb-0"
+      className="relative min-h-screen flex items-end overflow-hidden pb-32 sm:pb-0 sm:items-center"
     >
       {/* Background Slideshow */}
       <AnimatePresence mode="wait">
@@ -93,7 +93,7 @@ const Hero = memo(() => {
             decoding="async"
           />
           {/* Dark overlay - stronger on mobile for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/60 sm:bg-gradient-to-r sm:from-background/95 sm:via-background/70 sm:to-background/40" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/40 sm:bg-gradient-to-r sm:from-background/95 sm:via-background/70 sm:to-background/40" />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent sm:from-background sm:via-transparent sm:to-background/50" />
         </motion.div>
       </AnimatePresence>
@@ -102,7 +102,7 @@ const Hero = memo(() => {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_hsl(35_49%_44%_/_0.15)_0%,_transparent_50%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_hsl(35_49%_44%_/_0.1)_0%,_transparent_50%)]" />
 
-      <div className="container mx-auto px-6 sm:px-6 lg:px-12 pt-24 sm:pt-24 relative z-10">
+      <div className="container mx-auto px-6 sm:px-6 lg:px-12 relative z-10">
         <div className="max-w-2xl">
           {/* Left Content */}
           <motion.div
@@ -173,16 +173,16 @@ const Hero = memo(() => {
           </motion.div>
         </div>
 
-        {/* Slide Indicators - positioned better on mobile */}
-        <div className="absolute bottom-8 left-6 sm:bottom-16 sm:left-6 lg:left-12 flex gap-2 sm:gap-3">
+        {/* Slide Indicators - visible on all screens */}
+        <div className="flex gap-2 sm:gap-3 mt-6 sm:mt-0 sm:absolute sm:bottom-16 sm:left-6 lg:left-12">
           {slides.map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrentSlide(index)}
-              className={`h-1 transition-all duration-500 ${
+              className={`h-1.5 sm:h-1 rounded-full transition-all duration-500 ${
                 index === currentSlide
-                  ? "w-6 sm:w-12 bg-primary"
-                  : "w-3 sm:w-6 bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                  ? "w-8 sm:w-12 bg-primary"
+                  : "w-4 sm:w-6 bg-white/40 hover:bg-white/60"
               }`}
             />
           ))}
