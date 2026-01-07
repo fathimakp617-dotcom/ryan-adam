@@ -89,7 +89,7 @@ const Collection = () => {
           ))}
         </motion.div>
 
-        {/* View All Button */}
+        {/* Coming Soon Button */}
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -97,10 +97,9 @@ const Collection = () => {
           variants={fadeInUp}
           className="text-center mt-12 sm:mt-16"
         >
-          <Link to="/shop" className="relative inline-block px-10 sm:px-12 py-4 border border-primary text-primary text-sm tracking-widest transition-all duration-300 hover:bg-primary hover:text-primary-foreground group overflow-hidden">
-            <span className="relative z-10">VIEW ALL FRAGRANCES</span>
-            <div className="absolute inset-0 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
-          </Link>
+          <div className="relative inline-block px-10 sm:px-12 py-4 border border-primary/50 text-primary/70 text-sm tracking-widest cursor-not-allowed">
+            <span className="relative z-10">COMING SOON</span>
+          </div>
         </motion.div>
       </div>
     </section>

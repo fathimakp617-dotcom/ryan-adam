@@ -268,34 +268,15 @@ const ProductDetail = () => {
                   </div>
                 </motion.div>
 
-                {/* Quantity & Add to Cart */}
+                {/* Coming Soon */}
                 <motion.div variants={staggerItem} className="space-y-4 pt-4">
-                  <div className="flex items-center gap-4">
-                    <span className="text-sm tracking-wider text-muted-foreground">QUANTITY</span>
-                    <div className="flex items-center border border-border/50">
-                      <button
-                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                        className="p-3 hover:bg-muted transition-colors"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="w-12 text-center">{quantity}</span>
-                      <button
-                        onClick={() => setQuantity(quantity + 1)}
-                        className="p-3 hover:bg-muted transition-colors"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
                   <div className="flex flex-col sm:flex-row gap-4">
                     <Button
                       size="lg"
-                      onClick={handleAddToCart}
-                      className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground py-6 text-sm tracking-widest font-medium transition-all duration-300 hover:shadow-[0_0_30px_hsl(35_49%_44%_/_0.4)]"
+                      disabled
+                      className="flex-1 bg-primary/50 text-primary-foreground py-6 text-sm tracking-widest font-medium cursor-not-allowed"
                     >
-                      ADD TO CART
+                      COMING SOON
                     </Button>
                     <Button
                       size="lg"

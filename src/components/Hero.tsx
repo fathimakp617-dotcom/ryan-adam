@@ -145,14 +145,13 @@ const Hero = memo(() => {
             <div
               className="flex flex-col sm:flex-row gap-4"
             >
-              <Link to="/shop">
-                <Button
-                  size="lg"
-                  className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground px-8 sm:px-10 py-5 sm:py-6 text-sm tracking-widest font-medium transition-all duration-300 hover:shadow-[0_0_30px_hsl(35_49%_44%_/_0.4)]"
-                >
-                  SHOP NOW
-                </Button>
-              </Link>
+              <Button
+                size="lg"
+                disabled
+                className="w-full sm:w-auto bg-primary/50 text-primary-foreground px-8 sm:px-10 py-5 sm:py-6 text-sm tracking-widest font-medium cursor-not-allowed"
+              >
+                COMING SOON
+              </Button>
               <a href="#collection">
                 <Button
                   variant="outline"
