@@ -99,12 +99,11 @@ const Wishlist = () => {
 
                         <div className="flex gap-2 mt-4">
                           <Button
-                            onClick={() => handleAddToCart(product)}
-                            className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+                            disabled
+                            className="flex-1 bg-primary/50 text-primary-foreground cursor-not-allowed"
                             size="sm"
                           >
-                            <ShoppingBag className="w-4 h-4 mr-2" />
-                            Add to Cart
+                            Coming Soon
                           </Button>
                           <Button
                             onClick={() => removeFromWishlist(product.id)}

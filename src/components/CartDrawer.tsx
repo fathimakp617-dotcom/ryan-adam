@@ -128,11 +128,11 @@ const CartDrawer = () => {
                   Shipping & taxes calculated at checkout
                 </p>
                 <Button
-                  asChild
                   size="lg"
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 text-sm tracking-widest transition-all duration-300 hover:shadow-[0_0_30px_hsl(35_49%_44%_/_0.4)]"
+                  disabled
+                  className="w-full bg-primary/50 text-primary-foreground py-6 text-sm tracking-widest cursor-not-allowed"
                 >
-                  <Link to="/checkout" onClick={closeCart}>PROCEED TO CHECKOUT</Link>
+                  COMING SOON
                 </Button>
                 <Button
                   variant="outline"
