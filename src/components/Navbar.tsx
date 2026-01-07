@@ -197,9 +197,13 @@ const Navbar = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[10000] w-full max-w-md p-4"
+                className="fixed inset-0 z-[10000] flex items-center justify-center p-4"
+                onClick={() => setShowConstructionModal(false)}
               >
-                <div className="relative w-full bg-card border border-border/50 p-8 sm:p-10 text-center">
+                <div 
+                  className="relative w-full max-w-md bg-card border border-border/50 p-8 sm:p-10 text-center"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   {/* Gold corner accents */}
                   <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-primary/60" />
                   <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-primary/60" />
