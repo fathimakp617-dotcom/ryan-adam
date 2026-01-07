@@ -12,20 +12,8 @@ interface RelatedProductsProps {
 }
 
 const RelatedProducts = ({ currentProductId, currentCategory }: RelatedProductsProps) => {
-  // First try to get products from same category
-  let relatedProducts = products.filter(
-    (p) => p.id !== currentProductId && p.category === currentCategory
-  );
-
-  // If not enough, add products from other categories
-  if (relatedProducts.length < 3) {
-    const otherProducts = products.filter(
-      (p) => p.id !== currentProductId && p.category !== currentCategory
-    );
-    relatedProducts = [...relatedProducts, ...otherProducts].slice(0, 4);
-  } else {
-    relatedProducts = relatedProducts.slice(0, 4);
-  }
+  // Show all products except the current one
+  const relatedProducts = products.filter((p) => p.id !== currentProductId);
 
   if (relatedProducts.length === 0) return null;
 
