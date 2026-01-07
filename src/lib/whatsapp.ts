@@ -1,5 +1,5 @@
-// WhatsApp Business Number - Update this with your actual WhatsApp number
-export const WHATSAPP_NUMBER = "919876543210"; // Format: country code + number without + or spaces
+// WhatsApp Business Number
+export const WHATSAPP_NUMBER = "919946647442";
 
 export const generateWhatsAppLink = (productName: string, productPrice: string) => {
   const message = encodeURIComponent(
