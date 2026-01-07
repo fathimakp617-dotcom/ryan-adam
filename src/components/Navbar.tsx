@@ -1,18 +1,10 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ShoppingBag, Heart, User, Share2, LogOut, Construction, MessageCircle } from "lucide-react";
+import { Menu, X, ShoppingBag, Heart, User, Construction, MessageCircle } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
-import { useAuth } from "@/contexts/AuthContext";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { generateWhatsAppLinkSimple } from "@/lib/whatsapp";
 
@@ -23,8 +15,6 @@ const Navbar = () => {
   const isHomePage = location.pathname === "/";
   const { totalItems } = useCart();
   const { totalItems: wishlistItems } = useWishlist();
-  const { user, signOut } = useAuth();
-  const { toast } = useToast();
 
   const handleShowConstruction = () => {
     setShowConstructionModal(true);
@@ -39,27 +29,6 @@ const Navbar = () => {
     { name: "Contact", href: isHomePage ? "#contact" : "/#contact", isRoute: !isHomePage },
   ];
 
-  const handleCopyReferralLink = () => {
-    if (!user) return;
-    
-    // Generate referral code from user ID (first 8 chars)
-    const referralCode = user.id.substring(0, 8).toUpperCase();
-    const referralLink = `${window.location.origin}/?ref=${referralCode}`;
-    
-    navigator.clipboard.writeText(referralLink);
-    toast({
-      title: "Referral Link Copied!",
-      description: "Share this link with friends to earn rewards.",
-    });
-  };
-
-  const handleSignOut = async () => {
-    await signOut();
-    toast({
-      title: "Signed Out",
-      description: "You have been successfully signed out.",
-    });
-  };
 
   return (
     <motion.nav
@@ -208,84 +177,87 @@ const Navbar = () => {
           </motion.div>
         )}
       </AnimatePresence>
-      {/* Under Construction Modal */}
-      <AnimatePresence>
-        {showConstructionModal && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowConstructionModal(false)}
-              className="fixed inset-0 bg-background/90 backdrop-blur-sm z-[100]"
-            />
+      {/* Under Construction Modal - using portal for proper centering */}
+      {createPortal(
+        <AnimatePresence>
+          {showConstructionModal && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowConstructionModal(false)}
+                className="fixed inset-0 bg-background/90 backdrop-blur-sm z-[9999]"
+              />
 
-            {/* Modal */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed inset-0 z-[101] flex items-center justify-center p-4"
-            >
-              <div className="relative w-full max-w-md bg-card border border-border/50 p-8 sm:p-10 text-center">
-                {/* Gold corner accents */}
-                <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-primary/60" />
-                <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-primary/60" />
-                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-primary/60" />
-                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-primary/60" />
+              {/* Modal */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[10000] w-full max-w-md p-4"
+              >
+                <div className="relative w-full bg-card border border-border/50 p-8 sm:p-10 text-center">
+                  {/* Gold corner accents */}
+                  <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-primary/60" />
+                  <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-primary/60" />
+                  <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-primary/60" />
+                  <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-primary/60" />
 
-                {/* Close button */}
-                <button
-                  onClick={() => setShowConstructionModal(false)}
-                  className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-
-                {/* Icon */}
-                <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Construction className="w-8 h-8 text-primary" />
-                </div>
-
-                {/* Content */}
-                <h2 className="text-2xl sm:text-3xl font-heading tracking-tight mb-3">
-                  Website Under Construction
-                </h2>
-                <p className="text-muted-foreground mb-6 leading-relaxed">
-                  We're working hard to bring you an amazing shopping experience. 
-                  In the meantime, you can still purchase our luxury fragrances via WhatsApp!
-                </p>
-
-                {/* WhatsApp Button */}
-                <a
-                  href={generateWhatsAppLinkSimple()}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block"
-                >
-                  <Button
-                    size="lg"
-                    className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white py-6 text-sm tracking-widest font-medium transition-all duration-300 hover:shadow-[0_0_30px_rgba(37,211,102,0.4)] flex items-center justify-center gap-2"
+                  {/* Close button */}
+                  <button
+                    onClick={() => setShowConstructionModal(false)}
+                    className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    <MessageCircle className="w-5 h-5" />
-                    SHOP ON WHATSAPP
-                  </Button>
-                </a>
+                    <X className="w-5 h-5" />
+                  </button>
 
-                {/* Continue browsing */}
-                <button
-                  onClick={() => setShowConstructionModal(false)}
-                  className="mt-4 text-sm text-muted-foreground hover:text-primary transition-colors tracking-wider"
-                >
-                  Continue Browsing
-                </button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+                  {/* Icon */}
+                  <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Construction className="w-8 h-8 text-primary" />
+                  </div>
+
+                  {/* Content */}
+                  <h2 className="text-2xl sm:text-3xl font-heading tracking-tight mb-3">
+                    Website Under Construction
+                  </h2>
+                  <p className="text-muted-foreground mb-6 leading-relaxed">
+                    We're working hard to bring you an amazing shopping experience. 
+                    In the meantime, you can still purchase our luxury fragrances via WhatsApp!
+                  </p>
+
+                  {/* WhatsApp Button */}
+                  <a
+                    href={generateWhatsAppLinkSimple()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block"
+                  >
+                    <Button
+                      size="lg"
+                      className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white py-6 text-sm tracking-widest font-medium transition-all duration-300 hover:shadow-[0_0_30px_rgba(37,211,102,0.4)] flex items-center justify-center gap-2"
+                    >
+                      <MessageCircle className="w-5 h-5" />
+                      SHOP ON WHATSAPP
+                    </Button>
+                  </a>
+
+                  {/* Continue browsing */}
+                  <button
+                    onClick={() => setShowConstructionModal(false)}
+                    className="mt-4 text-sm text-muted-foreground hover:text-primary transition-colors tracking-wider"
+                  >
+                    Continue Browsing
+                  </button>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </motion.nav>
   );
 };
