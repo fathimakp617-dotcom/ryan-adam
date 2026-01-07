@@ -91,14 +91,21 @@ const Collection = () => {
           ))}
         </motion.div>
 
-        {/* Buy on WhatsApp Button */}
+        {/* Action Buttons */}
         <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
           variants={fadeInUp}
-          className="text-center mt-12 sm:mt-16"
+          className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-12 sm:mt-16"
         >
+          <Link 
+            to="/shop" 
+            className="relative inline-block px-10 sm:px-12 py-4 border border-primary text-primary text-sm tracking-widest transition-all duration-300 hover:bg-primary hover:text-primary-foreground group overflow-hidden"
+          >
+            <span className="relative z-10">VIEW ALL PRODUCTS</span>
+            <div className="absolute inset-0 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
+          </Link>
           <a 
             href={generateWhatsAppLinkSimple()} 
             target="_blank" 
