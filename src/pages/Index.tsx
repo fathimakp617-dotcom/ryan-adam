@@ -12,6 +12,7 @@ const Footer = lazy(() => import("@/components/Footer"));
 const FloatingParticles = lazy(() => import("@/components/FloatingParticles"));
 const OrderSuccessModal = lazy(() => import("@/components/OrderSuccessModal"));
 const CookieConsent = lazy(() => import("@/components/CookieConsent"));
+const UnderConstructionModal = lazy(() => import("@/components/UnderConstructionModal"));
 
 const SectionLoader = () => (
   <div className="py-12 flex items-center justify-center">
@@ -34,11 +35,12 @@ const Index = () => {
         />
       </Helmet>
 
-      {/* Defer particles loading */}
+      {/* Defer modals loading */}
       <Suspense fallback={null}>
         <FloatingParticles />
         <OrderSuccessModal />
         <CookieConsent />
+        <UnderConstructionModal />
       </Suspense>
 
       <PageTransition>
