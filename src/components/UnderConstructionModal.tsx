@@ -1,11 +1,24 @@
 import { useState, useEffect } from "react";
+import { useLocation, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MessageCircle, Construction } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { generateWhatsAppLinkSimple } from "@/lib/whatsapp";
+import { generateWhatsAppLink, generateWhatsAppLinkSimple } from "@/lib/whatsapp";
+import { getProductById, formatPrice } from "@/data/products";
 
 const UnderConstructionModal = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
+  
+  // Extract product ID from URL if on product page
+  const productMatch = location.pathname.match(/^\/product\/(.+)$/);
+  const productId = productMatch ? productMatch[1] : null;
+  const product = productId ? getProductById(productId) : null;
+
+  // Generate appropriate WhatsApp link
+  const whatsappLink = product 
+    ? generateWhatsAppLink(product.name, formatPrice(product.price))
+    : generateWhatsAppLinkSimple();
 
   useEffect(() => {
     // Check if user has already seen the modal in this session
@@ -69,14 +82,23 @@ const UnderConstructionModal = () => {
               <h2 className="text-2xl sm:text-3xl font-heading tracking-tight mb-3">
                 Website Under Construction
               </h2>
-              <p className="text-muted-foreground mb-8 leading-relaxed">
+              <p className="text-muted-foreground mb-6 leading-relaxed">
                 We're working hard to bring you an amazing shopping experience. 
                 In the meantime, you can still purchase our luxury fragrances via WhatsApp!
               </p>
 
+              {/* Product info if on product page */}
+              {product && (
+                <div className="bg-muted/30 border border-border/50 p-4 mb-6 rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-1">Interested in:</p>
+                  <p className="font-heading text-lg text-foreground">{product.name}</p>
+                  <p className="text-primary font-medium">{formatPrice(product.price)}</p>
+                </div>
+              )}
+
               {/* WhatsApp Button */}
               <a
-                href={generateWhatsAppLinkSimple()}
+                href={whatsappLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block"
@@ -86,7 +108,7 @@ const UnderConstructionModal = () => {
                   className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white py-6 text-sm tracking-widest font-medium transition-all duration-300 hover:shadow-[0_0_30px_rgba(37,211,102,0.4)] flex items-center justify-center gap-2"
                 >
                   <MessageCircle className="w-5 h-5" />
-                  SHOP ON WHATSAPP
+                  {product ? `ORDER ${product.name.toUpperCase()}` : "SHOP ON WHATSAPP"}
                 </Button>
               </a>
 
