@@ -101,3 +101,6 @@ verify_jwt = false
 
 [functions.manage-shop-orders]
 verify_jwt = false
+
+[functions.send-contact-email]
+verify_jwt = false

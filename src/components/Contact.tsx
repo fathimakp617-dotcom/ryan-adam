@@ -1,10 +1,60 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { fadeInUp, staggerContainer, staggerItem, lineReveal } from "@/lib/animations";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 const Contact = () => {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    subject: "",
+    message: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validation
+    if (!formData.name.trim() || !formData.email.trim() || !formData.subject.trim() || !formData.message.trim()) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("send-contact-email", {
+        body: formData,
+      });
+
+      if (error) throw error;
+
+      toast.success("Message sent! We'll get back to you soon.");
+      setFormData({ name: "", email: "", subject: "", message: "" });
+    } catch (error: any) {
+      console.error("Contact form error:", error);
+      toast.error("Failed to send message. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <section id="contact" className="py-24 sm:py-32 bg-background relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_hsl(35_49%_44%_/_0.03)_0%,_transparent_50%)]" />
@@ -37,6 +87,7 @@ const Contact = () => {
 
           {/* Contact Form */}
           <motion.form
+            onSubmit={handleSubmit}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-50px" }}
@@ -50,8 +101,12 @@ const Contact = () => {
                 </label>
                 <Input
                   type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
                   placeholder="Your name"
                   className="bg-card border-border/50 focus:border-primary h-12 sm:h-14 px-4 sm:px-6 text-foreground placeholder:text-muted-foreground/50 transition-all duration-300"
+                  disabled={isSubmitting}
                 />
               </div>
               <div className="space-y-2">
@@ -60,8 +115,12 @@ const Contact = () => {
                 </label>
                 <Input
                   type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
                   placeholder="Your email"
                   className="bg-card border-border/50 focus:border-primary h-12 sm:h-14 px-4 sm:px-6 text-foreground placeholder:text-muted-foreground/50 transition-all duration-300"
+                  disabled={isSubmitting}
                 />
               </div>
             </motion.div>
@@ -72,8 +131,12 @@ const Contact = () => {
               </label>
               <Input
                 type="text"
+                name="subject"
+                value={formData.subject}
+                onChange={handleChange}
                 placeholder="Subject"
                 className="bg-card border-border/50 focus:border-primary h-12 sm:h-14 px-4 sm:px-6 text-foreground placeholder:text-muted-foreground/50 transition-all duration-300"
+                disabled={isSubmitting}
               />
             </motion.div>
 
@@ -82,9 +145,13 @@ const Contact = () => {
                 MESSAGE
               </label>
               <Textarea
+                name="message"
+                value={formData.message}
+                onChange={handleChange}
                 placeholder="Your message"
                 rows={6}
                 className="bg-card border-border/50 focus:border-primary px-4 sm:px-6 py-4 text-foreground placeholder:text-muted-foreground/50 resize-none transition-all duration-300"
+                disabled={isSubmitting}
               />
             </motion.div>
 
@@ -92,9 +159,17 @@ const Contact = () => {
               <Button
                 type="submit"
                 size="lg"
-                className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground px-12 sm:px-16 py-5 sm:py-6 text-sm tracking-widest font-medium transition-all duration-300 hover:shadow-[0_0_30px_hsl(35_49%_44%_/_0.4)]"
+                disabled={isSubmitting}
+                className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground px-12 sm:px-16 py-5 sm:py-6 text-sm tracking-widest font-medium transition-all duration-300 hover:shadow-[0_0_30px_hsl(35_49%_44%_/_0.4)] disabled:opacity-50"
               >
-                SEND MESSAGE
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    SENDING...
+                  </>
+                ) : (
+                  "SEND MESSAGE"
+                )}
               </Button>
             </motion.div>
           </motion.form>
