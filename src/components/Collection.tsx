@@ -1,7 +1,9 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { MessageCircle } from "lucide-react";
 import { products, formatPrice } from "@/data/products";
 import { fadeInUp, staggerContainer, staggerItem, lineReveal } from "@/lib/animations";
+import { generateWhatsAppLinkSimple } from "@/lib/whatsapp";
 
 const Collection = () => {
   const featuredProducts = products.slice(0, 3);
@@ -89,7 +91,7 @@ const Collection = () => {
           ))}
         </motion.div>
 
-        {/* Coming Soon Button */}
+        {/* Buy on WhatsApp Button */}
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -97,9 +99,15 @@ const Collection = () => {
           variants={fadeInUp}
           className="text-center mt-12 sm:mt-16"
         >
-          <div className="relative inline-block px-10 sm:px-12 py-4 border border-primary/50 text-primary/70 text-sm tracking-widest cursor-not-allowed">
-            <span className="relative z-10">COMING SOON</span>
-          </div>
+          <a 
+            href={generateWhatsAppLinkSimple()} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="relative inline-flex items-center gap-2 px-10 sm:px-12 py-4 bg-[#25D366] text-white text-sm tracking-widest transition-all duration-300 hover:bg-[#20bd5a] hover:shadow-[0_0_30px_rgba(37,211,102,0.4)]"
+          >
+            <MessageCircle className="w-5 h-5" />
+            <span>BUY ON WHATSAPP</span>
+          </a>
         </motion.div>
       </div>
     </section>
