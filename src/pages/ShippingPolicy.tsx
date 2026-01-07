@@ -57,7 +57,7 @@ const ShippingPolicy = () => {
                       <AlertTriangle className="w-5 h-5 text-orange-500" />
                       <p className="font-medium text-foreground">Orders Below ₹999</p>
                     </div>
-                    <p className="text-2xl font-bold text-orange-500">₹99</p>
+                    <p className="text-2xl font-bold text-orange-500">₹79</p>
                     <p className="text-sm text-muted-foreground">Flat shipping charge</p>
                   </div>
                 </div>
@@ -140,7 +140,7 @@ const ShippingPolicy = () => {
                   <div>
                     <p className="font-medium text-foreground">Important: COD Advance Payment</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      For COD orders, the <span className="text-orange-500 font-semibold">shipping charge (₹99) must be paid in advance</span> online 
+                      For COD orders, the <span className="text-orange-500 font-semibold">shipping charge (₹79) must be paid in advance</span> online 
                       before order confirmation. Only the product amount is collected at delivery.
                     </p>
                   </div>

@@ -26,6 +26,7 @@ const Terms = lazy(() => import("./pages/Terms"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const RefundPolicy = lazy(() => import("./pages/RefundPolicy"));
 const ShippingPolicy = lazy(() => import("./pages/ShippingPolicy"));
+const CancellationPolicy = lazy(() => import("./pages/CancellationPolicy"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Contact = lazy(() => import("./pages/Contact"));
 
@@ -96,6 +97,7 @@ const App = () => (
                       <Route path="/privacy" element={<PrivacyPolicy />} />
                       <Route path="/refund-policy" element={<RefundPolicy />} />
                       <Route path="/shipping-policy" element={<ShippingPolicy />} />
+                      <Route path="/cancellation-policy" element={<CancellationPolicy />} />
                       <Route path="/contact" element={<Contact />} />
                       <Route path="/admin" element={<AdminLayout />}>
                         <Route index element={<AdminDashboard />} />
