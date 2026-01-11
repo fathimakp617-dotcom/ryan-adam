@@ -115,6 +115,10 @@ const AdminCoupons = () => {
 
     setSaving(true);
     try {
+      const sessionData = sessionStorage.getItem("rayn_admin_session");
+      if (!sessionData) throw new Error("No admin session found");
+      const session = JSON.parse(sessionData);
+
       const couponData = {
         id: selectedCoupon?.id,
         code: formData.code.trim(),
@@ -130,6 +134,8 @@ const AdminCoupons = () => {
         body: {
           action: selectedCoupon ? "update" : "create",
           coupon: couponData,
+          admin_email: session.email,
+          admin_token: session.token,
         },
       });
 
@@ -158,8 +164,17 @@ const AdminCoupons = () => {
     if (!selectedCoupon) return;
 
     try {
+      const sessionData = sessionStorage.getItem("rayn_admin_session");
+      if (!sessionData) throw new Error("No admin session found");
+      const session = JSON.parse(sessionData);
+
       const { error } = await supabase.functions.invoke("manage-coupons", {
-        body: { action: "delete", coupon: { id: selectedCoupon.id } },
+        body: { 
+          action: "delete", 
+          coupon: { id: selectedCoupon.id },
+          admin_email: session.email,
+          admin_token: session.token,
+        },
       });
 
       if (error) throw error;
@@ -186,10 +201,16 @@ const AdminCoupons = () => {
 
   const handleToggleActive = async (coupon: Coupon) => {
     try {
+      const sessionData = sessionStorage.getItem("rayn_admin_session");
+      if (!sessionData) throw new Error("No admin session found");
+      const session = JSON.parse(sessionData);
+
       const { error } = await supabase.functions.invoke("manage-coupons", {
         body: {
           action: "toggle",
           coupon: { id: coupon.id, is_active: !coupon.is_active },
+          admin_email: session.email,
+          admin_token: session.token,
         },
       });
 

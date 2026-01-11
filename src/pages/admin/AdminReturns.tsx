@@ -91,32 +91,18 @@ const AdminReturns = () => {
       
       const session = JSON.parse(sessionData);
       
-      // Use the Supabase client to update return_status directly
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      
-      // First verify admin access
-      const { data: accessData, error: accessError } = await supabase.functions.invoke('check-admin-access', {
+      // Use dedicated server-side Edge Function for return status updates
+      const { data, error } = await supabase.functions.invoke('update-return-status', {
         body: {
           admin_email: session.email,
           admin_token: session.token,
+          order_id: orderId,
+          return_status: newReturnStatus,
         },
       });
-      
-      if (accessError || !accessData?.authorized) {
-        throw new Error("Access denied");
-      }
-      
-      // Update return status directly in the database
-      const { error: updateError } = await supabase
-        .from('orders')
-        .update({ 
-          return_status: newReturnStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', orderId);
 
-      if (updateError) throw updateError;
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Failed to update status");
 
       toast({
         title: "Updated",
