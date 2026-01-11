@@ -33,6 +33,29 @@ export interface Product {
 
 export const products: Product[] = [
   {
+    id: "combo",
+    name: "COMBO",
+    tagline: "Fresh & Invigorating",
+    description: "A burst of Mediterranean sunshine, Combo awakens the senses with its vibrant blend of Italian citrus and aromatic herbs. Pure energy in a bottle.",
+    story: "Capturing the spirit of the Amalfi Coast, Combo features hand-pressed Calabrian bergamot and Sicilian lemon. It's a celebration of life, light, and the joy of summer.",
+    price: 444,
+    category: "Unisex",
+    size: "3ml PER BOTTLE",
+    image: comboMain,
+    gallery: [comboMain, combo2, comboMain],
+    notes: {
+      top: ["Bergamot", "Sicilian Lemon", "Grapefruit"],
+      heart: ["Neroli", "Lavender", "Rosemary"],
+      base: ["Vetiver", "White Musk", "Cedar"]
+    },
+    ingredients: ["Alcohol Denat", "Parfum", "Aqua", "Limonene", "Linalool", "Citral", "Geraniol"],
+    concentration: "Eau de Parfum",
+    longevity: "6-8 hours",
+    sillage: "Moderate",
+    season: ["Spring", "Summer"],
+    occasion: ["Daily Wear", "Office", "Beach", "Sports"]
+  },
+  {
     id: "elite",
     name: "ELITE",
     tagline: "Smooth & Seductive",
@@ -100,29 +123,6 @@ export const products: Product[] = [
     sillage: "Moderate to Strong",
     season: ["Fall", "Winter"],
     occasion: ["Daily Wear", "Cozy Evenings", "Date Night"]
-  },
-  {
-    id: "combo",
-    name: "COMBO",
-    tagline: "Fresh & Invigorating",
-    description: "A burst of Mediterranean sunshine, Combo awakens the senses with its vibrant blend of Italian citrus and aromatic herbs. Pure energy in a bottle.",
-    story: "Capturing the spirit of the Amalfi Coast, Combo features hand-pressed Calabrian bergamot and Sicilian lemon. It's a celebration of life, light, and the joy of summer.",
-    price: 444,
-    category: "Unisex",
-    size: "8ml PER BOTTLE",
-    image: comboMain,
-    gallery: [comboMain, combo2, comboMain],
-    notes: {
-      top: ["Bergamot", "Sicilian Lemon", "Grapefruit"],
-      heart: ["Neroli", "Lavender", "Rosemary"],
-      base: ["Vetiver", "White Musk", "Cedar"]
-    },
-    ingredients: ["Alcohol Denat", "Parfum", "Aqua", "Limonene", "Linalool", "Citral", "Geraniol"],
-    concentration: "Eau de Parfum",
-    longevity: "6-8 hours",
-    sillage: "Moderate",
-    season: ["Spring", "Summer"],
-    occasion: ["Daily Wear", "Office", "Beach", "Sports"]
   }
 ];
 
