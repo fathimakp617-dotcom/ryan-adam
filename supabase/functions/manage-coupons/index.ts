@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { validateSession } from '../_shared/session-validator.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,7 +16,36 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { action, coupon } = await req.json();
+    const { action, coupon, admin_email, admin_token } = await req.json();
+
+    // Validate admin credentials
+    if (!admin_email || !admin_token) {
+      return new Response(JSON.stringify({ error: 'Authentication required' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Check if email is in admin list
+    const adminEmails = (Deno.env.get('ADMIN_EMAILS') || '')
+      .split(',')
+      .map((e) => e.trim().toLowerCase());
+
+    if (!adminEmails.includes(admin_email.toLowerCase())) {
+      return new Response(JSON.stringify({ error: 'Admin access required' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Validate session token
+    const isValidSession = await validateSession(supabase, admin_email, admin_token);
+    if (!isValidSession) {
+      return new Response(JSON.stringify({ error: 'Session expired or invalid' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     if (action === 'list') {
       // List regular coupons (not loyalty)

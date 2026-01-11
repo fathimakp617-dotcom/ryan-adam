@@ -187,8 +187,15 @@ export const useAdminCoupons = () => {
   return useQuery({
     queryKey: ["admin", "coupons"],
     queryFn: async () => {
+      const session = getAdminSession();
+      if (!session) throw new Error("Admin session not found");
+
       const { data, error } = await supabase.functions.invoke("manage-coupons", {
-        body: { action: "list" },
+        body: { 
+          action: "list",
+          admin_email: session.email,
+          admin_token: session.token,
+        },
       });
 
       if (error) throw error;
@@ -202,8 +209,15 @@ export const useAdminLoyaltyCoupons = () => {
   return useQuery({
     queryKey: ["admin", "loyalty-coupons"],
     queryFn: async () => {
+      const session = getAdminSession();
+      if (!session) throw new Error("Admin session not found");
+
       const { data, error } = await supabase.functions.invoke("manage-coupons", {
-        body: { action: "list_loyalty" },
+        body: { 
+          action: "list_loyalty",
+          admin_email: session.email,
+          admin_token: session.token,
+        },
       });
 
       if (error) throw error;
