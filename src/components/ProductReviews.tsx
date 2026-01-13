@@ -67,7 +67,7 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
-  const [newReview, setNewReview] = useState({ rating: 0, title: "", content: "", name: "" });
+  const [newReview, setNewReview] = useState({ rating: 0, title: "", content: "", name: "", email: "" });
   const [averageRating, setAverageRating] = useState(0);
   const [totalReviews, setTotalReviews] = useState(0);
 
@@ -116,11 +116,6 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!user) {
-      toast.error("Please sign in to write a review");
-      return;
-    }
 
     if (newReview.rating === 0) {
       toast.error("Please select a rating");
@@ -132,18 +127,23 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
       return;
     }
 
+    if (!newReview.email.trim()) {
+      toast.error("Please enter your email");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       const { error } = await supabase.from("product_reviews").insert({
         product_id: productId,
-        user_id: user.id,
+        user_id: user?.id || null,
         customer_name: newReview.name.trim(),
-        customer_email: user.email || "",
+        customer_email: newReview.email.trim(),
         rating: newReview.rating,
         title: newReview.title.trim() || null,
         comment: newReview.content.trim() || null,
-        is_verified_purchase: false, // Could be checked against orders table
+        is_verified_purchase: false,
       });
 
       if (error) throw error;
@@ -152,7 +152,7 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
         description: "Your review has been submitted.",
       });
       setShowReviewForm(false);
-      setNewReview({ rating: 0, title: "", content: "", name: "" });
+      setNewReview({ rating: 0, title: "", content: "", name: "", email: "" });
       fetchReviews();
       fetchRatingSummary();
     } catch (error: any) {
@@ -228,29 +228,17 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
         </div>
 
         <div className="flex flex-col justify-center">
-          {user ? (
-            <Button
-              onClick={() => setShowReviewForm(!showReviewForm)}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              {showReviewForm ? "Cancel" : "Write a Review"}
-            </Button>
-          ) : (
-            <div className="text-center">
-              <p className="text-muted-foreground mb-2">Sign in to write a review</p>
-              <Button
-                variant="outline"
-                onClick={() => window.location.href = "/auth"}
-              >
-                Sign In
-              </Button>
-            </div>
-          )}
+          <Button
+            onClick={() => setShowReviewForm(!showReviewForm)}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
+          >
+            {showReviewForm ? "Cancel" : "Write a Review"}
+          </Button>
         </div>
       </motion.div>
 
       {/* Review Form */}
-      {showReviewForm && user && (
+      {showReviewForm && (
         <motion.form
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
@@ -273,6 +261,17 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
               value={newReview.name}
               onChange={(e) => setNewReview({ ...newReview, name: e.target.value })}
               placeholder="Enter your name"
+              required
+              className="bg-background border-border/50"
+            />
+          </div>
+          <div>
+            <label className="text-sm text-muted-foreground block mb-2">Your Email *</label>
+            <Input
+              type="email"
+              value={newReview.email}
+              onChange={(e) => setNewReview({ ...newReview, email: e.target.value })}
+              placeholder="Enter your email"
               required
               className="bg-background border-border/50"
             />
