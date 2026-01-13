@@ -2,7 +2,7 @@ import { useState, useEffect, memo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Heart, Share2, Truck, Shield, RotateCcw, Star, MessageCircle } from "lucide-react";
+import { ArrowLeft, Heart, Share2, Truck, Shield, RotateCcw, Star, MessageCircle, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/Navbar";
@@ -226,18 +226,33 @@ const ProductDetail = () => {
                     {product.tagline}
                   </motion.p>
                   {/* Rating Preview */}
-                  <motion.div variants={staggerItem} className="flex items-center gap-2 mt-3">
-                    <div className="flex">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star
-                          key={star}
-                          className={`w-4 h-4 ${star <= Math.round(averageRating) ? "fill-primary text-primary" : "text-muted-foreground/30"}`}
-                        />
-                      ))}
+                  <motion.div variants={staggerItem} className="flex items-center gap-3 mt-3">
+                    <div className="flex items-center gap-2">
+                      <div className="flex">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`w-4 h-4 ${star <= Math.round(averageRating) ? "fill-primary text-primary" : "text-muted-foreground/30"}`}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {totalReviews > 0 ? `${averageRating.toFixed(1)} (${totalReviews})` : "No reviews"}
+                      </span>
                     </div>
-                    <span className="text-sm text-muted-foreground">
-                      {totalReviews > 0 ? `${averageRating.toFixed(1)} (${totalReviews} ${totalReviews === 1 ? "review" : "reviews"})` : "No reviews yet"}
-                    </span>
+                    <button
+                      onClick={() => {
+                        const reviewsTab = document.querySelector('[data-state="inactive"][value="reviews"]') as HTMLElement;
+                        if (reviewsTab) reviewsTab.click();
+                        setTimeout(() => {
+                          document.getElementById('reviews-section')?.scrollIntoView({ behavior: 'smooth' });
+                        }, 100);
+                      }}
+                      className="text-xs text-primary hover:underline flex items-center gap-1"
+                    >
+                      <PenLine className="w-3 h-3" />
+                      Add Review
+                    </button>
                   </motion.div>
                 </div>
 
@@ -481,7 +496,7 @@ const ProductDetail = () => {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="reviews" className="pt-8">
+                <TabsContent value="reviews" className="pt-8" id="reviews-section">
                   <ProductReviews productId={product.id} />
                 </TabsContent>
               </Tabs>
