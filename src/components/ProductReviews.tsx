@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Star, ThumbsUp, User, Loader2 } from "lucide-react";
+import { Star, User, Loader2, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -305,8 +305,16 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
       {/* Reviews List */}
       <motion.div variants={staggerContainer} className="space-y-6">
         {reviews.length === 0 ? (
-          <div className="text-center py-12">
+          <div className="text-center py-12 space-y-4">
             <p className="text-muted-foreground">No reviews yet. Be the first to review this product!</p>
+            <Button
+              onClick={() => setShowReviewForm(true)}
+              variant="outline"
+              className="gap-2"
+            >
+              <PenLine className="w-4 h-4" />
+              Write a Review
+            </Button>
           </div>
         ) : (
           reviews.map((review) => (
