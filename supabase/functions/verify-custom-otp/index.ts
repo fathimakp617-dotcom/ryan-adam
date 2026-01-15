@@ -73,14 +73,39 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("OTP verified successfully");
 
-    // For login/signup, create a magic link to sign the user in
+    // For login/signup, create a session for the user
     if (otp_type === 'login' || otp_type === 'signup') {
+      // Check if user exists
+      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+      const userExists = existingUsers?.users?.some(u => u.email?.toLowerCase() === email.toLowerCase());
+      
+      let userId: string;
+      
+      if (!userExists) {
+        // Create new user
+        const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+          email: email,
+          email_confirm: true,
+        });
+        
+        if (createError) {
+          console.error("Error creating user:", createError);
+          return new Response(
+            JSON.stringify({ error: "Failed to create account" }),
+            { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+          );
+        }
+        userId = newUser.user.id;
+      } else {
+        // Get existing user
+        const existingUser = existingUsers?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
+        userId = existingUser!.id;
+      }
+
+      // Generate a magic link that can be used client-side
       const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
         type: "magiclink",
         email: email,
-        options: {
-          redirectTo: Deno.env.get("SITE_URL") || "https://raynadamperfume.com",
-        },
       });
 
       if (linkError) {
@@ -91,14 +116,18 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // Return the token hash for client-side verification
-      const tokenHash = linkData?.properties?.hashed_token;
+      // Extract the token from the action link
+      const actionLink = linkData?.properties?.action_link;
+      const url = new URL(actionLink || "");
+      const token = url.searchParams.get("token");
+      const type = url.searchParams.get("type");
       
       return new Response(
         JSON.stringify({ 
           valid: true, 
           message: "OTP verified successfully",
-          token_hash: tokenHash,
+          token: token,
+          type: type,
           email: email
         }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
