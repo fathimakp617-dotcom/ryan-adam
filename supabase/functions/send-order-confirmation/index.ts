@@ -20,8 +20,9 @@ interface ShippingAddress {
   address: string;
   city: string;
   state: string;
-  zipCode: string;
-  country: string;
+  zipCode?: string;
+  pincode?: string;
+  country?: string;
 }
 
 interface OrderConfirmationRequest {
@@ -477,7 +478,7 @@ const generateInvoicePDF = async (order: OrderConfirmationRequest): Promise<Uint
   });
   
   yPos -= 15;
-  page.drawText(order.shipping_address.country, {
+  page.drawText(order.shipping_address.country || 'India', {
     x: width / 2 + 20,
     y: yPos,
     size: 10,
@@ -989,7 +990,7 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   });
   
   // Country
-  page.drawText(order.shipping_address.country.toUpperCase(), {
+  page.drawText((order.shipping_address.country || 'India').toUpperCase(), {
     x: 20,
     y: height - 264,
     size: 11,
@@ -1067,12 +1068,40 @@ const handler = async (req: Request): Promise<Response> => {
     const invoicePdfBase64 = btoa(String.fromCharCode(...invoicePdf));
     console.log("PDF invoice generated, size:", invoicePdf.length);
 
+    // Generate plain text version for email
+    const plainTextEmail = `Thank you for your order, ${orderData.customer_name}!
+
+Order Number: ${orderData.order_number}
+
+Order Summary:
+${orderData.items.map(item => `- ${item.name} x${item.quantity}: ₹${(item.price * item.quantity).toLocaleString('en-IN')}`).join('\n')}
+
+Subtotal: ₹${orderData.subtotal.toLocaleString('en-IN')}
+${orderData.discount > 0 ? `Discount: -₹${orderData.discount.toLocaleString('en-IN')}\n` : ''}Shipping: ${orderData.shipping === 0 ? 'FREE' : `₹${orderData.shipping.toLocaleString('en-IN')}`}
+Total: ₹${orderData.total.toLocaleString('en-IN')}
+
+Shipping Address:
+${orderData.customer_name}
+${orderData.shipping_address.address}
+${orderData.shipping_address.city}, ${orderData.shipping_address.state} ${orderData.shipping_address.zipCode || orderData.shipping_address.pincode || ''}
+${orderData.shipping_address.country || 'India'}
+
+Payment Method: ${orderData.payment_method === 'cod' ? 'Cash on Delivery' : 'Online Payment'}
+
+Your invoice is attached to this email.
+
+For questions, contact us at support@raynadamperfume.com
+
+Thank you for shopping with Rayn Adam!
+`;
+
     // Send customer confirmation email with PDF invoice
     const emailResponse = await resend.emails.send({
       from: "Rayn Adam <orders@raynadamperfume.com>",
       to: [orderData.customer_email],
       subject: `Order Confirmed - ${orderData.order_number}`,
       html: emailHTML,
+      text: plainTextEmail,
       attachments: [
         {
           filename: `invoice-${orderData.order_number}.pdf`,
@@ -1106,12 +1135,32 @@ const handler = async (req: Request): Promise<Response> => {
         const shippingLabelBase64 = btoa(String.fromCharCode(...shippingLabelPdf));
         console.log("Shipping label PDF generated, size:", shippingLabelPdf.length);
 
+        const adminPlainText = `New Order Received!
+
+Order: ${orderData.order_number}
+Customer: ${orderData.customer_name}
+Email: ${orderData.customer_email}
+Phone: ${orderData.customer_phone || 'N/A'}
+Total: ₹${orderData.total.toLocaleString('en-IN')}
+Payment: ${orderData.payment_method === 'cod' ? 'Cash on Delivery' : 'Online Payment'}
+
+Items:
+${orderData.items.map(item => `- ${item.name} x${item.quantity}`).join('\n')}
+
+Shipping Address:
+${orderData.shipping_address.address}
+${orderData.shipping_address.city}, ${orderData.shipping_address.state}
+
+Invoice and shipping label are attached.
+`;
+
         const sendAdminEmail = async () =>
           await resend.emails.send({
             from: "Rayn Adam <notifications@raynadamperfume.com>",
             to: adminEmails,
             subject: `🚚 NEW ORDER - ${orderData.order_number} - ${orderData.customer_name}`,
             html: adminEmailHTML,
+            text: adminPlainText,
             attachments: [
               {
                 filename: `invoice-${orderData.order_number}.pdf`,
