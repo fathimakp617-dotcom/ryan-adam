@@ -77,11 +77,11 @@ const handler = async (req: Request): Promise<Response> => {
     if (otp_type === 'login' || otp_type === 'signup') {
       // Check if user exists
       const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-      const userExists = existingUsers?.users?.some(u => u.email?.toLowerCase() === email.toLowerCase());
+      const existingUser = existingUsers?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
       
       let userId: string;
       
-      if (!userExists) {
+      if (!existingUser) {
         // Create new user
         const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
           email: email,
@@ -96,39 +96,71 @@ const handler = async (req: Request): Promise<Response> => {
           );
         }
         userId = newUser.user.id;
+        console.log("Created new user:", userId);
       } else {
-        // Get existing user
-        const existingUser = existingUsers?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
-        userId = existingUser!.id;
+        userId = existingUser.id;
+        console.log("Found existing user:", userId);
       }
 
-      // Generate a magic link that can be used client-side
-      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+      // Generate session tokens directly using admin API
+      // This creates a valid session without needing magic link verification
+      const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.generateLink({
         type: "magiclink",
         email: email,
+        options: {
+          // Set a short redirect to prevent actual redirect
+          redirectTo: Deno.env.get("SITE_URL") || "https://raynadamperfume.com",
+        }
       });
 
-      if (linkError) {
-        console.error("Error generating magic link:", linkError);
+      if (sessionError) {
+        console.error("Error generating session:", sessionError);
         return new Response(
           JSON.stringify({ error: "Failed to complete authentication" }),
           { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
 
-      // Extract the token from the action link
-      const actionLink = linkData?.properties?.action_link;
-      const url = new URL(actionLink || "");
-      const token = url.searchParams.get("token");
-      const type = url.searchParams.get("type");
+      // Extract token_hash and use it to get actual session
+      const tokenHash = sessionData?.properties?.hashed_token;
+      
+      if (!tokenHash) {
+        console.error("No token hash returned");
+        return new Response(
+          JSON.stringify({ error: "Failed to generate authentication token" }),
+          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      // Verify the token immediately to get a session - this must happen server-side
+      // Using the anon client to properly exchange the token
+      const supabaseAnon = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+        { auth: { autoRefreshToken: false, persistSession: false } }
+      );
+
+      const { data: verifyData, error: verifyError } = await supabaseAnon.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: 'magiclink',
+      });
+
+      if (verifyError || !verifyData.session) {
+        console.error("Error verifying token:", verifyError);
+        return new Response(
+          JSON.stringify({ error: "Failed to create session" }),
+          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      console.log("Session created successfully for user:", verifyData.user?.email);
       
       return new Response(
         JSON.stringify({ 
           valid: true, 
           message: "OTP verified successfully",
-          token: token,
-          type: type,
-          email: email
+          session: verifyData.session,
+          user: verifyData.user
         }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );

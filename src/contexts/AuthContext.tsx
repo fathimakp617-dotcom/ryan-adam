@@ -215,18 +215,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { error: new Error(data.error || "Invalid or expired OTP") };
       }
 
-      // Use the token to verify with Supabase
-      if (data.token) {
-        const { error: verifyError } = await supabase.auth.verifyOtp({
-          email,
-          token: data.token,
-          type: 'magiclink',
+      // If we got a session back, set it directly
+      if (data.session) {
+        const { error: setSessionError } = await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
         });
         
-        if (verifyError) {
-          console.error("Magic link verification failed:", verifyError);
+        if (setSessionError) {
+          console.error("Error setting session:", setSessionError);
           await checkRateLimit(email, "login", "record_failure");
-          return { error: verifyError };
+          return { error: setSessionError };
         }
       }
 
