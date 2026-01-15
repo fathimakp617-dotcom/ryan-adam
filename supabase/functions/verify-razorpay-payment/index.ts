@@ -7,12 +7,12 @@ const corsHeaders = {
 };
 
 // Product prices - server-side source of truth (all prices include taxes, must match create-order)
-// TESTING: All prices set to ₹1
+// TESTING: All prices set to ₹10
 const PRODUCT_PRICES: Record<string, number> = {
-  "elite": 1,
-  "amber-crown": 1,
-  "legacy": 1,
-  "combo": 1,
+  "elite": 10,
+  "amber-crown": 10,
+  "legacy": 10,
+  "combo": 10,
 };
 
 const VALID_PRODUCT_IDS = Object.keys(PRODUCT_PRICES);
