@@ -1,9 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { MessageCircle } from "lucide-react";
 import { products, formatPrice } from "@/data/products";
 import { fadeInUp, staggerContainer, staggerItem, lineReveal } from "@/lib/animations";
-import { generateWhatsAppLinkSimple } from "@/lib/whatsapp";
 
 const Collection = () => {
   const featuredProducts = products.slice(0, 3);
@@ -97,24 +95,14 @@ const Collection = () => {
           whileInView="visible"
           viewport={{ once: true }}
           variants={fadeInUp}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-12 sm:mt-16"
+          className="flex items-center justify-center mt-12 sm:mt-16"
         >
           <Link 
             to="/shop" 
-            className="relative inline-block px-10 sm:px-12 py-4 border border-primary text-primary text-sm tracking-widest transition-all duration-300 hover:bg-primary hover:text-primary-foreground group overflow-hidden"
+            className="relative inline-block px-10 sm:px-12 py-4 bg-primary text-primary-foreground text-sm tracking-widest transition-all duration-300 hover:bg-primary/90 hover:shadow-[0_0_30px_hsl(var(--primary)/0.4)]"
           >
-            <span className="relative z-10">VIEW ALL PRODUCTS</span>
-            <div className="absolute inset-0 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
+            VIEW ALL PRODUCTS
           </Link>
-          <a 
-            href={generateWhatsAppLinkSimple()} 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="relative inline-flex items-center gap-2 px-10 sm:px-12 py-4 bg-[#25D366] text-white text-sm tracking-widest transition-all duration-300 hover:bg-[#20bd5a] hover:shadow-[0_0_30px_rgba(37,211,102,0.4)]"
-          >
-            <MessageCircle className="w-5 h-5" />
-            <span>BUY ON WHATSAPP</span>
-          </a>
         </motion.div>
       </div>
     </section>

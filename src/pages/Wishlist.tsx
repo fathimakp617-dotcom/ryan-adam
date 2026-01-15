@@ -2,18 +2,25 @@ import { memo } from "react";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Heart, Trash2, MessageCircle } from "lucide-react";
+import { Heart, Trash2, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FloatingParticles from "@/components/FloatingParticles";
 import { useWishlist } from "@/contexts/WishlistContext";
+import { useCart } from "@/contexts/CartContext";
 import { formatPrice } from "@/data/products";
 import { fadeInUp, staggerContainer, staggerItem } from "@/lib/animations";
-import { generateWhatsAppLink } from "@/lib/whatsapp";
+import { toast } from "sonner";
 
 const Wishlist = () => {
   const { items, removeFromWishlist } = useWishlist();
+  const { addToCart } = useCart();
+
+  const handleAddToCart = (product: typeof items[0]) => {
+    addToCart(product);
+    toast.success(`${product.name} added to cart`);
+  };
 
   return (
     <>
@@ -91,20 +98,14 @@ const Wishlist = () => {
                         </p>
 
                         <div className="flex gap-2 mt-4">
-                          <a 
-                            href={generateWhatsAppLink(product.name, formatPrice(product.price))}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-1"
+                          <Button
+                            onClick={() => handleAddToCart(product)}
+                            className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+                            size="sm"
                           >
-                            <Button
-                              className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white"
-                              size="sm"
-                            >
-                              <MessageCircle className="w-4 h-4 mr-2" />
-                              Buy on WhatsApp
-                            </Button>
-                          </a>
+                            <ShoppingBag className="w-4 h-4 mr-2" />
+                            Add to Cart
+                          </Button>
                           <Button
                             onClick={() => removeFromWishlist(product.id)}
                             variant="outline"
