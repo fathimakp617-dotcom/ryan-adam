@@ -1,10 +1,9 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Minus, Plus, ShoppingBag, Trash2, MessageCircle } from "lucide-react";
+import { X, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { formatPrice } from "@/data/products";
-import { generateWhatsAppLinkSimple } from "@/lib/whatsapp";
 
 const CartDrawer = () => {
   const { items, isOpen, closeCart, updateQuantity, removeFromCart, totalPrice, totalItems } = useCart();
@@ -126,18 +125,16 @@ const CartDrawer = () => {
                   <span className="text-lg font-heading">{formatPrice(totalPrice)}</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Contact us on WhatsApp to complete your order
+                  Shipping and taxes calculated at checkout
                 </p>
-                <a href={generateWhatsAppLinkSimple()} target="_blank" rel="noopener noreferrer">
-                  <Button
-                    size="lg"
-                    onClick={closeCart}
-                    className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white py-6 text-sm tracking-widest transition-all duration-300 hover:shadow-[0_0_30px_rgba(37,211,102,0.4)] flex items-center justify-center gap-2"
-                  >
-                    <MessageCircle className="w-5 h-5" />
-                    ORDER ON WHATSAPP
-                  </Button>
-                </a>
+                <Button
+                  size="lg"
+                  asChild
+                  onClick={closeCart}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 text-sm tracking-widest transition-all duration-300 hover:shadow-[0_0_30px_hsl(var(--primary)/0.4)]"
+                >
+                  <Link to="/checkout">PROCEED TO CHECKOUT</Link>
+                </Button>
                 <Button
                   variant="outline"
                   onClick={closeCart}

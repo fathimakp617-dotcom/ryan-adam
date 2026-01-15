@@ -1,10 +1,11 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { MessageCircle } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 import { products, formatPrice, Product } from "@/data/products";
 import { staggerContainer, staggerItem, fadeInUp } from "@/lib/animations";
-import { generateWhatsAppLink } from "@/lib/whatsapp";
 import { Button } from "@/components/ui/button";
+import { useCart } from "@/contexts/CartContext";
+import { toast } from "sonner";
 
 interface RelatedProductsProps {
   currentProductId: string;
@@ -12,10 +13,17 @@ interface RelatedProductsProps {
 }
 
 const RelatedProducts = ({ currentProductId, currentCategory }: RelatedProductsProps) => {
+  const { addToCart } = useCart();
+  
   // Show all products except the current one
   const relatedProducts = products.filter((p) => p.id !== currentProductId);
 
   if (relatedProducts.length === 0) return null;
+
+  const handleAddToCart = (item: Product) => {
+    addToCart(item);
+    toast.success(`${item.name} added to cart`);
+  };
 
   return (
     <section className="py-16 sm:py-24">
@@ -53,20 +61,14 @@ const RelatedProducts = ({ currentProductId, currentCategory }: RelatedProductsP
                       <p className="text-primary font-medium mt-2">{formatPrice(item.price)}</p>
                     </div>
                   </Link>
-                  <a 
-                    href={generateWhatsAppLink(item.name, formatPrice(item.price))} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="block mt-4"
+                  <Button
+                    size="sm"
+                    onClick={() => handleAddToCart(item)}
+                    className="w-full mt-4 bg-primary hover:bg-primary/90 text-primary-foreground text-xs tracking-wider flex items-center justify-center gap-2"
                   >
-                    <Button
-                      size="sm"
-                      className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs tracking-wider flex items-center justify-center gap-2"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                      BUY ON WHATSAPP
-                    </Button>
-                  </a>
+                    <ShoppingBag className="w-4 h-4" />
+                    ADD TO CART
+                  </Button>
                 </div>
               </motion.div>
             ))}
