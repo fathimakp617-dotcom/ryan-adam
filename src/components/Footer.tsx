@@ -1,8 +1,8 @@
-import { motion } from "framer-motion";
+import { memo } from "react";
 import { Instagram, Facebook, Twitter } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const Footer = () => {
+const Footer = memo(() => {
   return (
     <footer className="bg-charcoal border-t border-border/30 py-16">
       <div className="container mx-auto px-6 lg:px-12">
@@ -19,14 +19,13 @@ const Footer = () => {
             {/* Social Icons */}
             <div className="flex gap-4">
               {[Instagram, Facebook, Twitter].map((Icon, index) => (
-                <motion.a
+                <a
                   key={index}
                   href="#"
-                  whileHover={{ scale: 1.1 }}
-                  className="w-10 h-10 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary transition-colors duration-300"
+                  className="w-10 h-10 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary transition-colors"
                 >
                   <Icon size={18} />
-                </motion.a>
+                </a>
               ))}
             </div>
           </div>
@@ -39,7 +38,7 @@ const Footer = () => {
                 <li key={link}>
                   <a
                     href={`#${link.toLowerCase()}`}
-                    className="text-muted-foreground hover:text-primary transition-colors duration-300 text-sm"
+                    className="text-muted-foreground hover:text-primary transition-colors text-sm"
                   >
                     {link}
                   </a>
@@ -87,6 +86,8 @@ const Footer = () => {
       </div>
     </footer>
   );
-};
+});
+
+Footer.displayName = "Footer";
 
 export default Footer;

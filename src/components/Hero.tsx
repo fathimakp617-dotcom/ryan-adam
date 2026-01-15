@@ -72,14 +72,14 @@ const Hero = memo(() => {
       id="home"
       className="relative min-h-screen flex items-end overflow-hidden pb-32 sm:pb-0 sm:items-center"
     >
-      {/* Background Slideshow */}
+      {/* Background Slideshow - optimized transitions */}
       <AnimatePresence mode="wait">
         <motion.div
           key={currentSlide}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.4 }}
+          transition={{ duration: 0.25 }}
           className="absolute inset-0"
         >
           <img
@@ -88,16 +88,15 @@ const Hero = memo(() => {
             className="w-full h-full object-cover object-center"
             loading={currentSlide === 0 ? "eager" : "lazy"}
             decoding="async"
+            fetchPriority={currentSlide === 0 ? "high" : "auto"}
           />
-          {/* Dark overlay - stronger on mobile for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/40 sm:bg-gradient-to-r sm:from-background/95 sm:via-background/70 sm:to-background/40" />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent sm:from-background sm:via-transparent sm:to-background/50" />
+          {/* Simplified overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/30" />
         </motion.div>
       </AnimatePresence>
 
-      {/* Gold accent gradients */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_hsl(35_49%_44%_/_0.15)_0%,_transparent_50%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_hsl(35_49%_44%_/_0.1)_0%,_transparent_50%)]" />
+      {/* Simplified gold accent */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_hsl(35_49%_44%_/_0.1)_0%,_transparent_40%)]" />
 
       <div className="container mx-auto px-6 sm:px-6 lg:px-12 relative z-10">
         <div className="max-w-2xl">

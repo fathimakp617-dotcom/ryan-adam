@@ -29,26 +29,26 @@ const ShippingPolicy = lazy(() => import("./pages/ShippingPolicy"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Contact = lazy(() => import("./pages/Contact"));
 
-// Admin pages - eager load child routes for instant switching
+// Admin pages - all lazy loaded for faster initial load
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminOrders from "./pages/admin/AdminOrders";
-import AdminCustomers from "./pages/admin/AdminCustomers";
-import AdminAffiliates from "./pages/admin/AdminAffiliates";
-import AdminActivityLogs from "./pages/admin/AdminActivityLogs";
-import AdminStaff from "./pages/admin/AdminStaff";
-import AdminAccount from "./pages/admin/AdminAccount";
-import AdminCoupons from "./pages/admin/AdminCoupons";
-import AdminReturns from "./pages/admin/AdminReturns";
-import AdminExpenses from "./pages/admin/AdminExpenses";
-import AdminReviewsPage from "./pages/admin/AdminReviewsPage";
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
+const AdminCustomers = lazy(() => import("./pages/admin/AdminCustomers"));
+const AdminAffiliates = lazy(() => import("./pages/admin/AdminAffiliates"));
+const AdminActivityLogs = lazy(() => import("./pages/admin/AdminActivityLogs"));
+const AdminStaff = lazy(() => import("./pages/admin/AdminStaff"));
+const AdminAccount = lazy(() => import("./pages/admin/AdminAccount"));
+const AdminCoupons = lazy(() => import("./pages/admin/AdminCoupons"));
+const AdminReturns = lazy(() => import("./pages/admin/AdminReturns"));
+const AdminExpenses = lazy(() => import("./pages/admin/AdminExpenses"));
+const AdminReviewsPage = lazy(() => import("./pages/admin/AdminReviewsPage"));
 
-// Shipping pages - eager load child routes for instant switching
+// Shipping pages - all lazy loaded
 const ShippingLayout = lazy(() => import("./pages/shipping/ShippingLayout"));
-import ShippingDashboard from "./pages/shipping/ShippingDashboard";
-import ShippingOrders from "./pages/shipping/ShippingOrders";
-import ShippingAccount from "./pages/shipping/ShippingAccount";
-import ShippingReturns from "./pages/shipping/ShippingReturns";
+const ShippingDashboard = lazy(() => import("./pages/shipping/ShippingDashboard"));
+const ShippingOrders = lazy(() => import("./pages/shipping/ShippingOrders"));
+const ShippingAccount = lazy(() => import("./pages/shipping/ShippingAccount"));
+const ShippingReturns = lazy(() => import("./pages/shipping/ShippingReturns"));
 
 
 // Minimal loading fallback
