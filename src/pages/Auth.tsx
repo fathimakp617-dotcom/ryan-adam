@@ -641,22 +641,16 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Background decorative elements */}
+      {/* Simplified background - removed heavy blur effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/3 rounded-full blur-3xl" />
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full" />
       </div>
       
       <Navbar />
 
       <main className="container mx-auto px-4 py-16 md:py-24 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-md mx-auto"
-        >
+        <div className="max-w-md mx-auto">
           <Link
             to="/"
             className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-6 md:mb-8 text-sm"
@@ -665,22 +659,12 @@ const Auth = () => {
             Back to Home
           </Link>
 
-          <motion.div 
-            className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-6 md:p-8 shadow-2xl shadow-primary/5"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, delay: 0.1 }}
-          >
+          <div className="bg-card/90 border border-border/50 rounded-2xl p-6 md:p-8 shadow-xl">
             {/* Icon header for verification modes */}
             {(mode === "email-otp-verify" || mode === "signup-verify" || mode === "forgot-verify") && (
-              <motion.div 
-                className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-primary/20"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 200 }}
-              >
+              <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-primary/20">
                 <Mail className="w-8 h-8 md:w-10 md:h-10 text-primary" />
-              </motion.div>
+              </div>
             )}
 
             {/* Logo for non-verification modes */}
@@ -1366,8 +1350,8 @@ const Auth = () => {
                 </form>
               </>
             )}
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </main>
 
       <Footer />
