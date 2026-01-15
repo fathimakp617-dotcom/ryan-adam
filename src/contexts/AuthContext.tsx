@@ -198,14 +198,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const verifyEmailOtp = async (email: string, token: string) => {
     try {
-      // Use custom edge function to verify 4-digit OTP
       const response = await fetch(`${SUPABASE_URL}/functions/v1/verify-custom-otp`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "apikey": SUPABASE_ANON_KEY,
+          apikey: SUPABASE_ANON_KEY,
         },
-        body: JSON.stringify({ email, otp: token, otp_type: 'login' }),
+        body: JSON.stringify({ email, otp: token, otp_type: "login" }),
       });
 
       const data = await response.json();
@@ -215,22 +214,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { error: new Error(data.error || "Invalid or expired OTP") };
       }
 
-      // If we got a session back, set it directly
-      if (data.session) {
-        const { error: setSessionError } = await supabase.auth.setSession({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-        });
-        
-        if (setSessionError) {
-          console.error("Error setting session:", setSessionError);
-          await checkRateLimit(email, "login", "record_failure");
-          return { error: setSessionError };
-        }
+      // Most reliable: follow the auth action link to complete session creation.
+      if (data.action_link) {
+        await checkRateLimit(email, "login", "reset");
+        window.location.assign(data.action_link as string);
+        return { error: null };
       }
 
-      await checkRateLimit(email, "login", "reset");
-      return { error: null };
+      await checkRateLimit(email, "login", "record_failure");
+      return { error: new Error("Authentication link missing") };
     } catch (err: any) {
       console.error("Error verifying OTP:", err);
       await checkRateLimit(email, "login", "record_failure");
