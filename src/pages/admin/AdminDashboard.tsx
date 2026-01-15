@@ -748,14 +748,6 @@ const AdminDashboard = () => {
             </p>
           </CardContent>
         </Card>
-        <Card className="bg-amber-500/10 border-amber-500/20">
-          <CardContent className="p-4 flex items-center gap-3">
-            <CreditCard className="h-5 w-5 text-amber-500" />
-            <p className="text-sm text-amber-700 dark:text-amber-300">
-              <strong>Reminder:</strong> Razorpay integration pending. Let me know when you're ready to set it up!
-            </p>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
