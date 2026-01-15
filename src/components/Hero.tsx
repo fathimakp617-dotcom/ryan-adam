@@ -107,17 +107,16 @@ const Hero = memo(() => {
             transition={{ duration: 0.3 }}
             className="space-y-5 sm:space-y-8"
           >
-            {/* Brand tag */}
-            <p className="text-xs tracking-[0.3em] sm:tracking-[0.4em] text-primary">
-              EAU DE PARFUM
-            </p>
-
             {/* Main heading */}
-            <div className="space-y-1">
+            <div className="space-y-2">
               <h1 className="text-5xl sm:text-5xl md:text-7xl lg:text-8xl font-heading tracking-tight leading-[0.9]">
                 <span className="block text-foreground">LUXURY</span>
                 <span className="block text-gold-gradient">PERFUME</span>
               </h1>
+              {/* Brand tag - now under the heading */}
+              <p className="text-xs tracking-[0.3em] sm:tracking-[0.4em] text-primary pt-2">
+                EAU DE PARFUM
+              </p>
             </div>
 
             {/* Current Slide Info */}
