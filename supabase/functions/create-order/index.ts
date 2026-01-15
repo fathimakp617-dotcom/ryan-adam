@@ -50,10 +50,10 @@ const sanitizeString = (str: string, maxLength: number): string => {
 
 // Product prices - server-side source of truth (all prices include taxes)
 const PRODUCT_PRICES: Record<string, number> = {
-  "elite": 10,
-  "amber-crown": 10,
-  "legacy": 10,
-  "combo": 10,
+  "elite": 1000,
+  "amber-crown": 1000,
+  "legacy": 1000,
+  "combo": 1000,
 };
 
 const VALID_PRODUCT_IDS = Object.keys(PRODUCT_PRICES);
