@@ -166,6 +166,7 @@ export type Database = {
           discount_amount: number | null
           discount_percent: number
           expires_at: string | null
+          free_shipping: boolean | null
           id: string
           is_active: boolean | null
           is_bogo: boolean | null
@@ -181,6 +182,7 @@ export type Database = {
           discount_amount?: number | null
           discount_percent: number
           expires_at?: string | null
+          free_shipping?: boolean | null
           id?: string
           is_active?: boolean | null
           is_bogo?: boolean | null
@@ -196,6 +198,7 @@ export type Database = {
           discount_amount?: number | null
           discount_percent?: number
           expires_at?: string | null
+          free_shipping?: boolean | null
           id?: string
           is_active?: boolean | null
           is_bogo?: boolean | null
@@ -644,6 +647,7 @@ export type Database = {
           code: string
           discount_amount: number
           discount_percent: number
+          free_shipping: boolean
           is_valid: boolean
           min_order_amount: number
         }[]

@@ -14,6 +14,7 @@ interface CouponData {
   discountAmount: number | null;
   minOrderAmount: number;
   isLoyalty?: boolean;
+  freeShipping?: boolean;
 }
 
 interface AffiliateContextType {
@@ -166,9 +167,11 @@ export const AffiliateProvider = ({ children }: { children: ReactNode }) => {
           discountPercent: coupon.discount_percent,
           discountAmount: coupon.discount_amount,
           minOrderAmount: coupon.min_order_amount || 0,
+          freeShipping: coupon.free_shipping || false,
         });
         setIsLoading(false);
-        return { success: true, message: `Coupon applied! ${coupon.discount_percent}% off` };
+        const freeShippingText = coupon.free_shipping ? " + Free Shipping!" : "";
+        return { success: true, message: `Coupon applied! ${coupon.discount_percent}% off${freeShippingText}` };
       }
 
       setIsLoading(false);
