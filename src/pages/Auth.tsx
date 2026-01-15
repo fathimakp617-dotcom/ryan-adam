@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, memo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, KeyRound, Phone } from "lucide-react";
+import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, KeyRound, Phone, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,8 +49,9 @@ const Auth = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [resendCountdown, setResendCountdown] = useState(0);
+  const [otpExpiryTime, setOtpExpiryTime] = useState(0); // OTP expiry countdown in seconds
 
-  // Countdown timer effect
+  // Countdown timer effect for resend
   useEffect(() => {
     if (resendCountdown > 0) {
       const timer = setTimeout(() => setResendCountdown(resendCountdown - 1), 1000);
@@ -58,9 +59,28 @@ const Auth = () => {
     }
   }, [resendCountdown]);
 
+  // OTP expiry timer effect
+  useEffect(() => {
+    if (otpExpiryTime > 0) {
+      const timer = setTimeout(() => setOtpExpiryTime(otpExpiryTime - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [otpExpiryTime]);
+
   const startResendCountdown = useCallback(() => {
     setResendCountdown(60); // 60 seconds countdown
   }, []);
+
+  const startOtpExpiryTimer = useCallback(() => {
+    setOtpExpiryTime(10 * 60); // 10 minutes in seconds
+  }, []);
+
+  // Format time as mm:ss
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -326,6 +346,7 @@ const Auth = () => {
       // Store the OTP in state and move to verify mode
       setFormData(prev => ({ ...prev, otp: "" }));
       startResendCountdown();
+      startOtpExpiryTimer();
       setMode("signup-verify");
     } finally {
       setIsSubmitting(false);
@@ -399,6 +420,7 @@ const Auth = () => {
         description: "A new verification code has been sent to your email.",
       });
       startResendCountdown();
+      startOtpExpiryTimer();
     } finally {
       setIsSubmitting(false);
     }
@@ -426,6 +448,7 @@ const Auth = () => {
       });
       setFormData(prev => ({ ...prev, forgotOtp: "" }));
       startResendCountdown();
+      startOtpExpiryTimer();
       setMode("forgot-verify");
     } finally {
       setIsSubmitting(false);
@@ -475,6 +498,7 @@ const Auth = () => {
         description: "A new verification code has been sent to your email.",
       });
       startResendCountdown();
+      startOtpExpiryTimer();
     } finally {
       setIsSubmitting(false);
     }
@@ -525,6 +549,7 @@ const Auth = () => {
         description: "Check your email for the 4-digit verification code.",
       });
       startResendCountdown();
+      startOtpExpiryTimer();
       setMode("email-otp-verify");
     } finally {
       setIsSubmitting(false);
@@ -573,6 +598,7 @@ const Auth = () => {
         description: "A new verification code has been sent to your email.",
       });
       startResendCountdown();
+      startOtpExpiryTimer();
     } finally {
       setIsSubmitting(false);
     }
@@ -943,6 +969,19 @@ const Auth = () => {
                     {errors.otp && (
                       <p className="text-destructive text-xs text-center">{errors.otp}</p>
                     )}
+                    
+                    {/* OTP Expiry Timer */}
+                    {otpExpiryTime > 0 && (
+                      <div className="flex items-center justify-center gap-2 text-sm">
+                        <Clock className={`w-4 h-4 ${otpExpiryTime <= 60 ? 'text-destructive' : 'text-muted-foreground'}`} />
+                        <span className={otpExpiryTime <= 60 ? 'text-destructive font-medium' : 'text-muted-foreground'}>
+                          Code expires in {formatTime(otpExpiryTime)}
+                        </span>
+                      </div>
+                    )}
+                    {otpExpiryTime === 0 && mode === "signup-verify" && (
+                      <p className="text-destructive text-xs text-center">Code expired. Please request a new one.</p>
+                    )}
                   </div>
 
                   <Button
@@ -1066,6 +1105,19 @@ const Auth = () => {
                     {errors.otp && (
                       <p className="text-destructive text-xs text-center">{errors.otp}</p>
                     )}
+                    
+                    {/* OTP Expiry Timer */}
+                    {otpExpiryTime > 0 && (
+                      <div className="flex items-center justify-center gap-2 text-sm">
+                        <Clock className={`w-4 h-4 ${otpExpiryTime <= 60 ? 'text-destructive' : 'text-muted-foreground'}`} />
+                        <span className={otpExpiryTime <= 60 ? 'text-destructive font-medium' : 'text-muted-foreground'}>
+                          Code expires in {formatTime(otpExpiryTime)}
+                        </span>
+                      </div>
+                    )}
+                    {otpExpiryTime === 0 && mode === "email-otp-verify" && (
+                      <p className="text-destructive text-xs text-center">Code expired. Please request a new one.</p>
+                    )}
                   </div>
 
                   <Button
@@ -1188,6 +1240,19 @@ const Auth = () => {
                     </div>
                     {errors.forgotOtp && (
                       <p className="text-destructive text-xs text-center">{errors.forgotOtp}</p>
+                    )}
+                    
+                    {/* OTP Expiry Timer */}
+                    {otpExpiryTime > 0 && (
+                      <div className="flex items-center justify-center gap-2 text-sm">
+                        <Clock className={`w-4 h-4 ${otpExpiryTime <= 60 ? 'text-destructive' : 'text-muted-foreground'}`} />
+                        <span className={otpExpiryTime <= 60 ? 'text-destructive font-medium' : 'text-muted-foreground'}>
+                          Code expires in {formatTime(otpExpiryTime)}
+                        </span>
+                      </div>
+                    )}
+                    {otpExpiryTime === 0 && mode === "forgot-verify" && (
+                      <p className="text-destructive text-xs text-center">Code expired. Please request a new one.</p>
                     )}
                   </div>
 
