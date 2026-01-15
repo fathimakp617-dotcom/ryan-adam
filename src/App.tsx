@@ -11,7 +11,6 @@ import { AffiliateProvider } from "@/contexts/AffiliateContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import CartDrawer from "@/components/CartDrawer";
 import ScrollToTop from "@/components/ScrollToTop";
-import UnderConstructionModal from "@/components/UnderConstructionModal";
 
 // Eagerly load critical pages
 import Index from "./pages/Index";
@@ -84,7 +83,6 @@ const App = () => (
                 <BrowserRouter>
                   <ScrollToTop />
                   <CartDrawer />
-                  <UnderConstructionModal />
                   <Suspense fallback={<PageLoader />}>
                     <Routes>
                       <Route path="/" element={<Index />} />
