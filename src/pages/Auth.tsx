@@ -24,7 +24,7 @@ const passwordSchema = z
   .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
   .regex(/[a-z]/, "Password must contain at least one lowercase letter")
   .regex(/[!@#$%^&*(),.?":{}|<>]/, "Password must contain at least one special character (!@#$%^&*)");
-const otpSchema = z.string().length(8, "OTP must be 8 digits").regex(/^\d+$/, "OTP must contain only numbers");
+const otpSchema = z.string().length(4, "OTP must be 4 digits").regex(/^\d+$/, "OTP must contain only numbers");
 const phoneSchema = z.string().min(6, "Phone number must be at least 6 digits").max(15, "Phone number too long").regex(/^[\d]+$/, "Phone number must contain only digits");
 
 type AuthMode = "login" | "signup" | "signup-verify" | "forgot" | "forgot-verify" | "reset" | "email-otp" | "email-otp-verify";
@@ -321,7 +321,7 @@ const Auth = () => {
       }
       toast({
         title: "Verification Code Sent!",
-        description: "Please check your email for the 8-digit code.",
+        description: "Please check your email for the 4-digit code.",
       });
       // Store the OTP in state and move to verify mode
       setFormData(prev => ({ ...prev, otp: "" }));
@@ -422,7 +422,7 @@ const Auth = () => {
       }
       toast({
         title: "OTP Sent!",
-        description: "Check your email for the 8-digit verification code.",
+        description: "Check your email for the 4-digit verification code.",
       });
       setFormData(prev => ({ ...prev, forgotOtp: "" }));
       startResendCountdown();
@@ -522,7 +522,7 @@ const Auth = () => {
       }
       toast({
         title: "OTP Sent!",
-        description: "Check your email for the 8-digit verification code.",
+        description: "Check your email for the 4-digit verification code.",
       });
       startResendCountdown();
       setMode("email-otp-verify");
@@ -603,12 +603,12 @@ const Auth = () => {
   const getSubtitle = () => {
     switch (mode) {
       case "signup": return "Join RAYN ADAM for exclusive offers";
-      case "signup-verify": return `Enter the 8-digit code sent to ${formData.email}`;
+      case "signup-verify": return `Enter the 4-digit code sent to ${formData.email}`;
       case "forgot": return "Enter your email to receive a verification code";
-      case "forgot-verify": return `Enter the 8-digit code sent to ${formData.email}`;
+      case "forgot-verify": return `Enter the 4-digit code sent to ${formData.email}`;
       case "reset": return "Enter your new password";
       case "email-otp": return "Enter your email to receive a verification code";
-      case "email-otp-verify": return `Enter the 8-digit code sent to ${formData.otpEmail}`;
+      case "email-otp-verify": return `Enter the 4-digit code sent to ${formData.otpEmail}`;
       default: return "Sign in to access your account";
     }
   };
@@ -924,22 +924,18 @@ const Auth = () => {
                     <div className="flex justify-center overflow-x-auto pb-2">
                       <div className="bg-background/50 border border-border/50 rounded-2xl p-4 md:p-6">
                         <InputOTP
-                          maxLength={8}
+                          maxLength={4}
                           value={formData.otp}
                           onChange={(value) => {
                             setFormData((prev) => ({ ...prev, otp: value }));
                             setErrors((prev) => ({ ...prev, otp: "" }));
                           }}
                         >
-                          <InputOTPGroup className="gap-1.5 md:gap-2">
-                            <InputOTPSlot index={0} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={1} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={2} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={3} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={4} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={5} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={6} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={7} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
+                          <InputOTPGroup className="gap-3 md:gap-4">
+                            <InputOTPSlot index={0} className="w-12 h-14 md:w-14 md:h-16 text-2xl font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={1} className="w-12 h-14 md:w-14 md:h-16 text-2xl font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={2} className="w-12 h-14 md:w-14 md:h-16 text-2xl font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={3} className="w-12 h-14 md:w-14 md:h-16 text-2xl font-bold border-border/50 bg-background rounded-lg" />
                           </InputOTPGroup>
                         </InputOTP>
                       </div>
@@ -952,7 +948,7 @@ const Auth = () => {
                   <Button
                     type="submit"
                     className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-medium text-base shadow-lg shadow-primary/20"
-                    disabled={isSubmitting || formData.otp.length !== 8}
+                    disabled={isSubmitting || formData.otp.length !== 4}
                   >
                     {isSubmitting ? (
                       <span className="flex items-center gap-2">
@@ -1051,22 +1047,18 @@ const Auth = () => {
                     <div className="flex justify-center overflow-x-auto pb-2">
                       <div className="bg-background/50 border border-border/50 rounded-2xl p-4 md:p-6">
                         <InputOTP
-                          maxLength={8}
+                          maxLength={4}
                           value={formData.otp}
                           onChange={(value) => {
                             setFormData((prev) => ({ ...prev, otp: value }));
                             setErrors((prev) => ({ ...prev, otp: "" }));
                           }}
                         >
-                          <InputOTPGroup className="gap-1.5 md:gap-2">
-                            <InputOTPSlot index={0} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={1} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={2} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={3} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={4} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={5} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={6} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={7} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
+                          <InputOTPGroup className="gap-3 md:gap-4">
+                            <InputOTPSlot index={0} className="w-12 h-14 md:w-14 md:h-16 text-2xl font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={1} className="w-12 h-14 md:w-14 md:h-16 text-2xl font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={2} className="w-12 h-14 md:w-14 md:h-16 text-2xl font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={3} className="w-12 h-14 md:w-14 md:h-16 text-2xl font-bold border-border/50 bg-background rounded-lg" />
                           </InputOTPGroup>
                         </InputOTP>
                       </div>
@@ -1079,7 +1071,7 @@ const Auth = () => {
                   <Button
                     type="submit"
                     className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-medium text-base shadow-lg shadow-primary/20"
-                    disabled={isSubmitting || formData.otp.length !== 8}
+                    disabled={isSubmitting || formData.otp.length !== 4}
                   >
                     {isSubmitting ? (
                       <span className="flex items-center gap-2">
@@ -1178,22 +1170,18 @@ const Auth = () => {
                     <div className="flex justify-center overflow-x-auto pb-2">
                       <div className="bg-background/50 border border-border/50 rounded-2xl p-4 md:p-6">
                         <InputOTP
-                          maxLength={8}
+                          maxLength={4}
                           value={formData.forgotOtp}
                           onChange={(value) => {
                             setFormData((prev) => ({ ...prev, forgotOtp: value }));
                             setErrors((prev) => ({ ...prev, forgotOtp: "" }));
                           }}
                         >
-                          <InputOTPGroup className="gap-1.5 md:gap-2">
-                            <InputOTPSlot index={0} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={1} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={2} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={3} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={4} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={5} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={6} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
-                            <InputOTPSlot index={7} className="w-9 h-11 md:w-10 md:h-12 text-lg font-bold border-border/50 bg-background rounded-lg" />
+                          <InputOTPGroup className="gap-3 md:gap-4">
+                            <InputOTPSlot index={0} className="w-12 h-14 md:w-14 md:h-16 text-2xl font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={1} className="w-12 h-14 md:w-14 md:h-16 text-2xl font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={2} className="w-12 h-14 md:w-14 md:h-16 text-2xl font-bold border-border/50 bg-background rounded-lg" />
+                            <InputOTPSlot index={3} className="w-12 h-14 md:w-14 md:h-16 text-2xl font-bold border-border/50 bg-background rounded-lg" />
                           </InputOTPGroup>
                         </InputOTP>
                       </div>
@@ -1206,7 +1194,7 @@ const Auth = () => {
                   <Button
                     type="submit"
                     className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-medium text-base shadow-lg shadow-primary/20"
-                    disabled={isSubmitting || formData.forgotOtp.length !== 8}
+                    disabled={isSubmitting || formData.forgotOtp.length !== 4}
                   >
                     {isSubmitting ? (
                       <span className="flex items-center gap-2">

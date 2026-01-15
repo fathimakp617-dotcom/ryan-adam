@@ -13,6 +13,11 @@ interface OtpRequest {
   email: string;
 }
 
+// Generate a random 4-digit OTP
+const generateOtp = (): string => {
+  return Math.floor(1000 + Math.random() * 9000).toString();
+};
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -46,39 +51,41 @@ const handler = async (req: Request): Promise<Response> => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    console.log("Generating OTP for password reset:", email);
+    console.log("Generating 4-digit OTP for password reset:", email);
 
-    // Generate magic link using admin API - this creates a token we can extract
-    const { data, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: "magiclink",
-      email: email,
-      options: {
-        redirectTo: Deno.env.get("SITE_URL") || "https://raynadamperfume.com",
-      },
-    });
+    // Generate custom 4-digit OTP
+    const otpCode = generateOtp();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
 
-    if (linkError) {
-      console.error("Error generating magic link:", linkError);
-      return new Response(
-        JSON.stringify({ error: "Failed to generate verification code" }),
-        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
+    // Delete any existing unused OTPs for this email and type
+    await supabaseAdmin
+      .from('custom_otps')
+      .delete()
+      .eq('email', email.toLowerCase())
+      .eq('otp_type', 'password_reset')
+      .is('used_at', null);
 
-    // Extract the OTP from the link properties - use full OTP (8 digits)
-    const emailOtp = data?.properties?.email_otp;
-    
-    if (!emailOtp) {
-      console.error("No OTP found in generated link data:", data);
+    // Insert new OTP
+    const { error: insertError } = await supabaseAdmin
+      .from('custom_otps')
+      .insert({
+        email: email.toLowerCase(),
+        otp_code: otpCode,
+        otp_type: 'password_reset',
+        expires_at: expiresAt.toISOString(),
+      });
+
+    if (insertError) {
+      console.error("Error storing OTP:", insertError);
       return new Response(
         JSON.stringify({ error: "Failed to generate OTP code" }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    console.log("OTP generated successfully, sending email via Resend. OTP length:", emailOtp.length);
+    console.log("OTP stored successfully, sending email via Resend");
 
-    // Send branded email via Resend with the 6-digit OTP
+    // Send branded email via Resend with the 4-digit OTP
     const emailResponse = await resend.emails.send({
       from: "Rayn Adam <noreply@raynadamperfume.com>",
       to: [email],
@@ -122,8 +129,8 @@ const handler = async (req: Request): Promise<Response> => {
                         <p style="margin: 0; font-size: 14px; color: #888; text-transform: uppercase; letter-spacing: 2px;">
                           Reset Code
                         </p>
-                        <p style="margin: 15px 0 0; font-size: 48px; letter-spacing: 16px; color: #c9a45c; font-weight: bold; font-family: monospace;">
-                          ${emailOtp}
+                        <p style="margin: 15px 0 0; font-size: 56px; letter-spacing: 20px; color: #c9a45c; font-weight: bold; font-family: monospace;">
+                          ${otpCode}
                         </p>
                       </div>
                       

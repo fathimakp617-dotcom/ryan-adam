@@ -107,3 +107,6 @@ verify_jwt = false
 
 [functions.update-return-status]
 verify_jwt = false
+
+[functions.verify-custom-otp]
+verify_jwt = false

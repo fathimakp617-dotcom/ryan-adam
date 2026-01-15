@@ -197,19 +197,55 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const verifyEmailOtp = async (email: string, token: string) => {
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token,
-      type: 'email',
-    });
+    try {
+      // Use custom edge function to verify 4-digit OTP
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/verify-custom-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ email, otp: token, otp_type: 'login' }),
+      });
 
-    if (error) {
-      await checkRateLimit(email, "login", "record_failure");
-    } else {
+      const data = await response.json();
+
+      if (!response.ok || !data.valid) {
+        await checkRateLimit(email, "login", "record_failure");
+        return { error: new Error(data.error || "Invalid or expired OTP") };
+      }
+
+      // Use the token hash to verify with Supabase
+      if (data.token_hash) {
+        const { error: verifyError } = await supabase.auth.verifyOtp({
+          email,
+          token: data.token_hash,
+          type: 'email',
+        });
+        
+        if (verifyError) {
+          // Try signing in with magic link as fallback
+          const { error: signInError } = await supabase.auth.signInWithOtp({
+            email,
+            options: {
+              shouldCreateUser: true,
+            }
+          });
+          
+          if (signInError) {
+            await checkRateLimit(email, "login", "record_failure");
+            return { error: signInError };
+          }
+        }
+      }
+
       await checkRateLimit(email, "login", "reset");
+      return { error: null };
+    } catch (err: any) {
+      console.error("Error verifying OTP:", err);
+      await checkRateLimit(email, "login", "record_failure");
+      return { error: new Error(err.message || "Failed to verify OTP") };
     }
-
-    return { error };
   };
 
   const sendPasswordResetOtp = async (email: string) => {
