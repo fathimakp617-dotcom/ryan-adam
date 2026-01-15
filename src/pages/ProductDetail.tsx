@@ -2,7 +2,7 @@ import { useState, useEffect, memo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Heart, Share2, Truck, Shield, RotateCcw, Star, ShoppingBag, PenLine } from "lucide-react";
+import { ArrowLeft, Heart, Share2, Truck, Shield, RotateCcw, Star, ShoppingBag, PenLine, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/Navbar";
@@ -27,7 +27,7 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [averageRating, setAverageRating] = useState(0);
   const [totalReviews, setTotalReviews] = useState(0);
-  const { addToCart } = useCart();
+  const { addToCart, buyNow } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
 
   useEffect(() => {
@@ -71,6 +71,11 @@ const ProductDetail = () => {
     toast.success(`${product.name} added to cart`, {
       description: `Quantity: ${quantity}`,
     });
+  };
+
+  const handleBuyNow = () => {
+    buyNow(product, quantity);
+    navigate("/checkout");
   };
 
   const handleToggleWishlist = () => {
@@ -297,19 +302,32 @@ const ProductDetail = () => {
                     </Button>
                     <Button
                       size="lg"
+                      onClick={handleBuyNow}
+                      variant="secondary"
+                      className="flex-1 py-6 text-sm tracking-widest font-medium transition-all duration-300 flex items-center justify-center gap-2"
+                    >
+                      <Zap className="w-5 h-5" />
+                      BUY NOW
+                    </Button>
+                  </div>
+                  <div className="flex gap-4">
+                    <Button
+                      size="lg"
                       variant="outline"
                       onClick={handleToggleWishlist}
-                      className={`p-6 border-border/50 hover:border-primary ${inWishlist ? "bg-primary/10 border-primary" : ""}`}
+                      className={`flex-1 p-6 border-border/50 hover:border-primary ${inWishlist ? "bg-primary/10 border-primary" : ""}`}
                     >
-                      <Heart className={`w-5 h-5 ${inWishlist ? "fill-primary text-primary" : ""}`} />
+                      <Heart className={`w-5 h-5 mr-2 ${inWishlist ? "fill-primary text-primary" : ""}`} />
+                      {inWishlist ? "WISHLISTED" : "WISHLIST"}
                     </Button>
                     <Button
                       size="lg"
                       variant="outline"
                       onClick={handleShare}
-                      className="p-6 border-border/50 hover:border-primary"
+                      className="flex-1 p-6 border-border/50 hover:border-primary"
                     >
-                      <Share2 className="w-5 h-5" />
+                      <Share2 className="w-5 h-5 mr-2" />
+                      SHARE
                     </Button>
                   </div>
                 </motion.div>
