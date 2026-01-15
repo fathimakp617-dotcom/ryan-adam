@@ -8,10 +8,10 @@ const corsHeaders = {
 
 // Product prices - server-side source of truth (all prices include taxes, must match create-order)
 const PRODUCT_PRICES: Record<string, number> = {
-  "elite": 444,
-  "amber-crown": 444,
-  "legacy": 444,
-  "combo": 444,
+  "elite": 10,
+  "amber-crown": 10,
+  "legacy": 10,
+  "combo": 10,
 };
 
 const VALID_PRODUCT_IDS = Object.keys(PRODUCT_PRICES);
