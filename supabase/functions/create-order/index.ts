@@ -49,12 +49,11 @@ const sanitizeString = (str: string, maxLength: number): string => {
 };
 
 // Product prices - server-side source of truth (all prices include taxes)
-// TESTING: All prices set to ₹10
 const PRODUCT_PRICES: Record<string, number> = {
-  "elite": 10,
-  "amber-crown": 10,
-  "legacy": 10,
-  "combo": 10,
+  "elite": 444,
+  "amber-crown": 444,
+  "legacy": 444,
+  "combo": 444,
 };
 
 const VALID_PRODUCT_IDS = Object.keys(PRODUCT_PRICES);
