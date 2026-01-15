@@ -32,7 +32,7 @@ const Checkout = () => {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [showTermsDialog, setShowTermsDialog] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [paymentMethod, setPaymentMethod] = useState("upi");
   const [formData, setFormData] = useState({
     email: "",
     firstName: "",
@@ -741,29 +741,19 @@ const Checkout = () => {
                         </div>
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-3 bg-input border border-border rounded-lg p-4 cursor-pointer hover:border-primary transition-colors">
-                      <RadioGroupItem value="cod" id="cod" />
-                      <Label htmlFor="cod" className="flex items-center gap-2 cursor-pointer flex-1">
-                        <Truck className="w-5 h-5 text-primary" />
+                    <div className="flex items-center space-x-3 bg-input border border-border rounded-lg p-4 opacity-60 cursor-not-allowed">
+                      <RadioGroupItem value="cod" id="cod" disabled />
+                      <Label htmlFor="cod" className="flex items-center gap-2 cursor-not-allowed flex-1">
+                        <Truck className="w-5 h-5 text-muted-foreground" />
                         <div className="flex-1">
-                          <span>Cash on Delivery</span>
-                          <p className="text-xs text-orange-500 font-medium mt-0.5">
-                            {shipping > 0 ? `₹${shipping} shipping charge applies` : 'FREE Shipping on orders ₹999+'}
+                          <span className="text-muted-foreground">Cash on Delivery</span>
+                          <p className="text-xs text-amber-500 font-medium mt-0.5">
+                            Coming Soon
                           </p>
                         </div>
                       </Label>
                     </div>
                   </RadioGroup>
-
-                  {/* COD Shipping Notice */}
-                  {paymentMethod === "cod" && shipping > 0 && (
-                    <div className="flex items-start gap-2 p-3 bg-orange-500/5 border border-orange-500/20 rounded-lg mb-4">
-                      <AlertTriangle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
-                      <p className="text-xs text-muted-foreground">
-                        <span className="text-orange-500 font-medium">Note:</span> For COD orders, the shipping charge of ₹{shipping} must be paid in advance. Our team will contact you to collect this fee before dispatching your order.
-                      </p>
-                    </div>
-                  )}
 
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mt-4">
                     <Lock className="w-4 h-4" />
