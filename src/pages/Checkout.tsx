@@ -58,8 +58,9 @@ const Checkout = () => {
     }
   }, [user]);
 
-  // Free shipping for online payment (UPI/Card), ₹79 for COD orders under ₹999
-  const shipping = (paymentMethod === "upi" || paymentMethod === "card") ? 0 : (totalPrice >= 999 ? 0 : 79);
+  // Free shipping for online payment (UPI/Card), coupon with free shipping, or COD orders ≥₹999
+  const hasFreeShipping = appliedCoupon?.freeShipping || paymentMethod === "upi" || paymentMethod === "card" || totalPrice >= 999;
+  const shipping = hasFreeShipping ? 0 : 79;
   const discount = calculateDiscount(totalPrice);
   const orderTotal = totalPrice - discount + shipping;
 
