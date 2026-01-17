@@ -16,6 +16,22 @@ const PRODUCT_PRICES: Record<string, number> = {
 
 const VALID_PRODUCT_IDS = Object.keys(PRODUCT_PRICES);
 
+// Bulk discount tiers - must match frontend and create-order
+const BULK_DISCOUNT_TIERS = [
+  { minQty: 100, discountPercent: 30 },
+  { minQty: 50, discountPercent: 20 },
+  { minQty: 25, discountPercent: 10 },
+];
+
+const getBulkDiscountPercent = (totalQuantity: number): number => {
+  for (const tier of BULK_DISCOUNT_TIERS) {
+    if (totalQuantity >= tier.minQty) {
+      return tier.discountPercent;
+    }
+  }
+  return 0;
+};
+
 interface VerifyPaymentRequest {
   razorpay_order_id: string;
   razorpay_payment_id: string;
@@ -111,6 +127,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Validate items and calculate totals using SERVER-SIDE prices
     let subtotal = 0;
+    let totalQuantity = 0;
     for (const item of order_data.items) {
       // Validate product exists
       if (!VALID_PRODUCT_IDS.includes(item.productId)) {
@@ -123,7 +140,7 @@ const handler = async (req: Request): Promise<Response> => {
 
       // Validate quantity
       const quantity = Math.floor(Number(item.quantity));
-      if (quantity < 1 || quantity > 10) {
+      if (quantity < 1 || quantity > 1000) {
         console.error("Invalid quantity for product:", item.productId, quantity);
         return new Response(
           JSON.stringify({ error: `Invalid quantity for ${item.productId}` }),
@@ -134,13 +151,21 @@ const handler = async (req: Request): Promise<Response> => {
       // Use SERVER-SIDE price, not client-provided price
       const serverPrice = PRODUCT_PRICES[item.productId];
       subtotal += serverPrice * quantity;
+      totalQuantity += quantity;
     }
+
+    // Calculate bulk discount
+    const bulkDiscountPercent = getBulkDiscountPercent(totalQuantity);
+    const bulkDiscount = Math.round(subtotal * (bulkDiscountPercent / 100));
+    const priceAfterBulk = subtotal - bulkDiscount;
+    console.log(`Bulk discount: ${bulkDiscountPercent}% on ${totalQuantity} items = ${bulkDiscount}`);
     
-    let discount = 0;
+    let couponDiscount = 0;
     // Free shipping for online payments
     const shipping = 0;
     let validCouponCode: string | null = null;
     let validAffiliateCode: string | null = null;
+    let affiliateDiscount = 0;
 
     // Apply coupon if provided
     if (order_data.coupon_code) {
@@ -159,16 +184,16 @@ const handler = async (req: Request): Promise<Response> => {
         if (!couponRecord.expires_at || new Date(couponRecord.expires_at) > new Date()) {
           // Check usage limit
           if (!couponRecord.max_uses || (couponRecord.current_uses || 0) < couponRecord.max_uses) {
-            // Check minimum order
-            if (!couponRecord.min_order_amount || subtotal >= couponRecord.min_order_amount) {
-              // Apply discount
+            // Check minimum order (on price after bulk discount)
+            if (!couponRecord.min_order_amount || priceAfterBulk >= couponRecord.min_order_amount) {
+              // Apply discount on price after bulk discount
               if (couponRecord.discount_amount) {
-                discount = couponRecord.discount_amount;
+                couponDiscount = couponRecord.discount_amount;
               } else if (couponRecord.discount_percent) {
-                discount = Math.round(subtotal * (couponRecord.discount_percent / 100));
+                couponDiscount = Math.round(priceAfterBulk * (couponRecord.discount_percent / 100));
               }
               validCouponCode = couponRecord.code;
-              console.log("Coupon applied successfully, discount:", discount);
+              console.log("Coupon applied successfully, discount:", couponDiscount);
 
               // Increment coupon usage
               await supabase
@@ -203,9 +228,9 @@ const handler = async (req: Request): Promise<Response> => {
         .single();
       
       if (!affiliateError && affiliate) {
-        discount = Math.round(subtotal * ((affiliate.coupon_discount_percent || 10) / 100));
+        affiliateDiscount = Math.round(priceAfterBulk * ((affiliate.coupon_discount_percent || 10) / 100));
         validAffiliateCode = affiliate.code;
-        console.log("Affiliate discount applied:", discount);
+        console.log("Affiliate discount applied:", affiliateDiscount);
 
         // Update affiliate stats
         const commission = Math.round(subtotal * ((affiliate.commission_percent || 10) / 100));
@@ -221,7 +246,9 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    const total = subtotal - discount + shipping;
+    const totalDiscount = bulkDiscount + couponDiscount + affiliateDiscount;
+    const total = subtotal - totalDiscount + shipping;
+    console.log(`Order totals: subtotal=${subtotal}, bulkDiscount=${bulkDiscount}, couponDiscount=${couponDiscount}, affiliateDiscount=${affiliateDiscount}, total=${total}`);
 
     // Generate order number
     const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
@@ -238,7 +265,7 @@ const handler = async (req: Request): Promise<Response> => {
         shipping_address: order_data.shipping_address,
         items: order_data.items,
         subtotal,
-        discount,
+        discount: totalDiscount,
         shipping,
         total,
         payment_method: 'razorpay',
@@ -269,7 +296,7 @@ const handler = async (req: Request): Promise<Response> => {
           customer_phone: order_data.customer_phone,
           items: order_data.items,
           subtotal,
-          discount,
+          discount: totalDiscount,
           shipping,
           total,
           shipping_address: order_data.shipping_address,

@@ -6,6 +6,33 @@ export interface CartItem {
   quantity: number;
 }
 
+// Bulk discount tiers
+export const BULK_DISCOUNT_TIERS = [
+  { minQty: 100, discountPercent: 30, label: "100+ pieces" },
+  { minQty: 50, discountPercent: 20, label: "50+ pieces" },
+  { minQty: 25, discountPercent: 10, label: "25+ pieces" },
+] as const;
+
+export const getBulkDiscountPercent = (totalQuantity: number): number => {
+  for (const tier of BULK_DISCOUNT_TIERS) {
+    if (totalQuantity >= tier.minQty) {
+      return tier.discountPercent;
+    }
+  }
+  return 0;
+};
+
+export const getNextBulkTier = (totalQuantity: number): { neededQty: number; discountPercent: number } | null => {
+  // Find the next tier the customer hasn't reached yet
+  const sortedTiers = [...BULK_DISCOUNT_TIERS].sort((a, b) => a.minQty - b.minQty);
+  for (const tier of sortedTiers) {
+    if (totalQuantity < tier.minQty) {
+      return { neededQty: tier.minQty - totalQuantity, discountPercent: tier.discountPercent };
+    }
+  }
+  return null; // Already at max tier
+};
+
 interface CartContextType {
   items: CartItem[];
   addToCart: (product: Product, quantity?: number) => void;
@@ -18,6 +45,8 @@ interface CartContextType {
   closeCart: () => void;
   totalItems: number;
   totalPrice: number;
+  bulkDiscountPercent: number;
+  bulkDiscountAmount: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -77,6 +106,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     (sum, item) => sum + item.product.price * item.quantity,
     0
   );
+  
+  const bulkDiscountPercent = getBulkDiscountPercent(totalItems);
+  const bulkDiscountAmount = Math.round(totalPrice * (bulkDiscountPercent / 100));
 
   return (
     <CartContext.Provider
@@ -92,6 +124,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         closeCart,
         totalItems,
         totalPrice,
+        bulkDiscountPercent,
+        bulkDiscountAmount,
       }}
     >
       {children}

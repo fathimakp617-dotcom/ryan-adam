@@ -1,12 +1,14 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { X, Minus, Plus, ShoppingBag, Trash2, Gift } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useCart } from "@/contexts/CartContext";
+import { useCart, getNextBulkTier } from "@/contexts/CartContext";
 import { formatPrice } from "@/data/products";
 
 const CartDrawer = () => {
-  const { items, isOpen, closeCart, updateQuantity, removeFromCart, totalPrice, totalItems } = useCart();
+  const { items, isOpen, closeCart, updateQuantity, removeFromCart, totalPrice, totalItems, bulkDiscountPercent, bulkDiscountAmount } = useCart();
+  
+  const nextTier = getNextBulkTier(totalItems);
 
   return (
     <AnimatePresence>
@@ -120,9 +122,36 @@ const CartDrawer = () => {
             {/* Footer */}
             {items.length > 0 && (
               <div className="border-t border-border/50 p-6 space-y-4">
+                {/* Bulk Discount Info */}
+                {bulkDiscountPercent > 0 && (
+                  <div className="flex items-center justify-between text-emerald-500">
+                    <span className="flex items-center gap-2">
+                      <Gift className="w-4 h-4" />
+                      Bulk Discount ({bulkDiscountPercent}%)
+                    </span>
+                    <span>-{formatPrice(bulkDiscountAmount)}</span>
+                  </div>
+                )}
+                
+                {/* Next tier incentive */}
+                {nextTier && (
+                  <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 text-xs text-center">
+                    Add <span className="font-bold text-primary">{nextTier.neededQty} more</span> to unlock <span className="font-bold text-primary">{nextTier.discountPercent}% OFF</span>!
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="text-lg font-heading">{formatPrice(totalPrice)}</span>
+                  <div className="text-right">
+                    {bulkDiscountAmount > 0 && (
+                      <span className="text-sm text-muted-foreground line-through mr-2">
+                        {formatPrice(totalPrice)}
+                      </span>
+                    )}
+                    <span className="text-lg font-heading">
+                      {formatPrice(totalPrice - bulkDiscountAmount)}
+                    </span>
+                  </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Shipping and taxes calculated at checkout
