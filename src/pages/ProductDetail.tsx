@@ -12,7 +12,7 @@ import ProductReviews from "@/components/ProductReviews";
 import RelatedProducts from "@/components/RelatedProducts";
 import PageTransition from "@/components/PageTransition";
 import { getProductById, formatPrice, products } from "@/data/products";
-import { useCart, BULK_DISCOUNT_TIERS } from "@/contexts/CartContext";
+import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { fadeInUp, fadeInLeft, staggerContainer, staggerItem } from "@/lib/animations";
 import { toast } from "sonner";
@@ -268,21 +268,6 @@ const ProductDetail = () => {
                   <span className="text-sm text-muted-foreground">
                     {product.size} • {product.concentration}
                   </span>
-                </motion.div>
-
-                {/* Bulk Discount Tiers */}
-                <motion.div variants={staggerItem} className="bg-card/50 border border-border/50 rounded-lg p-4">
-                  <p className="text-xs tracking-wider text-muted-foreground mb-3">BULK DISCOUNTS</p>
-                  <div className="flex flex-wrap gap-2">
-                    {BULK_DISCOUNT_TIERS.slice().reverse().map((tier) => (
-                      <span
-                        key={tier.minQty}
-                        className="px-3 py-1.5 bg-primary/10 border border-primary/30 rounded text-sm text-primary font-medium"
-                      >
-                        {tier.minQty}+ pcs → {tier.discountPercent}% OFF
-                      </span>
-                    ))}
-                  </div>
                 </motion.div>
 
                 <motion.p variants={staggerItem} className="text-muted-foreground leading-relaxed">

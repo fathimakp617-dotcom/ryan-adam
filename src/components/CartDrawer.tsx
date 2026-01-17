@@ -2,13 +2,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Minus, Plus, ShoppingBag, Trash2, Gift } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useCart, getNextBulkTier } from "@/contexts/CartContext";
+import { useCart } from "@/contexts/CartContext";
 import { formatPrice } from "@/data/products";
 
 const CartDrawer = () => {
   const { items, isOpen, closeCart, updateQuantity, removeFromCart, totalPrice, totalItems, bulkDiscountPercent, bulkDiscountAmount } = useCart();
-  
-  const nextTier = getNextBulkTier(totalItems);
 
   return (
     <AnimatePresence>
@@ -121,8 +119,8 @@ const CartDrawer = () => {
 
             {/* Footer */}
             {items.length > 0 && (
-              <div className="border-t border-border/50 p-6 space-y-4">
-                {/* Bulk Discount Info */}
+            <div className="border-t border-border/50 p-6 space-y-4">
+                {/* Bulk Discount Info - only show when applied */}
                 {bulkDiscountPercent > 0 && (
                   <div className="flex items-center justify-between text-emerald-500">
                     <span className="flex items-center gap-2">
@@ -130,13 +128,6 @@ const CartDrawer = () => {
                       Bulk Discount ({bulkDiscountPercent}%)
                     </span>
                     <span>-{formatPrice(bulkDiscountAmount)}</span>
-                  </div>
-                )}
-                
-                {/* Next tier incentive */}
-                {nextTier && (
-                  <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 text-xs text-center">
-                    Add <span className="font-bold text-primary">{nextTier.neededQty} more</span> to unlock <span className="font-bold text-primary">{nextTier.discountPercent}% OFF</span>!
                   </div>
                 )}
 
