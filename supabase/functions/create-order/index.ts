@@ -248,11 +248,11 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Handle coupon discount (applied on price after bulk discount)
+    // Handle coupon discount (only if NO bulk discount applied)
     let couponDiscount = 0;
     let validCouponCode: string | null = null;
 
-    if (orderRequest.coupon_code) {
+    if (orderRequest.coupon_code && bulkDiscountPercent === 0) {
       const couponCode = sanitizeString(orderRequest.coupon_code, 50).toUpperCase();
       console.log("Validating coupon:", couponCode);
 
@@ -283,13 +283,15 @@ serve(async (req) => {
           }
         }
       }
+    } else if (orderRequest.coupon_code && bulkDiscountPercent > 0) {
+      console.log("Coupon ignored - bulk discount active");
     }
 
-    // Handle affiliate discount (applied on price after bulk discount)
+    // Handle affiliate discount (only if NO bulk discount AND no coupon applied)
     let affiliateDiscount = 0;
     let validAffiliateCode: string | null = null;
 
-    if (orderRequest.affiliate_code && !validCouponCode) {
+    if (orderRequest.affiliate_code && !validCouponCode && bulkDiscountPercent === 0) {
       const affiliateCode = sanitizeString(orderRequest.affiliate_code, 50).toUpperCase();
       console.log("Validating affiliate code:", affiliateCode);
 
@@ -315,6 +317,8 @@ serve(async (req) => {
           })
           .eq('id', affiliate.id);
       }
+    } else if (orderRequest.affiliate_code && bulkDiscountPercent > 0) {
+      console.log("Affiliate code ignored - bulk discount active");
     }
 
     // Calculate total discount and final total

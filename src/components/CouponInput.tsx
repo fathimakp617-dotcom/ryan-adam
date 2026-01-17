@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Tag, X, Check, Loader2 } from "lucide-react";
+import { Tag, X, Check, Loader2, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAffiliate } from "@/contexts/AffiliateContext";
+import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 
 const CouponInput = () => {
@@ -15,9 +16,16 @@ const CouponInput = () => {
     appliedCoupon,
     isLoading,
   } = useAffiliate();
+  const { bulkDiscountPercent } = useCart();
   const [inputValue, setInputValue] = useState(couponCode);
 
+  const isBulkDiscountActive = bulkDiscountPercent > 0;
+
   const handleApply = async () => {
+    if (isBulkDiscountActive) {
+      toast.error("Coupons cannot be combined with bulk discounts");
+      return;
+    }
     const result = await applyCoupon(inputValue);
     if (result.success) {
       toast.success(result.message);
@@ -31,6 +39,24 @@ const CouponInput = () => {
     setInputValue("");
     toast.info("Coupon removed");
   };
+
+  // If bulk discount is active, show a message instead of coupon input
+  if (isBulkDiscountActive) {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Tag className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">Coupon / Affiliate Code</span>
+        </div>
+        <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3">
+          <Gift className="w-4 h-4 text-emerald-500" />
+          <span className="text-sm text-emerald-500">
+            Bulk discount ({bulkDiscountPercent}% OFF) applied! Coupons not available with bulk orders.
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
