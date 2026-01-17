@@ -26,7 +26,7 @@ declare global {
 
 const Checkout = () => {
   const { items, totalPrice, clearCart, totalItems, bulkDiscountPercent, bulkDiscountAmount } = useCart();
-  const { affiliateCode, appliedCoupon, calculateDiscount } = useAffiliate();
+  const { affiliateCode, appliedCoupon, calculateDiscount, removeCoupon } = useAffiliate();
   const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -58,10 +58,18 @@ const Checkout = () => {
     }
   }, [user]);
 
+  // Clear coupon if bulk discount is active (they are mutually exclusive)
+  useEffect(() => {
+    if (bulkDiscountPercent > 0 && appliedCoupon) {
+      removeCoupon();
+    }
+  }, [bulkDiscountPercent, appliedCoupon, removeCoupon]);
+
   // Free shipping for online payment (UPI/Card), coupon with free shipping, or COD orders ≥₹999
   const hasFreeShipping = appliedCoupon?.freeShipping || paymentMethod === "upi" || paymentMethod === "card" || totalPrice >= 999;
   const shipping = hasFreeShipping ? 0 : 79;
-  const couponDiscount = calculateDiscount(totalPrice - bulkDiscountAmount); // Apply coupon on price after bulk discount
+  // Only apply coupon discount if no bulk discount is active
+  const couponDiscount = bulkDiscountPercent > 0 ? 0 : calculateDiscount(totalPrice);
   const totalDiscount = bulkDiscountAmount + couponDiscount;
   const orderTotal = totalPrice - totalDiscount + shipping;
 
