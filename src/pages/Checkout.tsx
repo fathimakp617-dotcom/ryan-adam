@@ -25,7 +25,7 @@ declare global {
 }
 
 const Checkout = () => {
-  const { items, totalPrice, clearCart } = useCart();
+  const { items, totalPrice, clearCart, totalItems, bulkDiscountPercent, bulkDiscountAmount } = useCart();
   const { affiliateCode, appliedCoupon, calculateDiscount } = useAffiliate();
   const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -61,8 +61,9 @@ const Checkout = () => {
   // Free shipping for online payment (UPI/Card), coupon with free shipping, or COD orders ≥₹999
   const hasFreeShipping = appliedCoupon?.freeShipping || paymentMethod === "upi" || paymentMethod === "card" || totalPrice >= 999;
   const shipping = hasFreeShipping ? 0 : 79;
-  const discount = calculateDiscount(totalPrice);
-  const orderTotal = totalPrice - discount + shipping;
+  const couponDiscount = calculateDiscount(totalPrice - bulkDiscountAmount); // Apply coupon on price after bulk discount
+  const totalDiscount = bulkDiscountAmount + couponDiscount;
+  const orderTotal = totalPrice - totalDiscount + shipping;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -795,13 +796,19 @@ const Checkout = () => {
 
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between text-muted-foreground">
-                      <span>Subtotal</span>
+                      <span>Subtotal ({totalItems} items)</span>
                       <span>{formatPrice(totalPrice)}</span>
                     </div>
-                    {discount > 0 && (
+                    {bulkDiscountAmount > 0 && (
+                      <div className="flex justify-between text-emerald-500">
+                        <span>Bulk Discount ({bulkDiscountPercent}%)</span>
+                        <span>-{formatPrice(bulkDiscountAmount)}</span>
+                      </div>
+                    )}
+                    {couponDiscount > 0 && (
                       <div className="flex justify-between text-primary">
-                        <span>Discount</span>
-                        <span>-{formatPrice(discount)}</span>
+                        <span>Coupon Discount</span>
+                        <span>-{formatPrice(couponDiscount)}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-muted-foreground">

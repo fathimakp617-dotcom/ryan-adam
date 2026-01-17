@@ -58,6 +58,22 @@ const PRODUCT_PRICES: Record<string, number> = {
 
 const VALID_PRODUCT_IDS = Object.keys(PRODUCT_PRICES);
 
+// Bulk discount tiers - must match frontend
+const BULK_DISCOUNT_TIERS = [
+  { minQty: 100, discountPercent: 30 },
+  { minQty: 50, discountPercent: 20 },
+  { minQty: 25, discountPercent: 10 },
+];
+
+const getBulkDiscountPercent = (totalQuantity: number): number => {
+  for (const tier of BULK_DISCOUNT_TIERS) {
+    if (totalQuantity >= tier.minQty) {
+      return tier.discountPercent;
+    }
+  }
+  return 0;
+};
+
 interface OrderItem {
   productId: string;
   name: string;
@@ -174,6 +190,7 @@ serve(async (req) => {
     }
 
     let subtotal = 0;
+    let totalQuantity = 0;
     const validatedItems: OrderItem[] = [];
 
     for (const item of orderRequest.items) {
@@ -186,10 +203,10 @@ serve(async (req) => {
       }
 
       const quantity = Math.floor(Number(item.quantity));
-      if (quantity < 1 || quantity > 10) {
+      if (quantity < 1 || quantity > 1000) {
         console.error("Invalid quantity for product:", item.productId, quantity);
         return new Response(
-          JSON.stringify({ error: `Invalid quantity for ${item.productId}. Must be 1-10.` }),
+          JSON.stringify({ error: `Invalid quantity for ${item.productId}. Must be 1-1000.` }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -197,6 +214,7 @@ serve(async (req) => {
       // Use server-side price, not client-provided price
       const serverPrice = PRODUCT_PRICES[item.productId];
       subtotal += serverPrice * quantity;
+      totalQuantity += quantity;
 
       validatedItems.push({
         productId: item.productId,
@@ -205,6 +223,11 @@ serve(async (req) => {
         quantity: quantity,
       });
     }
+
+    // Calculate bulk discount
+    const bulkDiscountPercent = getBulkDiscountPercent(totalQuantity);
+    const bulkDiscount = Math.round(subtotal * (bulkDiscountPercent / 100));
+    console.log(`Bulk discount: ${bulkDiscountPercent}% on ${totalQuantity} items = ${bulkDiscount}`);
 
     // Validate payment method
     const validPaymentMethods = ['cod', 'razorpay'];
@@ -217,15 +240,16 @@ serve(async (req) => {
     }
 
     // Calculate shipping - FREE for online payment, ₹79 for COD under ₹999
-    const shipping = orderRequest.payment_method === 'razorpay' ? 0 : (subtotal >= 999 ? 0 : 79);
+    const priceAfterBulk = subtotal - bulkDiscount;
+    const shipping = orderRequest.payment_method === 'razorpay' ? 0 : (priceAfterBulk >= 999 ? 0 : 79);
 
     // Initialize Supabase client with service role for inserting
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Handle coupon discount
-    let discount = 0;
+    // Handle coupon discount (applied on price after bulk discount)
+    let couponDiscount = 0;
     let validCouponCode: string | null = null;
 
     if (orderRequest.coupon_code) {
@@ -244,11 +268,11 @@ serve(async (req) => {
         if (!coupon.expires_at || new Date(coupon.expires_at) > new Date()) {
           // Check usage limit
           if (!coupon.max_uses || (coupon.current_uses || 0) < coupon.max_uses) {
-            // Check minimum order
-            if (!coupon.min_order_amount || subtotal >= coupon.min_order_amount) {
-              discount = (subtotal * coupon.discount_percent) / 100;
+            // Check minimum order (on price after bulk discount)
+            if (!coupon.min_order_amount || priceAfterBulk >= coupon.min_order_amount) {
+              couponDiscount = Math.round(priceAfterBulk * (coupon.discount_percent / 100));
               validCouponCode = couponCode;
-              console.log("Coupon applied, discount:", discount);
+              console.log("Coupon applied, discount:", couponDiscount);
 
               // Increment coupon usage
               await supabase
@@ -261,7 +285,8 @@ serve(async (req) => {
       }
     }
 
-    // Handle affiliate discount
+    // Handle affiliate discount (applied on price after bulk discount)
+    let affiliateDiscount = 0;
     let validAffiliateCode: string | null = null;
 
     if (orderRequest.affiliate_code && !validCouponCode) {
@@ -276,9 +301,9 @@ serve(async (req) => {
         .single();
 
       if (!affiliateError && affiliate) {
-        discount = (subtotal * (affiliate.coupon_discount_percent || 10)) / 100;
+        affiliateDiscount = Math.round(priceAfterBulk * ((affiliate.coupon_discount_percent || 10) / 100));
         validAffiliateCode = affiliateCode;
-        console.log("Affiliate discount applied:", discount);
+        console.log("Affiliate discount applied:", affiliateDiscount);
 
         // Update affiliate stats
         const commission = (subtotal * (affiliate.commission_percent || 10)) / 100;
@@ -292,8 +317,10 @@ serve(async (req) => {
       }
     }
 
-    // Calculate total
-    const total = subtotal - discount + shipping;
+    // Calculate total discount and final total
+    const totalDiscount = bulkDiscount + couponDiscount + affiliateDiscount;
+    const total = subtotal - totalDiscount + shipping;
+    console.log(`Order totals: subtotal=${subtotal}, bulkDiscount=${bulkDiscount}, couponDiscount=${couponDiscount}, affiliateDiscount=${affiliateDiscount}, shipping=${shipping}, total=${total}`);
 
     // Generate order number
     const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
@@ -308,7 +335,7 @@ serve(async (req) => {
       shipping_address: shippingAddress,
       items: validatedItems,
       subtotal: subtotal,
-      discount: discount,
+      discount: totalDiscount,
       shipping: shipping,
       total: total,
       payment_method: orderRequest.payment_method,
@@ -347,7 +374,7 @@ serve(async (req) => {
         customer_phone: customerPhone,
         items: validatedItems,
         subtotal: subtotal,
-        discount: discount,
+        discount: totalDiscount,
         shipping: shipping,
         total: total,
         shipping_address: shippingAddress,
