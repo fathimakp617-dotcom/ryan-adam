@@ -59,8 +59,11 @@ export const AffiliateProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // Auto-apply loyalty coupon when user logs in
+  // Auto-apply loyalty coupon when user logs in (only if no bulk discount)
+  // Note: We don't auto-apply here anymore - it's handled in Checkout where we know cart state
   useEffect(() => {
+    // Only fetch if user is logged in and no coupon applied yet
+    // Bulk discount check will be done in Checkout.tsx
     if (user && !appliedCoupon) {
       fetchAndApplyLoyaltyCoupon(user.id);
     }
