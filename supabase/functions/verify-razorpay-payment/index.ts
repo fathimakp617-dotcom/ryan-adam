@@ -340,6 +340,42 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
+    // Send bulk order notification to admin and shipping (fire and forget)
+    if (totalQuantity >= 25) {
+      try {
+        console.log("Bulk order detected, sending notification to admin and shipping");
+        const bulkNotifyUrl = Deno.env.get('SUPABASE_URL')!;
+        const bulkNotifyKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+        fetch(`${bulkNotifyUrl}/functions/v1/send-bulk-order-notification`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${bulkNotifyKey}`,
+          },
+          body: JSON.stringify({
+            order_number: actualOrderNumber,
+            customer_name: order_data.customer_name,
+            customer_email: order_data.customer_email,
+            customer_phone: order_data.customer_phone,
+            total_quantity: totalQuantity,
+            subtotal: subtotal,
+            bulk_discount: bulkDiscount,
+            bulk_discount_percent: bulkDiscountPercent,
+            total: total,
+            items: order_data.items,
+            shipping_address: order_data.shipping_address,
+            payment_method: 'razorpay',
+          }),
+        }).then(res => {
+          console.log("Bulk order notification sent, status:", res.status);
+        }).catch(err => {
+          console.error("Failed to send bulk order notification:", err);
+        });
+      } catch (bulkNotifyError) {
+        console.error("Error sending bulk order notification:", bulkNotifyError);
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
