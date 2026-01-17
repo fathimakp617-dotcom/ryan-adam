@@ -63,7 +63,7 @@ export const products: Product[] = [
     story: "Inspired by the glamour of 1920s Paris, Elite captures the essence of sophistication and allure. The jasmine is sourced from Grasse, the perfume capital of the world.",
     price: 444,
     category: "Unisex",
-    size: "8ml",
+    size: "12ml",
     image: eliteMain,
     gallery: [eliteMain, eliteMain, eliteMain],
     notes: {
@@ -86,7 +86,7 @@ export const products: Product[] = [
     story: "Each bottle of Amber Crown contains the essence of 10,000 rose petals, hand-picked at the perfect moment of bloom. This fragrance is our tribute to eternal romance.",
     price: 444,
     category: "Unisex",
-    size: "8ml",
+    size: "12ml",
     image: amberCrownMain,
     gallery: [amberCrownMain, amberCrown2, amberCrown3],
     notes: {
@@ -109,7 +109,7 @@ export const products: Product[] = [
     story: "Inspired by ancient Arabian traditions, Legacy uses amber sourced from the Baltic Sea, aged for centuries. Combined with Madagascar vanilla, it creates an irresistible warmth.",
     price: 444,
     category: "Unisex",
-    size: "8ml",
+    size: "12ml",
     image: legacyMain,
     gallery: [legacyMain, legacyMain, legacyMain],
     notes: {
