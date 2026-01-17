@@ -431,6 +431,41 @@ serve(async (req) => {
       }
     }
 
+    // Send bulk order notification to admin and shipping (fire and forget)
+    if (totalQuantity >= 25) {
+      try {
+        console.log("Bulk order detected, sending notification to admin and shipping");
+        const bulkNotifyAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+        fetch(`${supabaseUrl}/functions/v1/send-bulk-order-notification`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${bulkNotifyAnonKey}`,
+          },
+          body: JSON.stringify({
+            order_number: order.order_number,
+            customer_name: customerName,
+            customer_email: customerEmail,
+            customer_phone: customerPhone,
+            total_quantity: totalQuantity,
+            subtotal: subtotal,
+            bulk_discount: bulkDiscount,
+            bulk_discount_percent: bulkDiscountPercent,
+            total: total,
+            items: validatedItems,
+            shipping_address: shippingAddress,
+            payment_method: orderRequest.payment_method,
+          }),
+        }).then(res => {
+          console.log("Bulk order notification sent, status:", res.status);
+        }).catch(err => {
+          console.error("Failed to send bulk order notification:", err);
+        });
+      } catch (bulkNotifyError) {
+        console.error("Error sending bulk order notification:", bulkNotifyError);
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
