@@ -635,7 +635,48 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      product_reviews_public: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          customer_name: string | null
+          id: string | null
+          is_approved: boolean | null
+          is_verified_purchase: boolean | null
+          product_id: string | null
+          rating: number | null
+          title: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          customer_name?: string | null
+          id?: string | null
+          is_approved?: boolean | null
+          is_verified_purchase?: boolean | null
+          product_id?: string | null
+          rating?: number | null
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          customer_name?: string | null
+          id?: string | null
+          is_approved?: boolean | null
+          is_verified_purchase?: boolean | null
+          product_id?: string | null
+          rating?: number | null
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_view_order: { Args: { order_email: string }; Returns: boolean }
