@@ -167,8 +167,8 @@ const handler = async (req: Request): Promise<Response> => {
     let validAffiliateCode: string | null = null;
     let affiliateDiscount = 0;
 
-    // Apply coupon if provided
-    if (order_data.coupon_code) {
+    // Apply coupon only if NO bulk discount is active
+    if (order_data.coupon_code && bulkDiscountPercent === 0) {
       console.log("Validating coupon for online payment:", order_data.coupon_code);
       
       // First get the full coupon details to update usage
@@ -214,10 +214,12 @@ const handler = async (req: Request): Promise<Response> => {
       } else {
         console.log("Coupon not found or inactive:", couponError?.message);
       }
+    } else if (order_data.coupon_code && bulkDiscountPercent > 0) {
+      console.log("Coupon ignored - bulk discount active");
     }
 
-    // Apply affiliate discount if provided (only if no coupon was applied)
-    if (order_data.affiliate_code && !validCouponCode) {
+    // Apply affiliate discount if provided (only if no coupon was applied AND no bulk discount)
+    if (order_data.affiliate_code && !validCouponCode && bulkDiscountPercent === 0) {
       console.log("Validating affiliate code:", order_data.affiliate_code);
       
       const { data: affiliate, error: affiliateError } = await supabase
@@ -244,6 +246,8 @@ const handler = async (req: Request): Promise<Response> => {
         
         console.log("Affiliate stats updated");
       }
+    } else if (order_data.affiliate_code && bulkDiscountPercent > 0) {
+      console.log("Affiliate code ignored - bulk discount active");
     }
 
     const totalDiscount = bulkDiscount + couponDiscount + affiliateDiscount;
