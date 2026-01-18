@@ -78,11 +78,11 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
 
   const fetchReviews = async () => {
     try {
+      // Use the secure public view that excludes customer_email
       const { data, error } = await supabase
-        .from("product_reviews")
+        .from("product_reviews_public")
         .select("*")
         .eq("product_id", productId)
-        .eq("is_approved", true)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
