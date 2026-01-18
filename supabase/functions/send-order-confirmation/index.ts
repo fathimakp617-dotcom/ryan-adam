@@ -1112,19 +1112,28 @@ Thank you for shopping with Rayn Adam!
 
     console.log("Customer email sent successfully:", emailResponse);
 
-    // Send admin notification email for packing and shipping
+    // Send admin and shipping notification email for packing and shipping
     const adminOrderEmailRaw = Deno.env.get("ADMIN_ORDER_EMAIL") || "";
+    const shippingEmailsRaw = Deno.env.get("SHIPPING_EMAILS") || "";
+    
     const adminEmails = adminOrderEmailRaw
       .split(",")
       .map((e) => e.trim().toLowerCase())
       .filter((e) => e.length > 0);
+    
+    const shippingEmails = shippingEmailsRaw
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter((e) => e.length > 0);
+    
+    // Combine and deduplicate all recipients
+    const allRecipients = [...new Set([...adminEmails, ...shippingEmails])];
 
-    console.log(
-      "Admin emails configured:",
-      adminEmails.length > 0 ? adminEmails.join(", ") : "NONE"
-    );
+    console.log("Admin emails configured:", adminEmails.length > 0 ? adminEmails.join(", ") : "NONE");
+    console.log("Shipping emails configured:", shippingEmails.length > 0 ? shippingEmails.join(", ") : "NONE");
+    console.log("Total unique recipients:", allRecipients.length);
 
-    if (adminEmails.length > 0) {
+    if (allRecipients.length > 0) {
       try {
         console.log("Generating admin email HTML...");
         const adminEmailHTML = generateAdminOrderEmailHTML(orderData);
@@ -1157,7 +1166,7 @@ Invoice and shipping label are attached.
         const sendAdminEmail = async () =>
           await resend.emails.send({
             from: "Rayn Adam <notifications@raynadamperfume.com>",
-            to: adminEmails,
+            to: allRecipients,
             subject: `🚚 NEW ORDER - ${orderData.order_number} - ${orderData.customer_name}`,
             html: adminEmailHTML,
             text: adminPlainText,
@@ -1173,7 +1182,7 @@ Invoice and shipping label are attached.
             ],
           });
 
-        console.log("Sending admin notification email to:", adminEmails.join(", "));
+        console.log("Sending order notification email to:", allRecipients.join(", "));
         let adminResp = await sendAdminEmail();
 
         // Resend API can rate-limit bursts; do one retry with a short backoff.
@@ -1184,16 +1193,16 @@ Invoice and shipping label are attached.
         }
 
         if ((adminResp as any)?.error) {
-          console.error("Admin notification email failed:", JSON.stringify(adminResp));
+          console.error("Order notification email failed:", JSON.stringify(adminResp));
         } else {
-          console.log("Admin notification email sent successfully:", JSON.stringify(adminResp));
+          console.log("Order notification email sent successfully:", JSON.stringify(adminResp));
         }
       } catch (adminError: any) {
-        console.error("Failed to send admin notification email:", adminError?.message || adminError);
-        console.error("Admin email error details:", JSON.stringify(adminError));
+        console.error("Failed to send order notification email:", adminError?.message || adminError);
+        console.error("Email error details:", JSON.stringify(adminError));
       }
     } else {
-      console.warn("ADMIN_ORDER_EMAIL not configured, skipping admin notification");
+      console.warn("No ADMIN_ORDER_EMAIL or SHIPPING_EMAILS configured, skipping order notification");
     }
 
     return new Response(JSON.stringify({ success: true, data: emailResponse }), {
