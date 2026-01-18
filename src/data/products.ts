@@ -14,6 +14,8 @@ export interface Product {
   description: string;
   story: string;
   price: number;
+  originalPrice: number;
+  discountPercent: number;
   category: string;
   size: string;
   image: string;
@@ -39,6 +41,8 @@ export const products: Product[] = [
     description: "A burst of Mediterranean sunshine, Combo awakens the senses with its vibrant blend of Italian citrus and aromatic herbs. Pure energy in a bottle.",
     story: "Capturing the spirit of the Amalfi Coast, Combo features hand-pressed Calabrian bergamot and Sicilian lemon. It's a celebration of life, light, and the joy of summer.",
     price: 444,
+    originalPrice: 888,
+    discountPercent: 50,
     category: "Unisex",
     size: "3ml PER BOTTLE",
     image: comboMain,
@@ -62,6 +66,8 @@ export const products: Product[] = [
     description: "Like the caress of midnight silk, Elite envelops you in an embrace of jasmine and patchouli. This sensuous fragrance is for those who live for the night.",
     story: "Inspired by the glamour of 1920s Paris, Elite captures the essence of sophistication and allure. The jasmine is sourced from Grasse, the perfume capital of the world.",
     price: 444,
+    originalPrice: 888,
+    discountPercent: 50,
     category: "Unisex",
     size: "12ml",
     image: eliteMain,
@@ -85,6 +91,8 @@ export const products: Product[] = [
     description: "A celebration of the queen of flowers, Amber Crown is a romantic masterpiece that captures the essence of a thousand petals. Delicate yet unforgettable.",
     story: "Each bottle of Amber Crown contains the essence of 10,000 rose petals, hand-picked at the perfect moment of bloom. This fragrance is our tribute to eternal romance.",
     price: 444,
+    originalPrice: 888,
+    discountPercent: 50,
     category: "Unisex",
     size: "12ml",
     image: amberCrownMain,
@@ -108,6 +116,8 @@ export const products: Product[] = [
     description: "A golden nectar of warmth and comfort, Legacy wraps you in a cocoon of precious resins and vanilla. This addictive scent is liquid gold for the soul.",
     story: "Inspired by ancient Arabian traditions, Legacy uses amber sourced from the Baltic Sea, aged for centuries. Combined with Madagascar vanilla, it creates an irresistible warmth.",
     price: 444,
+    originalPrice: 888,
+    discountPercent: 50,
     category: "Unisex",
     size: "12ml",
     image: legacyMain,

@@ -447,9 +447,19 @@ const Shop = () => {
                                     </span>
                                   ))}
                                 </div>
-                                <p className="text-xl text-primary font-medium mt-4">
-                                  {formatPrice(product.price)}
-                                </p>
+                                <div className="mt-4 flex flex-col items-center gap-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xl text-primary font-medium">
+                                      {formatPrice(product.price)}
+                                    </span>
+                                    <span className="text-sm text-muted-foreground line-through">
+                                      {formatPrice(product.originalPrice)}
+                                    </span>
+                                  </div>
+                                  <span className="bg-emerald-500/20 text-emerald-400 text-xs font-medium px-2 py-0.5 rounded-full">
+                                    {product.discountPercent}% OFF
+                                  </span>
+                                </div>
                                 <Button
                                   size="sm"
                                   className="mt-4 w-full bg-transparent border border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all"
@@ -498,9 +508,19 @@ const Shop = () => {
                           </div>
 
                           <div className="flex flex-col items-end justify-center gap-4">
-                            <p className="text-2xl text-primary font-medium">
-                              {formatPrice(product.price)}
-                            </p>
+                            <div className="text-right">
+                              <div className="flex items-center gap-2">
+                                <span className="text-2xl text-primary font-medium">
+                                  {formatPrice(product.price)}
+                                </span>
+                                <span className="text-lg text-muted-foreground line-through">
+                                  {formatPrice(product.originalPrice)}
+                                </span>
+                              </div>
+                              <span className="bg-emerald-500/20 text-emerald-400 text-xs font-medium px-2 py-0.5 rounded-full">
+                                {product.discountPercent}% OFF
+                              </span>
+                            </div>
                             <Link to={`/product/${product.id}`}>
                               <Button className="bg-primary hover:bg-primary/90 text-primary-foreground px-8">
                                 VIEW DETAILS
