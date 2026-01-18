@@ -261,9 +261,17 @@ const ProductDetail = () => {
                   </motion.div>
                 </div>
 
-                <motion.div variants={staggerItem} className="flex items-baseline gap-4">
-                  <span className="text-3xl sm:text-4xl text-primary font-heading">
-                    {formatPrice(product.price)}
+                <motion.div variants={staggerItem} className="flex items-center gap-4 flex-wrap">
+                  <div className="flex items-baseline gap-3">
+                    <span className="text-3xl sm:text-4xl text-primary font-heading">
+                      {formatPrice(product.price)}
+                    </span>
+                    <span className="text-lg sm:text-xl text-muted-foreground line-through">
+                      {formatPrice(product.originalPrice)}
+                    </span>
+                  </div>
+                  <span className="bg-emerald-500/20 text-emerald-400 text-sm font-medium px-3 py-1 rounded-full">
+                    {product.discountPercent}% OFF
                   </span>
                   <span className="text-sm text-muted-foreground">
                     {product.size} • {product.concentration}

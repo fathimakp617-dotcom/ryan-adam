@@ -58,7 +58,13 @@ const RelatedProducts = ({ currentProductId, currentCategory }: RelatedProductsP
                         {item.name}
                       </h3>
                       <p className="text-sm text-muted-foreground mt-1">{item.tagline}</p>
-                      <p className="text-primary font-medium mt-2">{formatPrice(item.price)}</p>
+                      <div className="flex items-center justify-center gap-2 flex-wrap mt-2">
+                        <span className="text-primary font-medium">{formatPrice(item.price)}</span>
+                        <span className="text-sm text-muted-foreground line-through">{formatPrice(item.originalPrice)}</span>
+                        <span className="bg-emerald-500/20 text-emerald-400 text-xs font-medium px-1.5 py-0.5 rounded-full">
+                          {item.discountPercent}% OFF
+                        </span>
+                      </div>
                     </div>
                   </Link>
                   <Button
