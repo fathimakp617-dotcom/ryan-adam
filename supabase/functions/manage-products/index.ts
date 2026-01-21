@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { action, product } = await req.json();
+    const { action, product, imageData } = await req.json();
 
     switch (action) {
       case "list": {
@@ -65,6 +65,64 @@ Deno.serve(async (req) => {
         if (error) throw error;
 
         return new Response(JSON.stringify({ products }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      case "upload_image": {
+        // Handle image upload
+        if (!imageData || !imageData.base64 || !imageData.fileName || !imageData.productId) {
+          return new Response(JSON.stringify({ error: "Missing image data" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Decode base64 image
+        const base64Data = imageData.base64.replace(/^data:image\/\w+;base64,/, "");
+        const imageBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+        
+        // Generate unique filename
+        const fileExt = imageData.fileName.split(".").pop() || "jpg";
+        const uniqueFileName = `${imageData.productId}/${Date.now()}.${fileExt}`;
+
+        // Upload to storage
+        const { data: uploadData, error: uploadError } = await supabaseClient.storage
+          .from("product-images")
+          .upload(uniqueFileName, imageBytes, {
+            contentType: imageData.contentType || "image/jpeg",
+            upsert: true,
+          });
+
+        if (uploadError) {
+          console.error("Upload error:", uploadError);
+          throw uploadError;
+        }
+
+        // Get public URL
+        const { data: urlData } = supabaseClient.storage
+          .from("product-images")
+          .getPublicUrl(uniqueFileName);
+
+        const imageUrl = urlData.publicUrl;
+
+        // Update product with new image URL
+        const { error: updateError } = await supabaseClient
+          .from("products")
+          .update({ image_url: imageUrl })
+          .eq("id", imageData.productId);
+
+        if (updateError) throw updateError;
+
+        // Log activity
+        await supabaseClient.from("activity_logs").insert({
+          actor_email: session.email,
+          actor_role: "admin",
+          action_type: "product_image_uploaded",
+          action_details: { product_id: imageData.productId, image_url: imageUrl },
+        });
+
+        return new Response(JSON.stringify({ image_url: imageUrl }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -84,6 +142,7 @@ Deno.serve(async (req) => {
             size: product.size || "100ml",
             image_url: product.image_url,
             is_active: product.is_active ?? true,
+            notes: product.notes || { top: [], middle: [], base: [] },
           })
           .select()
           .single();
@@ -104,20 +163,23 @@ Deno.serve(async (req) => {
       }
 
       case "update": {
+        const updateData: Record<string, unknown> = {};
+        
+        if (product.name !== undefined) updateData.name = product.name;
+        if (product.description !== undefined) updateData.description = product.description;
+        if (product.price !== undefined) updateData.price = product.price;
+        if (product.original_price !== undefined) updateData.original_price = product.original_price;
+        if (product.discount_percent !== undefined) updateData.discount_percent = product.discount_percent;
+        if (product.stock_quantity !== undefined) updateData.stock_quantity = product.stock_quantity;
+        if (product.category !== undefined) updateData.category = product.category;
+        if (product.size !== undefined) updateData.size = product.size;
+        if (product.image_url !== undefined) updateData.image_url = product.image_url;
+        if (product.is_active !== undefined) updateData.is_active = product.is_active;
+        if (product.notes !== undefined) updateData.notes = product.notes;
+
         const { data: updatedProduct, error } = await supabaseClient
           .from("products")
-          .update({
-            name: product.name,
-            description: product.description,
-            price: product.price,
-            original_price: product.original_price,
-            discount_percent: product.discount_percent,
-            stock_quantity: product.stock_quantity,
-            category: product.category,
-            size: product.size,
-            image_url: product.image_url,
-            is_active: product.is_active,
-          })
+          .update(updateData)
           .eq("id", product.id)
           .select()
           .single();
@@ -129,7 +191,7 @@ Deno.serve(async (req) => {
           actor_email: session.email,
           actor_role: "admin",
           action_type: "product_updated",
-          action_details: { product_id: product.id, changes: product },
+          action_details: { product_id: product.id, changes: updateData },
         });
 
         return new Response(JSON.stringify({ product: updatedProduct }), {
@@ -138,6 +200,16 @@ Deno.serve(async (req) => {
       }
 
       case "delete": {
+        // Delete product images from storage first
+        const { data: files } = await supabaseClient.storage
+          .from("product-images")
+          .list(product.id);
+
+        if (files && files.length > 0) {
+          const filePaths = files.map(f => `${product.id}/${f.name}`);
+          await supabaseClient.storage.from("product-images").remove(filePaths);
+        }
+
         const { error } = await supabaseClient
           .from("products")
           .delete()
@@ -187,9 +259,10 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in manage-products:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
