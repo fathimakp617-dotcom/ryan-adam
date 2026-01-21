@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Package, Loader2, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, Loader2, AlertCircle, Upload, Image, X } from "lucide-react";
 
 interface Product {
   id: string;
@@ -44,6 +44,11 @@ interface Product {
   size: string;
   image_url: string;
   is_active: boolean;
+  notes: {
+    top: string[];
+    middle: string[];
+    base: string[];
+  };
   created_at: string;
 }
 
@@ -62,8 +67,10 @@ const getAdminSession = () => {
 const AdminProducts = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [uploadingFor, setUploadingFor] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     id: "",
     name: "",
@@ -76,6 +83,9 @@ const AdminProducts = () => {
     size: "100ml",
     image_url: "",
     is_active: true,
+    notes_top: "",
+    notes_middle: "",
+    notes_base: "",
   });
 
   const { data: products, isLoading } = useQuery({
@@ -94,6 +104,46 @@ const AdminProducts = () => {
     },
   });
 
+  const uploadImageMutation = useMutation({
+    mutationFn: async ({ productId, file }: { productId: string; file: File }) => {
+      const session = getAdminSession();
+      if (!session) throw new Error("Not authenticated");
+
+      // Convert file to base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const { data, error } = await supabase.functions.invoke("manage-products", {
+        body: {
+          action: "upload_image",
+          imageData: {
+            base64,
+            fileName: file.name,
+            contentType: file.type,
+            productId,
+          },
+        },
+        headers: { Authorization: `Bearer ${session.token}` },
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      toast({ title: "Image uploaded successfully" });
+      setUploadingFor(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      setUploadingFor(null);
+    },
+  });
+
   const createMutation = useMutation({
     mutationFn: async (product: typeof formData) => {
       const session = getAdminSession();
@@ -103,11 +153,22 @@ const AdminProducts = () => {
         body: {
           action: "create",
           product: {
-            ...product,
+            id: product.id,
+            name: product.name,
+            description: product.description,
             price: parseFloat(product.price),
             original_price: parseFloat(product.original_price),
             discount_percent: parseInt(product.discount_percent),
             stock_quantity: parseInt(product.stock_quantity),
+            category: product.category,
+            size: product.size,
+            image_url: product.image_url,
+            is_active: product.is_active,
+            notes: {
+              top: product.notes_top.split(",").map(n => n.trim()).filter(Boolean),
+              middle: product.notes_middle.split(",").map(n => n.trim()).filter(Boolean),
+              base: product.notes_base.split(",").map(n => n.trim()).filter(Boolean),
+            },
           },
         },
         headers: { Authorization: `Bearer ${session.token}` },
@@ -122,7 +183,7 @@ const AdminProducts = () => {
       resetForm();
       toast({ title: "Product created successfully" });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
@@ -136,11 +197,22 @@ const AdminProducts = () => {
         body: {
           action: "update",
           product: {
-            ...product,
+            id: product.id,
+            name: product.name,
+            description: product.description,
             price: parseFloat(product.price),
             original_price: parseFloat(product.original_price),
             discount_percent: parseInt(product.discount_percent),
             stock_quantity: parseInt(product.stock_quantity),
+            category: product.category,
+            size: product.size,
+            image_url: product.image_url,
+            is_active: product.is_active,
+            notes: {
+              top: product.notes_top.split(",").map(n => n.trim()).filter(Boolean),
+              middle: product.notes_middle.split(",").map(n => n.trim()).filter(Boolean),
+              base: product.notes_base.split(",").map(n => n.trim()).filter(Boolean),
+            },
           },
         },
         headers: { Authorization: `Bearer ${session.token}` },
@@ -155,7 +227,7 @@ const AdminProducts = () => {
       resetForm();
       toast({ title: "Product updated successfully" });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
@@ -177,7 +249,7 @@ const AdminProducts = () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       toast({ title: "Product deleted successfully" });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
@@ -199,7 +271,7 @@ const AdminProducts = () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       toast({ title: "Stock updated" });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
@@ -217,6 +289,9 @@ const AdminProducts = () => {
       size: "100ml",
       image_url: "",
       is_active: true,
+      notes_top: "",
+      notes_middle: "",
+      notes_base: "",
     });
   };
 
@@ -234,6 +309,9 @@ const AdminProducts = () => {
       size: product.size || "100ml",
       image_url: product.image_url || "",
       is_active: product.is_active,
+      notes_top: product.notes?.top?.join(", ") || "",
+      notes_middle: product.notes?.middle?.join(", ") || "",
+      notes_base: product.notes?.base?.join(", ") || "",
     });
   };
 
@@ -244,6 +322,19 @@ const AdminProducts = () => {
     } else {
       createMutation.mutate(formData);
     }
+  };
+
+  const handleImageUpload = (productId: string, file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Error", description: "Please select an image file", variant: "destructive" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Error", description: "Image must be less than 5MB", variant: "destructive" });
+      return;
+    }
+    setUploadingFor(productId);
+    uploadImageMutation.mutate({ productId, file });
   };
 
   const generateSlug = (name: string) => {
@@ -376,8 +467,11 @@ const AdminProducts = () => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="3ml">3ml</SelectItem>
+              <SelectItem value="12ml">12ml</SelectItem>
               <SelectItem value="50ml">50ml</SelectItem>
               <SelectItem value="100ml">100ml</SelectItem>
+              <SelectItem value="3ml PER BOTTLE">3ml PER BOTTLE</SelectItem>
               <SelectItem value="Set of 2">Set of 2</SelectItem>
               <SelectItem value="Set of 3">Set of 3</SelectItem>
             </SelectContent>
@@ -385,8 +479,42 @@ const AdminProducts = () => {
         </div>
       </div>
 
+      {/* Fragrance Notes */}
+      <div className="space-y-3">
+        <Label className="text-base font-medium">Fragrance Notes (comma-separated)</Label>
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <Label htmlFor="notes_top" className="text-sm text-muted-foreground">Top Notes</Label>
+            <Input
+              id="notes_top"
+              value={formData.notes_top}
+              onChange={(e) => setFormData({ ...formData, notes_top: e.target.value })}
+              placeholder="Bergamot, Lemon"
+            />
+          </div>
+          <div>
+            <Label htmlFor="notes_middle" className="text-sm text-muted-foreground">Middle Notes</Label>
+            <Input
+              id="notes_middle"
+              value={formData.notes_middle}
+              onChange={(e) => setFormData({ ...formData, notes_middle: e.target.value })}
+              placeholder="Jasmine, Rose"
+            />
+          </div>
+          <div>
+            <Label htmlFor="notes_base" className="text-sm text-muted-foreground">Base Notes</Label>
+            <Input
+              id="notes_base"
+              value={formData.notes_base}
+              onChange={(e) => setFormData({ ...formData, notes_base: e.target.value })}
+              placeholder="Vanilla, Musk"
+            />
+          </div>
+        </div>
+      </div>
+
       <div>
-        <Label htmlFor="image_url">Image URL (optional)</Label>
+        <Label htmlFor="image_url">Image URL (or upload after creating)</Label>
         <Input
           id="image_url"
           value={formData.image_url}
@@ -427,10 +555,25 @@ const AdminProducts = () => {
 
   return (
     <div className="space-y-6">
+      {/* Hidden file input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        accept="image/*"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file && uploadingFor) {
+            handleImageUpload(uploadingFor, file);
+          }
+          e.target.value = "";
+        }}
+      />
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-heading font-bold">Products</h1>
-          <p className="text-muted-foreground">Manage your product inventory and stock</p>
+          <p className="text-muted-foreground">Manage your product inventory and stock ({products?.length || 0} products)</p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
@@ -462,6 +605,7 @@ const AdminProducts = () => {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Image</TableHead>
               <TableHead>Product</TableHead>
               <TableHead>Price</TableHead>
               <TableHead>Stock</TableHead>
@@ -474,14 +618,61 @@ const AdminProducts = () => {
             {products?.map((product) => (
               <TableRow key={product.id}>
                 <TableCell>
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded bg-muted flex items-center justify-center">
-                      <Package className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <div className="font-medium">{product.name}</div>
-                      <div className="text-sm text-muted-foreground">{product.id}</div>
-                    </div>
+                  <div className="relative group">
+                    {product.image_url ? (
+                      <div className="relative h-16 w-16 rounded overflow-hidden">
+                        <img
+                          src={product.image_url}
+                          alt={product.name}
+                          className="h-full w-full object-cover"
+                        />
+                        <button
+                          onClick={() => {
+                            setUploadingFor(product.id);
+                            fileInputRef.current?.click();
+                          }}
+                          className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                        >
+                          {uploadingFor === product.id && uploadImageMutation.isPending ? (
+                            <Loader2 className="h-5 w-5 text-white animate-spin" />
+                          ) : (
+                            <Upload className="h-5 w-5 text-white" />
+                          )}
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setUploadingFor(product.id);
+                          fileInputRef.current?.click();
+                        }}
+                        className="h-16 w-16 rounded bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
+                      >
+                        {uploadingFor === product.id && uploadImageMutation.isPending ? (
+                          <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />
+                        ) : (
+                          <div className="text-center">
+                            <Image className="h-5 w-5 text-muted-foreground mx-auto" />
+                            <span className="text-[10px] text-muted-foreground">Upload</span>
+                          </div>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div>
+                    <div className="font-medium">{product.name}</div>
+                    <div className="text-sm text-muted-foreground">{product.id}</div>
+                    {product.notes?.top?.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {product.notes.top.slice(0, 2).map((note) => (
+                          <span key={note} className="text-xs px-1.5 py-0.5 bg-muted rounded">
+                            {note}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell>
@@ -556,7 +747,7 @@ const AdminProducts = () => {
             ))}
             {(!products || products.length === 0) && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   No products found. Add your first product!
                 </TableCell>
               </TableRow>
