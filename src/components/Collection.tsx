@@ -2,9 +2,12 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { products, formatPrice } from "@/data/products";
 import { fadeInUp, staggerContainer, staggerItem, lineReveal } from "@/lib/animations";
+import { Badge } from "@/components/ui/badge";
+import { useProductStock, isProductSoldOut } from "@/hooks/useProductStock";
 
 const Collection = () => {
   const featuredProducts = products.slice(0, 3);
+  const { data: stockMap } = useProductStock();
 
   return (
     <section id="collection" className="py-24 sm:py-32 bg-background relative overflow-hidden">
@@ -62,10 +65,18 @@ const Collection = () => {
 
                   {/* Product Image */}
                   <div className="relative aspect-square mb-6 overflow-hidden">
+                    {/* Sold Out Badge */}
+                    {isProductSoldOut(stockMap, product.id) && (
+                      <div className="absolute top-2 right-2 z-10">
+                        <Badge variant="destructive" className="text-xs font-semibold">
+                          SOLD OUT
+                        </Badge>
+                      </div>
+                    )}
                     <motion.img
                       src={product.image}
                       alt={product.name}
-                      className="w-full h-full object-cover"
+                      className={`w-full h-full object-cover ${isProductSoldOut(stockMap, product.id) ? 'opacity-60' : ''}`}
                       whileHover={{ scale: 1.08 }}
                       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
                     />

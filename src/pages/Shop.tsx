@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FloatingParticles from "@/components/FloatingParticles";
@@ -19,6 +20,7 @@ import PageTransition from "@/components/PageTransition";
 import { products, formatPrice } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
+import { useProductStock, isProductSoldOut } from "@/hooks/useProductStock";
 import { fadeInUp, staggerContainer, staggerItem } from "@/lib/animations";
 import { toast } from "sonner";
 
@@ -44,6 +46,7 @@ const Shop = () => {
   const [selectedPriceRange, setSelectedPriceRange] = useState(0);
   const [sortBy, setSortBy] = useState("featured");
   const [showFilters, setShowFilters] = useState(false);
+  const { data: stockMap } = useProductStock();
 
   const filteredProducts = useMemo(() => {
     let result = [...products];
@@ -419,7 +422,16 @@ const Shop = () => {
                               <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-primary/60" />
                               <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-primary/60" />
 
-                              <div className="aspect-square overflow-hidden mb-4">
+                              {/* Sold Out Badge */}
+                              {isProductSoldOut(stockMap, product.id) && (
+                                <div className="absolute top-4 right-4 z-10">
+                                  <Badge variant="destructive" className="text-xs font-semibold">
+                                    SOLD OUT
+                                  </Badge>
+                                </div>
+                              )}
+
+                              <div className={`aspect-square overflow-hidden mb-4 ${isProductSoldOut(stockMap, product.id) ? 'opacity-60' : ''}`}>
                                 <img
                                   src={product.image}
                                   alt={product.name}

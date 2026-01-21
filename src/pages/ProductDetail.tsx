@@ -2,8 +2,9 @@ import { useState, useEffect, memo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Heart, Share2, Truck, Shield, RotateCcw, Star, ShoppingBag, PenLine, Zap } from "lucide-react";
+import { ArrowLeft, Heart, Share2, Truck, Shield, RotateCcw, Star, ShoppingBag, PenLine, Zap, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -14,6 +15,7 @@ import PageTransition from "@/components/PageTransition";
 import { getProductById, formatPrice, products } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
+import { useProductStock, isProductSoldOut, getProductStock } from "@/hooks/useProductStock";
 import { fadeInUp, fadeInLeft, staggerContainer, staggerItem } from "@/lib/animations";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +31,10 @@ const ProductDetail = () => {
   const [totalReviews, setTotalReviews] = useState(0);
   const { addToCart, buyNow } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
+  const { data: stockMap } = useProductStock();
+  
+  const isSoldOut = isProductSoldOut(stockMap, id || "");
+  const stockQuantity = getProductStock(stockMap, id || "");
 
   useEffect(() => {
     if (id) {
@@ -67,6 +73,10 @@ const ProductDetail = () => {
   const inWishlist = isInWishlist(product.id);
 
   const handleAddToCart = () => {
+    if (isSoldOut) {
+      toast.error("This product is currently sold out");
+      return;
+    }
     addToCart(product, quantity);
     toast.success(`${product.name} added to cart`, {
       description: `Quantity: ${quantity}`,
@@ -74,6 +84,10 @@ const ProductDetail = () => {
   };
 
   const handleBuyNow = () => {
+    if (isSoldOut) {
+      toast.error("This product is currently sold out");
+      return;
+    }
     buyNow(product, quantity);
     navigate("/checkout");
   };
@@ -182,6 +196,15 @@ const ProductDetail = () => {
                   <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-primary/60 z-10" />
                   <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-primary/60 z-10" />
                   <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-primary/60 z-10" />
+                  
+                  {/* Sold Out Badge */}
+                  {isSoldOut && (
+                    <div className="absolute top-8 right-8 z-20">
+                      <Badge variant="destructive" className="text-sm font-semibold px-4 py-2">
+                        SOLD OUT
+                      </Badge>
+                    </div>
+                  )}
                   
                   <AnimatePresence mode="wait">
                     <motion.img
@@ -299,20 +322,38 @@ const ProductDetail = () => {
 
                 {/* Add to Cart & Actions */}
                 <motion.div variants={staggerItem} className="space-y-4 pt-4">
+                  {/* Sold Out Notice */}
+                  {isSoldOut && (
+                    <div className="flex items-center gap-2 p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
+                      <AlertCircle className="w-5 h-5 text-destructive" />
+                      <span className="text-destructive font-medium">This product is currently sold out</span>
+                    </div>
+                  )}
+                  
+                  {/* Low Stock Warning */}
+                  {!isSoldOut && stockQuantity > 0 && stockQuantity <= 10 && (
+                    <div className="flex items-center gap-2 p-3 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+                      <AlertCircle className="w-4 h-4 text-orange-500" />
+                      <span className="text-orange-500 text-sm">Only {stockQuantity} left in stock!</span>
+                    </div>
+                  )}
+                  
                   <div className="flex flex-col sm:flex-row gap-4">
                     <Button
                       size="lg"
                       onClick={handleAddToCart}
-                      className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground py-6 text-sm tracking-widest font-medium transition-all duration-300 hover:shadow-[0_0_30px_hsl(var(--primary)/0.4)] flex items-center justify-center gap-2"
+                      disabled={isSoldOut}
+                      className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground py-6 text-sm tracking-widest font-medium transition-all duration-300 hover:shadow-[0_0_30px_hsl(var(--primary)/0.4)] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none"
                     >
                       <ShoppingBag className="w-5 h-5" />
-                      ADD TO CART
+                      {isSoldOut ? "SOLD OUT" : "ADD TO CART"}
                     </Button>
                     <Button
                       size="lg"
                       onClick={handleBuyNow}
+                      disabled={isSoldOut}
                       variant="secondary"
-                      className="flex-1 py-6 text-sm tracking-widest font-medium transition-all duration-300 flex items-center justify-center gap-2"
+                      className="flex-1 py-6 text-sm tracking-widest font-medium transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Zap className="w-5 h-5" />
                       BUY NOW
