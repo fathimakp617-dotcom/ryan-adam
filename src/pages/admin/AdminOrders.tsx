@@ -1,5 +1,5 @@
 import { useEffect, useState, memo, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminOrders, useInvalidateAdminData, type Order, type OrderItem, type ShippingAddress } from "@/hooks/useAdminData";
@@ -46,7 +46,8 @@ import {
 
 const AdminOrders = () => {
   const [searchParams] = useSearchParams();
-  const { data: cachedOrders = [], isLoading, refetch } = useAdminOrders();
+  const navigate = useNavigate();
+  const { data: cachedOrders = [], isLoading, error } = useAdminOrders();
   const { invalidateOrders } = useInvalidateAdminData();
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
@@ -63,6 +64,22 @@ const AdminOrders = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
   const { toast } = useToast();
+
+  // Handle expired admin session (avoid blank/error loops)
+  useEffect(() => {
+    if (!error) return;
+    const msg = String((error as any)?.message ?? "").toLowerCase();
+    const status = (error as any)?.status;
+    if (status === 401 || msg.includes("session expired")) {
+      sessionStorage.removeItem("rayn_admin_session");
+      toast({
+        title: "Session Expired",
+        description: "Please log in again to continue.",
+        variant: "destructive",
+      });
+      navigate("/admin", { replace: true });
+    }
+  }, [error, navigate, toast]);
 
   // Sync cached orders to local state
   useEffect(() => {
@@ -118,9 +135,7 @@ const AdminOrders = () => {
     filterOrders();
   }, [orders, searchQuery, statusFilter, dateFrom, dateTo]);
 
-  const fetchOrders = () => {
-    invalidateOrders();
-  };
+  const fetchOrders = () => invalidateOrders();
 
   const filterOrders = () => {
     let filtered = [...orders];
