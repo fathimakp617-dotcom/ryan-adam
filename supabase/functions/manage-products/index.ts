@@ -1,8 +1,76 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { Resend } from "https://esm.sh/resend@2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+const LOW_STOCK_THRESHOLD = 10;
+
+const parseEmailList = (value: string | undefined | null): string[] => {
+  if (!value) return [];
+  return value
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+};
+
+const sendLowStockAlert = async (params: {
+  productId: string;
+  productName?: string;
+  newStock: number;
+  recipients: string[];
+  updatedBy: string;
+  supabaseUrl: string;
+  supabaseServiceKey: string;
+}) => {
+  const { productId, productName, newStock, recipients, updatedBy, supabaseUrl, supabaseServiceKey } = params;
+  if (newStock >= LOW_STOCK_THRESHOLD) return;
+  if (!recipients.length) return;
+
+  try {
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    if (!resendApiKey) {
+      console.warn('RESEND_API_KEY missing; skipping low stock email');
+      return;
+    }
+
+    const resend = new Resend(resendApiKey);
+    const subject = `⚠️ Low stock: ${productName ?? productId} (${newStock} left)`;
+    const html = `
+      <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; line-height: 1.5;">
+        <h2 style="margin: 0 0 12px;">Low stock alert</h2>
+        <p style="margin: 0 0 8px;"><strong>Product:</strong> ${productName ?? productId}</p>
+        <p style="margin: 0 0 8px;"><strong>Product ID:</strong> ${productId}</p>
+        <p style="margin: 0 0 8px;"><strong>Remaining stock:</strong> ${newStock}</p>
+        <p style="margin: 0 0 8px;"><strong>Updated by:</strong> ${updatedBy}</p>
+        <p style="margin: 16px 0 0; color: #555;">This is an automated alert.</p>
+      </div>
+    `;
+
+    const emailRes = await resend.emails.send({
+      from: 'Rayn Adam <notifications@raynadamperfume.com>',
+      to: recipients,
+      subject,
+      html,
+    });
+
+    console.log('Low stock email sent (admin update):', { productId, newStock, emailRes });
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    await supabase.from('staff_notifications').insert({
+      staff_email: 'system',
+      notification_type: 'low_stock_alert',
+      subject,
+      recipients,
+      sent_by: updatedBy,
+      order_number: null,
+      details: { product_id: productId, product_name: productName ?? null, stock_quantity: newStock, source: 'admin_update_stock' },
+    });
+  } catch (err) {
+    console.error('Failed to send low stock alert (admin update):', err);
+  }
 };
 
 Deno.serve(async (req) => {
@@ -231,6 +299,14 @@ Deno.serve(async (req) => {
       }
 
       case "update_stock": {
+        const { data: current, error: currentErr } = await supabaseClient
+          .from('products')
+          .select('stock_quantity, name')
+          .eq('id', product.id)
+          .single();
+
+        if (currentErr) throw currentErr;
+
         const { data: updatedProduct, error } = await supabaseClient
           .from("products")
           .update({ stock_quantity: product.stock_quantity })
@@ -247,6 +323,27 @@ Deno.serve(async (req) => {
           action_type: "stock_updated",
           action_details: { product_id: product.id, new_quantity: product.stock_quantity },
         });
+
+        // Low stock alert (only when crossing threshold)
+        const before = Number(current.stock_quantity ?? 0);
+        const after = Number(updatedProduct?.stock_quantity ?? product.stock_quantity ?? 0);
+        if (before >= LOW_STOCK_THRESHOLD && after < LOW_STOCK_THRESHOLD) {
+          const recipients = (() => {
+            const adminOrderEmails = parseEmailList(Deno.env.get('ADMIN_ORDER_EMAIL'));
+            const adminEmails = parseEmailList(Deno.env.get('ADMIN_EMAILS'));
+            return [...new Set([...adminOrderEmails, ...adminEmails])];
+          })();
+
+          await sendLowStockAlert({
+            productId: product.id,
+            productName: current.name ?? undefined,
+            newStock: after,
+            recipients,
+            updatedBy: session.email,
+            supabaseUrl: Deno.env.get('SUPABASE_URL') ?? '',
+            supabaseServiceKey: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+          });
+        }
 
         return new Response(JSON.stringify({ product: updatedProduct }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },

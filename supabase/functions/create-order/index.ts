@@ -1,9 +1,78 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { Resend } from "https://esm.sh/resend@2.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+const LOW_STOCK_THRESHOLD = 10;
+
+const parseEmailList = (value: string | undefined | null): string[] => {
+  if (!value) return [];
+  return value
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+};
+
+const sendLowStockAlert = async (params: {
+  productId: string;
+  productName?: string;
+  newStock: number;
+  orderNumber?: string;
+  recipients: string[];
+  supabaseUrl: string;
+  supabaseServiceKey: string;
+}) => {
+  const { productId, productName, newStock, orderNumber, recipients, supabaseUrl, supabaseServiceKey } = params;
+  if (newStock >= LOW_STOCK_THRESHOLD) return;
+  if (!recipients.length) return;
+
+  try {
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    if (!resendApiKey) {
+      console.warn('RESEND_API_KEY missing; skipping low stock email');
+      return;
+    }
+
+    const resend = new Resend(resendApiKey);
+    const subject = `⚠️ Low stock: ${productName ?? productId} (${newStock} left)`;
+    const html = `
+      <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; line-height: 1.5;">
+        <h2 style="margin: 0 0 12px;">Low stock alert</h2>
+        <p style="margin: 0 0 8px;"><strong>Product:</strong> ${productName ?? productId}</p>
+        <p style="margin: 0 0 8px;"><strong>Product ID:</strong> ${productId}</p>
+        <p style="margin: 0 0 8px;"><strong>Remaining stock:</strong> ${newStock}</p>
+        ${orderNumber ? `<p style="margin: 0 0 8px;"><strong>Triggered by order:</strong> ${orderNumber}</p>` : ''}
+        <p style="margin: 16px 0 0; color: #555;">This is an automated alert.</p>
+      </div>
+    `;
+
+    const emailRes = await resend.emails.send({
+      from: 'Rayn Adam <notifications@raynadamperfume.com>',
+      to: recipients,
+      subject,
+      html,
+    });
+
+    console.log('Low stock email sent:', { productId, newStock, emailRes });
+
+    // Log in staff_notifications for audit/debugging
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    await supabase.from('staff_notifications').insert({
+      staff_email: 'system',
+      notification_type: 'low_stock_alert',
+      subject,
+      recipients,
+      sent_by: 'system',
+      order_number: orderNumber ?? null,
+      details: { product_id: productId, product_name: productName ?? null, stock_quantity: newStock },
+    });
+  } catch (err) {
+    console.error('Failed to send low stock alert:', err);
+  }
 };
 
 // Validation helpers
@@ -196,8 +265,8 @@ serve(async (req) => {
 
     let subtotal = 0;
     let totalQuantity = 0;
-    const validatedItems: OrderItem[] = [];
-    const stockUpdates: { productId: string; quantity: number }[] = [];
+     const validatedItems: OrderItem[] = [];
+     const stockUpdates: { productId: string; productName?: string; beforeStock: number; quantity: number }[] = [];
 
     for (const item of orderRequest.items) {
       if (!VALID_PRODUCT_IDS.includes(item.productId)) {
@@ -218,9 +287,9 @@ serve(async (req) => {
       }
 
       // Check stock availability
-      const { data: product, error: productError } = await supabase
+       const { data: product, error: productError } = await supabase
         .from('products')
-        .select('stock_quantity, is_active')
+         .select('stock_quantity, is_active, name')
         .eq('id', item.productId)
         .maybeSingle();
 
@@ -246,8 +315,13 @@ serve(async (req) => {
           );
         }
 
-        // Track stock update for this product
-        stockUpdates.push({ productId: item.productId, quantity });
+         // Track stock update for this product
+         stockUpdates.push({
+           productId: item.productId,
+           productName: product.name ?? undefined,
+           beforeStock: product.stock_quantity,
+           quantity,
+         });
       }
 
       // Use server-side price, not client-provided price
@@ -401,8 +475,14 @@ serve(async (req) => {
 
     console.log("Order created successfully:", order.order_number);
 
-    // Reduce stock for ordered products
-    for (const stockUpdate of stockUpdates) {
+     const lowStockRecipients = (() => {
+       const adminOrderEmails = parseEmailList(Deno.env.get('ADMIN_ORDER_EMAIL'));
+       const adminEmails = parseEmailList(Deno.env.get('ADMIN_EMAILS'));
+       return [...new Set([...adminOrderEmails, ...adminEmails])];
+     })();
+
+     // Reduce stock for ordered products
+     for (const stockUpdate of stockUpdates) {
       try {
         const { error: stockError } = await supabase.rpc('reduce_product_stock', {
           p_product_id: stockUpdate.productId,
@@ -429,6 +509,20 @@ serve(async (req) => {
           }
         }
         console.log(`Stock reduced for ${stockUpdate.productId}: -${stockUpdate.quantity}`);
+
+         // Send alert only when crossing threshold (to avoid spamming on every order)
+         const estimatedAfter = Math.max(0, stockUpdate.beforeStock - stockUpdate.quantity);
+         if (stockUpdate.beforeStock >= LOW_STOCK_THRESHOLD && estimatedAfter < LOW_STOCK_THRESHOLD) {
+           await sendLowStockAlert({
+             productId: stockUpdate.productId,
+             productName: stockUpdate.productName,
+             newStock: estimatedAfter,
+             orderNumber: order.order_number,
+             recipients: lowStockRecipients,
+             supabaseUrl,
+             supabaseServiceKey,
+           });
+         }
       } catch (stockErr) {
         console.error(`Failed to reduce stock for ${stockUpdate.productId}:`, stockErr);
         // Don't fail the order if stock update fails
