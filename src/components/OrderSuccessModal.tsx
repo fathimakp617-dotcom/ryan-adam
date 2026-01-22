@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef, memo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle, X, Download, Mail, RefreshCw, Gift, Copy, Check } from "lucide-react";
@@ -36,10 +36,9 @@ interface LoyaltyCoupon {
   expires_at: string | null;
 }
 
-const OrderSuccessModal = () => {
+const OrderSuccessModal = forwardRef<HTMLDivElement>((_, ref) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
-
   const orderNumber = searchParams.get("order");
   const [orderData, setOrderData] = useState<OrderData | null>(null);
   const [loyaltyCoupon, setLoyaltyCoupon] = useState<LoyaltyCoupon | null>(null);
@@ -327,6 +326,8 @@ const OrderSuccessModal = () => {
       )}
     </AnimatePresence>
   );
-};
+});
 
-export default OrderSuccessModal;
+OrderSuccessModal.displayName = "OrderSuccessModal";
+
+export default memo(OrderSuccessModal);

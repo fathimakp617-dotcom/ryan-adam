@@ -1,3 +1,4 @@
+import { forwardRef, memo } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { products, formatPrice } from "@/data/products";
@@ -5,12 +6,12 @@ import { fadeInUp, staggerContainer, staggerItem, lineReveal } from "@/lib/anima
 import { Badge } from "@/components/ui/badge";
 import { useProductStock, isProductSoldOut } from "@/hooks/useProductStock";
 
-const Collection = () => {
+const Collection = forwardRef<HTMLDivElement>((_, ref) => {
   const featuredProducts = products.slice(0, 3);
   const { data: stockMap } = useProductStock();
 
   return (
-    <section id="collection" className="py-24 sm:py-32 bg-background relative overflow-hidden">
+    <section ref={ref} id="collection" className="py-24 sm:py-32 bg-background relative overflow-hidden">
       {/* Subtle background accent */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_hsl(35_49%_44%_/_0.02)_0%,_transparent_50%)]" />
 
@@ -124,6 +125,8 @@ const Collection = () => {
       </div>
     </section>
   );
-};
+});
 
-export default Collection;
+Collection.displayName = "Collection";
+
+export default memo(Collection);

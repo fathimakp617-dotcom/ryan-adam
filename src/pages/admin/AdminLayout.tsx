@@ -41,6 +41,30 @@ const AdminLayout = () => {
 
   useEffect(() => {
     checkExistingSession();
+    
+    // Set up interval to check session expiry every minute
+    const intervalId = setInterval(() => {
+      const stored = sessionStorage.getItem(ADMIN_SESSION_KEY);
+      if (stored) {
+        try {
+          const session: AdminSession = JSON.parse(stored);
+          if (session.expiry <= Date.now()) {
+            sessionStorage.removeItem(ADMIN_SESSION_KEY);
+            setAdminSession(null);
+            toast({
+              title: "Session Expired",
+              description: "Your session has expired. Please log in again.",
+              variant: "destructive",
+            });
+          }
+        } catch {
+          sessionStorage.removeItem(ADMIN_SESSION_KEY);
+          setAdminSession(null);
+        }
+      }
+    }, 60000); // Check every minute
+    
+    return () => clearInterval(intervalId);
   }, []);
 
   const checkExistingSession = () => {
@@ -53,6 +77,11 @@ const AdminLayout = () => {
           setAdminSession(session);
         } else {
           sessionStorage.removeItem(ADMIN_SESSION_KEY);
+          toast({
+            title: "Session Expired",
+            description: "Your session has expired. Please log in again.",
+            variant: "destructive",
+          });
         }
       }
     } catch (error) {
