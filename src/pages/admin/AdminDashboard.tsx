@@ -112,7 +112,8 @@ const AdminDashboard = () => {
       description: "Please log in again to continue.",
       variant: "destructive",
     });
-    navigate("/admin", { replace: true });
+    // Hard redirect so AdminLayout state resets as well
+    window.location.assign("/admin");
   }, [navigate, toast]);
 
   useEffect(() => {
