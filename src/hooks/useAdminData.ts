@@ -1,6 +1,26 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+const clearAdminSession = () => {
+  sessionStorage.removeItem("rayn_admin_session");
+};
+
+const isSessionExpiredError = (err: unknown) => {
+  const anyErr = err as any;
+  const msg = String(anyErr?.message ?? "").toLowerCase();
+  const status = anyErr?.status;
+  return status === 401 || msg.includes("session expired");
+};
+
+const invokeAdminFn = async <T,>(fnName: string, body: Record<string, unknown>): Promise<T> => {
+  const { data, error } = await supabase.functions.invoke(fnName, { body });
+  if (error) {
+    if (isSessionExpiredError(error)) clearAdminSession();
+    throw error;
+  }
+  return data as T;
+};
+
 // Helper to get admin session
 const getAdminSession = () => {
   const stored = sessionStorage.getItem("rayn_admin_session");
@@ -71,15 +91,28 @@ export const useAdminOrders = () => {
       const session = getAdminSession();
       if (!session) throw new Error("No admin session found");
 
-      const { data, error } = await supabase.functions.invoke("get-admin-orders", {
-        body: {
-          admin_email: session.email,
-          admin_token: session.token,
-        },
-      });
+      // Fetch all historical orders (paginated; backend max 1000 per page)
+      const pageSize = 1000;
+      const maxPages = 50; // safety cap
+      const all: Order[] = [];
 
-      if (error) throw error;
-      return (data.orders || []) as Order[];
+      for (let page = 1; page <= maxPages; page++) {
+        const res = await invokeAdminFn<{ orders: Order[]; has_more?: boolean }>(
+          "get-admin-orders",
+          {
+            admin_email: session.email,
+            admin_token: session.token,
+            page,
+            page_size: pageSize,
+          }
+        );
+
+        all.push(...(res.orders || []));
+        const hasMore = res.has_more ?? (res.orders?.length === pageSize);
+        if (!hasMore) break;
+      }
+
+      return all;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

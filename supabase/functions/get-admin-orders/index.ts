@@ -47,6 +47,10 @@ serve(async (req) => {
     const adminEmail = body.admin_email;
     const adminToken = body.admin_token;
 
+    const page = Math.max(1, Number(body.page ?? 1));
+    const pageSizeRaw = Number(body.page_size ?? 1000);
+    const pageSize = Math.min(1000, Math.max(1, Number.isFinite(pageSizeRaw) ? pageSizeRaw : 1000));
+
     if (!adminEmail || !adminToken) {
       console.log("Missing credentials in body");
       return new Response(JSON.stringify({ error: "Access denied" }), { 
@@ -74,9 +78,20 @@ serve(async (req) => {
 
     console.log(`Access granted for: ${adminEmail}`);
 
-    const { data: orders } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
 
-    return new Response(JSON.stringify({ orders: orders || [] }), { 
+    const { data: orders, error: ordersError } = await supabase
+      .from("orders")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .range(from, to);
+
+    if (ordersError) throw ordersError;
+
+    const hasMore = (orders?.length || 0) === pageSize;
+
+    return new Response(JSON.stringify({ orders: orders || [], page, page_size: pageSize, has_more: hasMore }), { 
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } 
     });
   } catch (error) {
