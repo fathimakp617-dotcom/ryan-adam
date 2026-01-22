@@ -42,30 +42,38 @@ const AdminLayout = () => {
   useEffect(() => {
     checkExistingSession();
     
-    // Set up interval to check session expiry every minute
+    // Keep state in sync with sessionStorage (session can be cleared by child pages on 401)
     const intervalId = setInterval(() => {
       const stored = sessionStorage.getItem(ADMIN_SESSION_KEY);
-      if (stored) {
-        try {
-          const session: AdminSession = JSON.parse(stored);
-          if (session.expiry <= Date.now()) {
-            sessionStorage.removeItem(ADMIN_SESSION_KEY);
-            setAdminSession(null);
-            toast({
-              title: "Session Expired",
-              description: "Your session has expired. Please log in again.",
-              variant: "destructive",
-            });
-          }
-        } catch {
+      if (!stored) {
+        if (adminSession) setAdminSession(null);
+        return;
+      }
+
+      try {
+        const session: AdminSession = JSON.parse(stored);
+        if (session.expiry <= Date.now()) {
           sessionStorage.removeItem(ADMIN_SESSION_KEY);
           setAdminSession(null);
+          toast({
+            title: "Session Expired",
+            description: "Your session has expired. Please log in again.",
+            variant: "destructive",
+          });
+        } else {
+          // If token/expiry refreshed elsewhere, reflect it
+          if (!adminSession || adminSession.token !== session.token || adminSession.expiry !== session.expiry) {
+            setAdminSession(session);
+          }
         }
+      } catch {
+        sessionStorage.removeItem(ADMIN_SESSION_KEY);
+        setAdminSession(null);
       }
-    }, 60000); // Check every minute
+    }, 3000); // quick sync to avoid stuck dashboard
     
     return () => clearInterval(intervalId);
-  }, []);
+  }, [adminSession, toast]);
 
   const checkExistingSession = () => {
     try {
