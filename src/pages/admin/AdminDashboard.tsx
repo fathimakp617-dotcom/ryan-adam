@@ -1,7 +1,8 @@
-import { useEffect, useState, memo, useRef } from "react";
+import { useEffect, useState, memo, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -102,6 +103,18 @@ const AdminDashboard = () => {
   const [revenueView, setRevenueView] = useState<"all" | "cod" | "online">("all");
   const navigate = useNavigate();
   const hasMountedRef = useRef(false);
+  const { toast } = useToast();
+
+  const handleSessionExpiry = useCallback(() => {
+    sessionStorage.removeItem("rayn_admin_session");
+    toast({
+      title: "Session Expired",
+      description: "Please log in again to continue.",
+      variant: "destructive",
+    });
+    navigate("/admin");
+    window.location.reload();
+  }, [navigate, toast]);
 
   useEffect(() => {
     fetchStats();
@@ -190,9 +203,19 @@ const AdminDashboard = () => {
   const fetchStats = async () => {
     try {
       const sessionData = sessionStorage.getItem("rayn_admin_session");
-      if (!sessionData) throw new Error("No admin session found");
+      if (!sessionData) {
+        handleSessionExpiry();
+        return;
+      }
       
       const session = JSON.parse(sessionData);
+      
+      // Check if session is expired on client-side
+      if (session.expiry && session.expiry < Date.now()) {
+        handleSessionExpiry();
+        return;
+      }
+      
       const { dateFrom, dateTo } = getDateRange();
       
       const { data, error } = await supabase.functions.invoke('get-admin-stats', {
@@ -206,15 +229,25 @@ const AdminDashboard = () => {
       
       if (error) throw error;
       
-      if (data) {
+      // Check for session expiry from server
+      if (data?.error?.includes("Session expired") || data?.error?.includes("expired")) {
+        handleSessionExpiry();
+        return;
+      }
+      
+      if (data?.stats) {
         setStats(data.stats);
         setAllTimeStats(data.allTimeStats || { total: 0, totalRevenue: 0, codRevenue: 0, onlineRevenue: 0, codOrders: 0, onlineOrders: 0 });
         setPaymentBreakdown(data.paymentBreakdown || { cod: { orders: 0, revenue: 0, pending: 0, delivered: 0 }, online: { orders: 0, revenue: 0, pending: 0, delivered: 0 } });
         setMonthlyRevenue(data.monthlyRevenue || []);
         setRecentOrders(data.recentOrders || []);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching stats:", error);
+      // Check if it's an auth error
+      if (error?.message?.includes("401") || error?.message?.includes("Session expired")) {
+        handleSessionExpiry();
+      }
     } finally {
       setIsLoading(false);
     }
@@ -228,6 +261,11 @@ const AdminDashboard = () => {
       
       const session = JSON.parse(sessionData);
       
+      // Check client-side expiry
+      if (session.expiry && session.expiry < Date.now()) {
+        return; // Let fetchStats handle the session expiry
+      }
+      
       const { data, error } = await supabase.functions.invoke('get-activity-logs', {
         body: {
           admin_email: session.email,
@@ -238,11 +276,20 @@ const AdminDashboard = () => {
       
       if (error) throw error;
       
+      // Check for session expiry from server
+      if (data?.error?.includes("Session expired") || data?.error?.includes("expired")) {
+        handleSessionExpiry();
+        return;
+      }
+      
       if (data?.logs) {
         setActivityLogs(data.logs);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching activity logs:", error);
+      if (error?.message?.includes("401") || error?.message?.includes("Session expired")) {
+        handleSessionExpiry();
+      }
     } finally {
       setIsLoadingLogs(false);
     }
