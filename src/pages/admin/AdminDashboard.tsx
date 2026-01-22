@@ -112,8 +112,7 @@ const AdminDashboard = () => {
       description: "Please log in again to continue.",
       variant: "destructive",
     });
-    navigate("/admin");
-    window.location.reload();
+    navigate("/admin", { replace: true });
   }, [navigate, toast]);
 
   useEffect(() => {
@@ -245,7 +244,9 @@ const AdminDashboard = () => {
     } catch (error: any) {
       console.error("Error fetching stats:", error);
       // Check if it's an auth error
-      if (error?.message?.includes("401") || error?.message?.includes("Session expired")) {
+      const status = error?.status;
+      const msg = String(error?.message || "").toLowerCase();
+      if (status === 401 || msg.includes("session expired") || msg.includes("expired")) {
         handleSessionExpiry();
       }
     } finally {
@@ -287,7 +288,9 @@ const AdminDashboard = () => {
       }
     } catch (error: any) {
       console.error("Error fetching activity logs:", error);
-      if (error?.message?.includes("401") || error?.message?.includes("Session expired")) {
+      const status = error?.status;
+      const msg = String(error?.message || "").toLowerCase();
+      if (status === 401 || msg.includes("session expired") || msg.includes("expired")) {
         handleSessionExpiry();
       }
     } finally {
