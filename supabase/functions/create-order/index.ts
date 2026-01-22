@@ -189,9 +189,15 @@ serve(async (req) => {
       );
     }
 
+    // Initialize Supabase client early for stock checks
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
     let subtotal = 0;
     let totalQuantity = 0;
     const validatedItems: OrderItem[] = [];
+    const stockUpdates: { productId: string; quantity: number }[] = [];
 
     for (const item of orderRequest.items) {
       if (!VALID_PRODUCT_IDS.includes(item.productId)) {
@@ -209,6 +215,39 @@ serve(async (req) => {
           JSON.stringify({ error: `Invalid quantity for ${item.productId}. Must be 1-1000.` }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
+      }
+
+      // Check stock availability
+      const { data: product, error: productError } = await supabase
+        .from('products')
+        .select('stock_quantity, is_active')
+        .eq('id', item.productId)
+        .maybeSingle();
+
+      if (productError) {
+        console.error("Error checking stock for:", item.productId, productError);
+      }
+
+      // If product exists in DB, check stock
+      if (product) {
+        if (!product.is_active) {
+          console.error("Product is not active:", item.productId);
+          return new Response(
+            JSON.stringify({ error: `Product ${item.productId} is currently unavailable` }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        if (product.stock_quantity < quantity) {
+          console.error("Insufficient stock for:", item.productId, "requested:", quantity, "available:", product.stock_quantity);
+          return new Response(
+            JSON.stringify({ error: `Insufficient stock for ${item.productId}. Only ${product.stock_quantity} available.` }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Track stock update for this product
+        stockUpdates.push({ productId: item.productId, quantity });
       }
 
       // Use server-side price, not client-provided price
@@ -242,11 +281,6 @@ serve(async (req) => {
     // Calculate shipping - FREE for online payment, ₹79 for COD under ₹999
     const priceAfterBulk = subtotal - bulkDiscount;
     const shipping = orderRequest.payment_method === 'razorpay' ? 0 : (priceAfterBulk >= 999 ? 0 : 79);
-
-    // Initialize Supabase client with service role for inserting
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Handle coupon discount (only if NO bulk discount applied)
     let couponDiscount = 0;
@@ -367,7 +401,40 @@ serve(async (req) => {
 
     console.log("Order created successfully:", order.order_number);
 
-    // Send order confirmation email (fire and forget)
+    // Reduce stock for ordered products
+    for (const stockUpdate of stockUpdates) {
+      try {
+        const { error: stockError } = await supabase.rpc('reduce_product_stock', {
+          p_product_id: stockUpdate.productId,
+          p_quantity: stockUpdate.quantity
+        });
+        
+        if (stockError) {
+          // If RPC doesn't exist, fall back to direct update
+          console.log("RPC not available, using direct update for:", stockUpdate.productId);
+          const { data: currentProduct } = await supabase
+            .from('products')
+            .select('stock_quantity')
+            .eq('id', stockUpdate.productId)
+            .single();
+          
+          if (currentProduct) {
+            await supabase
+              .from('products')
+              .update({ 
+                stock_quantity: Math.max(0, currentProduct.stock_quantity - stockUpdate.quantity),
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', stockUpdate.productId);
+          }
+        }
+        console.log(`Stock reduced for ${stockUpdate.productId}: -${stockUpdate.quantity}`);
+      } catch (stockErr) {
+        console.error(`Failed to reduce stock for ${stockUpdate.productId}:`, stockErr);
+        // Don't fail the order if stock update fails
+      }
+    }
+
     try {
       const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
       

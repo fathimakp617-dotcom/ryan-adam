@@ -130,6 +130,35 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Order ${order.order_number} status updated to ${new_status}`);
 
+    // Restore stock if order is cancelled (and wasn't already cancelled)
+    if (new_status === "cancelled" && oldStatus !== "cancelled") {
+      const items = order.items as Array<{ productId: string; quantity: number }>;
+      for (const item of items) {
+        try {
+          // Get current stock and add back the quantity
+          const { data: currentProduct } = await supabaseClient
+            .from('products')
+            .select('stock_quantity')
+            .eq('id', item.productId)
+            .maybeSingle();
+          
+          if (currentProduct) {
+            await supabaseClient
+              .from('products')
+              .update({ 
+                stock_quantity: currentProduct.stock_quantity + item.quantity,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', item.productId);
+            console.log(`Stock restored for ${item.productId}: +${item.quantity}`);
+          }
+        } catch (stockErr) {
+          console.error(`Failed to restore stock for ${item.productId}:`, stockErr);
+          // Don't fail the status update if stock restore fails
+        }
+      }
+    }
+
     // Log the activity
     try {
       await supabaseClient.from("activity_logs").insert({
