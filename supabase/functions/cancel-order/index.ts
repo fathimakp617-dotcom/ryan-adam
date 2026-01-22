@@ -97,6 +97,33 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Restore stock for cancelled order items
+    const items = order.items as Array<{ productId: string; quantity: number }>;
+    for (const item of items) {
+      try {
+        // Get current stock and add back the quantity
+        const { data: currentProduct } = await supabaseClient
+          .from('products')
+          .select('stock_quantity')
+          .eq('id', item.productId)
+          .maybeSingle();
+        
+        if (currentProduct) {
+          await supabaseClient
+            .from('products')
+            .update({ 
+              stock_quantity: currentProduct.stock_quantity + item.quantity,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', item.productId);
+          console.log(`Stock restored for ${item.productId}: +${item.quantity}`);
+        }
+      } catch (stockErr) {
+        console.error(`Failed to restore stock for ${item.productId}:`, stockErr);
+        // Don't fail cancellation if stock restore fails
+      }
+    }
+
     console.log(`Order ${order.order_number} cancelled successfully`);
 
     // Send notification emails
