@@ -31,7 +31,7 @@ const formatCurrency = (amount: number): string => {
   return `₹${amount.toLocaleString("en-IN")}`;
 };
 
-export const generateInvoicePDF = (data: InvoiceData): jsPDF => {
+export const generateInvoicePDF = async (data: InvoiceData): Promise<jsPDF> => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
 
@@ -40,15 +40,35 @@ export const generateInvoicePDF = (data: InvoiceData): jsPDF => {
   const darkColor: [number, number, number] = [26, 26, 26];
   const grayColor: [number, number, number] = [136, 136, 136];
 
-  // Header
+  // Header with logo
   doc.setFillColor(...darkColor);
   doc.rect(0, 0, pageWidth, 58, "F");
 
-  doc.setTextColor(...goldColor);
-  doc.setFontSize(24);
-  doc.setFont("helvetica", "bold");
-  doc.text("RAYN ADAM", pageWidth / 2, 18, { align: "center" });
+  // Try to load and add logo
+  const logoUrl = "https://ryanadamperfume.lovable.app/lovable-uploads/eb8b7d91-8b18-4a81-a5e1-9d3f91d4f7df.png";
+  
+  try {
+    const response = await fetch(logoUrl);
+    const blob = await response.blob();
+    const logoDataUrl = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
 
+    // Add logo centered at the top
+    const logoWidth = 50;
+    const logoHeight = 18;
+    doc.addImage(logoDataUrl, "PNG", (pageWidth - logoWidth) / 2, 6, logoWidth, logoHeight);
+  } catch (error) {
+    // Fallback to text if logo fails
+    doc.setTextColor(...goldColor);
+    doc.setFontSize(24);
+    doc.setFont("helvetica", "bold");
+    doc.text("RAYN ADAM", pageWidth / 2, 18, { align: "center" });
+  }
+
+  doc.setTextColor(...goldColor);
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   doc.text("LUXURY PERFUMES", pageWidth / 2, 28, { align: "center" });
@@ -256,8 +276,8 @@ export const generateInvoicePDF = (data: InvoiceData): jsPDF => {
   return doc;
 };
 
-export const downloadInvoicePDF = (data: InvoiceData): void => {
-  const doc = generateInvoicePDF(data);
+export const downloadInvoicePDF = async (data: InvoiceData): Promise<void> => {
+  const doc = await generateInvoicePDF(data);
   doc.save(`invoice-${data.orderNumber}.pdf`);
 };
 

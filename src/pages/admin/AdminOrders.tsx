@@ -28,10 +28,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, Search, RefreshCw, Truck, Package, CheckCircle, X, Clock, Loader2, Download, FileText, Calendar, Trash2, AlertTriangle, ChevronRight, Check, Printer } from "lucide-react";
+import { Eye, Search, RefreshCw, Truck, Package, CheckCircle, X, Clock, Loader2, Download, FileText, Calendar, Trash2, AlertTriangle, ChevronRight, Check, Printer, Phone } from "lucide-react";
 import { generateShippingLabelPDF } from "@/lib/generateInvoicePDF";
 import OrderViewDialog from "@/components/OrderViewDialog";
 import ShippingSlipDialog from "@/components/ShippingSlipDialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -65,6 +66,8 @@ const AdminOrders = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
   const [shippingSlipOrder, setShippingSlipOrder] = useState<Order | null>(null);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
+  const [isBulkPrinting, setIsBulkPrinting] = useState(false);
   const { toast } = useToast();
 
   // Handle expired admin session (avoid blank/error loops)
@@ -185,6 +188,57 @@ const AdminOrders = () => {
         description: "Failed to generate shipping label",
         variant: "destructive",
       });
+    }
+  };
+
+  // Bulk selection handlers
+  const handleSelectAll = () => {
+    if (selectedOrderIds.size === filteredOrders.length) {
+      setSelectedOrderIds(new Set());
+    } else {
+      setSelectedOrderIds(new Set(filteredOrders.map(o => o.id)));
+    }
+  };
+
+  const handleSelectOrder = (orderId: string) => {
+    const newSet = new Set(selectedOrderIds);
+    if (newSet.has(orderId)) {
+      newSet.delete(orderId);
+    } else {
+      newSet.add(orderId);
+    }
+    setSelectedOrderIds(newSet);
+  };
+
+  const handleBulkPrintLabels = async () => {
+    if (selectedOrderIds.size === 0) {
+      toast({
+        title: "No orders selected",
+        description: "Please select orders to print labels",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsBulkPrinting(true);
+    try {
+      const selectedOrders = filteredOrders.filter(o => selectedOrderIds.has(o.id));
+      for (const order of selectedOrders) {
+        await generateShippingLabelPDF(order);
+      }
+      toast({
+        title: "Success",
+        description: `${selectedOrders.length} shipping labels downloaded`,
+      });
+      setSelectedOrderIds(new Set());
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate some labels",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBulkPrinting(false);
     }
   };
 
@@ -567,11 +621,53 @@ const AdminOrders = () => {
         </div>
       </div>
 
+      {/* Bulk Actions Bar */}
+      {selectedOrderIds.size > 0 && (
+        <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-lg p-3">
+          <span className="text-sm font-medium">
+            {selectedOrderIds.size} order{selectedOrderIds.size > 1 ? 's' : ''} selected
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setSelectedOrderIds(new Set())}
+            >
+              Clear Selection
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleBulkPrintLabels}
+              disabled={isBulkPrinting}
+              className="bg-primary hover:bg-primary/90"
+            >
+              {isBulkPrinting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Printing...
+                </>
+              ) : (
+                <>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Print Shipping Labels
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Orders Table */}
       <div className="border border-border rounded-lg overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
+              <TableHead className="w-12">
+                <Checkbox
+                  checked={filteredOrders.length > 0 && selectedOrderIds.size === filteredOrders.length}
+                  onCheckedChange={handleSelectAll}
+                />
+              </TableHead>
               <TableHead>Order</TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Products</TableHead>
@@ -585,7 +681,7 @@ const AdminOrders = () => {
           <TableBody>
             {filteredOrders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                   No orders found
                 </TableCell>
               </TableRow>
@@ -594,6 +690,12 @@ const AdminOrders = () => {
                 const isCancelled = order.order_status === "cancelled";
                 return (
                   <TableRow key={order.id} className={isCancelled ? "opacity-60" : ""}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedOrderIds.has(order.id)}
+                        onCheckedChange={() => handleSelectOrder(order.id)}
+                      />
+                    </TableCell>
                     <TableCell className={`font-medium ${isCancelled ? "line-through" : ""}`}>
                       {order.order_number}
                     </TableCell>
@@ -601,6 +703,12 @@ const AdminOrders = () => {
                       <div className={isCancelled ? "line-through" : ""}>
                         <p className="font-medium">{order.customer_name}</p>
                         <p className="text-sm text-muted-foreground">{order.customer_email}</p>
+                        {order.customer_phone && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                            <Phone className="h-3 w-3" />
+                            {order.customer_phone}
+                          </p>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
