@@ -51,11 +51,11 @@ const OrderReceipt = ({
 }: OrderReceiptProps) => {
   const [isDownloading, setIsDownloading] = useState(false);
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     setIsDownloading(true);
     
     try {
-      downloadInvoicePDF({
+      await downloadInvoicePDF({
         orderNumber,
         customerName,
         customerEmail,

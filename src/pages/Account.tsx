@@ -772,8 +772,8 @@ const Account = () => {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => {
-                                downloadInvoicePDF({
+                              onClick={async () => {
+                                await downloadInvoicePDF({
                                   orderNumber: order.order_number,
                                   customerName: order.customer_name,
                                   customerEmail: order.customer_email,
@@ -1376,8 +1376,8 @@ const Account = () => {
               <div className="space-y-2">
                 <Button
                   className="w-full"
-                  onClick={() => {
-                    downloadInvoicePDF({
+                  onClick={async () => {
+                    await downloadInvoicePDF({
                       orderNumber: selectedOrder.order_number,
                       customerName: selectedOrder.customer_name,
                       customerEmail: selectedOrder.customer_email,
