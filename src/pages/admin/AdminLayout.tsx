@@ -39,14 +39,43 @@ const AdminLayout = () => {
   const location = useLocation();
   const { toast } = useToast();
 
+  // Check existing session on mount only
   useEffect(() => {
+    const checkExistingSession = () => {
+      try {
+        const stored = sessionStorage.getItem(ADMIN_SESSION_KEY);
+        if (stored) {
+          const session: AdminSession = JSON.parse(stored);
+          if (session.expiry > Date.now()) {
+            setAdminSession(session);
+          } else {
+            sessionStorage.removeItem(ADMIN_SESSION_KEY);
+            toast({
+              title: "Session Expired",
+              description: "Your session has expired. Please log in again.",
+              variant: "destructive",
+            });
+          }
+        }
+      } catch (error) {
+        sessionStorage.removeItem(ADMIN_SESSION_KEY);
+      }
+      setIsChecking(false);
+    };
+
     checkExistingSession();
-    
-    // Keep state in sync with sessionStorage (session can be cleared by child pages on 401)
+  }, [toast]);
+
+  // Sync session with storage periodically (separate effect to avoid infinite loop)
+  useEffect(() => {
     const intervalId = setInterval(() => {
       const stored = sessionStorage.getItem(ADMIN_SESSION_KEY);
+      
       if (!stored) {
-        if (adminSession) setAdminSession(null);
+        setAdminSession(prev => {
+          if (prev !== null) return null;
+          return prev;
+        });
         return;
       }
 
@@ -61,42 +90,22 @@ const AdminLayout = () => {
             variant: "destructive",
           });
         } else {
-          // If token/expiry refreshed elsewhere, reflect it
-          if (!adminSession || adminSession.token !== session.token || adminSession.expiry !== session.expiry) {
-            setAdminSession(session);
-          }
+          setAdminSession(prev => {
+            // Only update if token or expiry changed
+            if (!prev || prev.token !== session.token || prev.expiry !== session.expiry) {
+              return session;
+            }
+            return prev;
+          });
         }
       } catch {
         sessionStorage.removeItem(ADMIN_SESSION_KEY);
         setAdminSession(null);
       }
-    }, 3000); // quick sync to avoid stuck dashboard
+    }, 3000);
     
     return () => clearInterval(intervalId);
-  }, [adminSession, toast]);
-
-  const checkExistingSession = () => {
-    try {
-      // Use sessionStorage for admin - auto logout on browser close
-      const stored = sessionStorage.getItem(ADMIN_SESSION_KEY);
-      if (stored) {
-        const session: AdminSession = JSON.parse(stored);
-        if (session.expiry > Date.now()) {
-          setAdminSession(session);
-        } else {
-          sessionStorage.removeItem(ADMIN_SESSION_KEY);
-          toast({
-            title: "Session Expired",
-            description: "Your session has expired. Please log in again.",
-            variant: "destructive",
-          });
-        }
-      }
-    } catch (error) {
-      sessionStorage.removeItem(ADMIN_SESSION_KEY);
-    }
-    setIsChecking(false);
-  };
+  }, [toast]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
