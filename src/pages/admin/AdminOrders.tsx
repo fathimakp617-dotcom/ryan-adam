@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, Search, RefreshCw, Truck, Package, CheckCircle, X, Clock, Loader2, Download, FileText, Calendar, Trash2, AlertTriangle, ChevronRight, Check, Printer } from "lucide-react";
-import jsPDF from "jspdf";
+import { generateShippingLabelPDF } from "@/lib/generateInvoicePDF";
 import OrderViewDialog from "@/components/OrderViewDialog";
 import ShippingSlipDialog from "@/components/ShippingSlipDialog";
 import {
@@ -172,115 +172,20 @@ const AdminOrders = () => {
     setFilteredOrders(filtered);
   };
 
-  const generateShippingLabelPDF = (order: Order) => {
-    const doc = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: [100, 150] // 4x6 label size
-    });
-
-    // Brand colors
-    const goldColor = [168, 124, 57];
-    const darkColor = [28, 28, 28];
-
-    // Header
-    doc.setFillColor(darkColor[0], darkColor[1], darkColor[2]);
-    doc.rect(0, 0, 100, 25, "F");
-    
-    doc.setTextColor(goldColor[0], goldColor[1], goldColor[2]);
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("RAYN ADAM", 50, 12, { align: "center" });
-    
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "normal");
-    doc.text("LUXURY PERFUMES", 50, 18, { align: "center" });
-
-    // From section
-    doc.setTextColor(100, 100, 100);
-    doc.setFontSize(8);
-    doc.text("FROM:", 8, 32);
-    
-    doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
-    doc.setFontSize(9);
-    doc.text("Rayn Adam Perfumes", 8, 38);
-    doc.setFontSize(8);
-    doc.text("Kozhikode, Kerala", 8, 43);
-    doc.text("India - 673001", 8, 48);
-
-    // Divider
-    doc.setDrawColor(goldColor[0], goldColor[1], goldColor[2]);
-    doc.setLineWidth(0.5);
-    doc.line(8, 54, 92, 54);
-
-    // To section
-    doc.setTextColor(100, 100, 100);
-    doc.setFontSize(8);
-    doc.text("SHIP TO:", 8, 62);
-    
-    doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.text(order.customer_name, 8, 70);
-    
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    
-    const addressLines = [
-      order.shipping_address.address,
-      `${order.shipping_address.city}, ${order.shipping_address.state}`,
-      order.shipping_address.zipCode,
-      order.shipping_address.country
-    ];
-    
-    let yPos = 77;
-    addressLines.forEach(line => {
-      doc.text(line, 8, yPos);
-      yPos += 6;
-    });
-
-    // Phone
-    if (order.customer_phone) {
-      doc.setFontSize(8);
-      doc.text(`Ph: ${order.customer_phone}`, 8, yPos + 2);
+  const handleGenerateLabel = async (order: Order) => {
+    try {
+      await generateShippingLabelPDF(order);
+      toast({
+        title: "Downloaded",
+        description: `Shipping label for ${order.order_number} saved`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate shipping label",
+        variant: "destructive",
+      });
     }
-
-    // Order info box
-    doc.setFillColor(248, 248, 248);
-    doc.rect(8, 110, 84, 20, "F");
-    
-    doc.setDrawColor(goldColor[0], goldColor[1], goldColor[2]);
-    doc.rect(8, 110, 84, 20, "S");
-    
-    doc.setTextColor(100, 100, 100);
-    doc.setFontSize(7);
-    doc.text("ORDER #", 12, 117);
-    
-    doc.setTextColor(goldColor[0], goldColor[1], goldColor[2]);
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    doc.text(order.order_number, 12, 124);
-    
-    doc.setTextColor(100, 100, 100);
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "normal");
-    doc.text("DATE", 60, 117);
-    
-    doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
-    doc.setFontSize(8);
-    doc.text(new Date(order.created_at).toLocaleDateString("en-IN"), 60, 124);
-
-    // Footer
-    doc.setTextColor(goldColor[0], goldColor[1], goldColor[2]);
-    doc.setFontSize(6);
-    doc.text("Handle with care • Fragile contents", 50, 140, { align: "center" });
-
-    doc.save(`shipping-label-${order.order_number}.pdf`);
-
-    toast({
-      title: "Downloaded",
-      description: `Shipping label for ${order.order_number} saved`,
-    });
   };
 
   const handleViewOrder = (order: Order) => {
@@ -785,7 +690,7 @@ const AdminOrders = () => {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => generateShippingLabelPDF(order)}
+                          onClick={() => handleGenerateLabel(order)}
                           title="Download shipping label"
                         >
                           <FileText className="h-4 w-4" />

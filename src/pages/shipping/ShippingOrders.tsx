@@ -149,9 +149,9 @@ const ShippingOrders = () => {
     }
   };
 
-  const handleGenerateLabel = (order: Order) => {
+  const handleGenerateLabel = async (order: Order) => {
     try {
-      generateShippingLabelPDF(order);
+      await generateShippingLabelPDF(order);
       toast({
         title: "Success",
         description: "Shipping label generated",

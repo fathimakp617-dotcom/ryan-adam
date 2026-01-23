@@ -275,7 +275,7 @@ interface ShippingLabelOrder {
   items?: any[];
 }
 
-export const generateShippingLabelPDF = (order: ShippingLabelOrder): void => {
+export const generateShippingLabelPDF = async (order: ShippingLabelOrder): Promise<void> => {
   const doc = new jsPDF({
     orientation: "portrait",
     unit: "pt",
@@ -287,34 +287,56 @@ export const generateShippingLabelPDF = (order: ShippingLabelOrder): void => {
 
   // Colors
   const darkColor: [number, number, number] = [26, 26, 26];
-  const goldColor: [number, number, number] = [201, 169, 98];
+  const goldColor: [number, number, number] = [168, 124, 57]; // #a87c39
 
-  // Header
-  doc.setFillColor(...darkColor);
-  doc.rect(0, 0, pageWidth, 50, "F");
+  // Load and add logo
+  const logoUrl = "https://ryanadamperfume.lovable.app/lovable-uploads/eb8b7d91-8b18-4a81-a5e1-9d3f91d4f7df.png";
+  
+  try {
+    const response = await fetch(logoUrl);
+    const blob = await response.blob();
+    const logoDataUrl = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
 
-  doc.setTextColor(...goldColor);
-  doc.setFontSize(16);
-  doc.setFont("helvetica", "bold");
-  doc.text("RAYN ADAM", pageWidth / 2, 25, { align: "center" });
+    // Header with dark background
+    doc.setFillColor(...darkColor);
+    doc.rect(0, 0, pageWidth, 60, "F");
 
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
-  doc.text("LUXURY PERFUMES", pageWidth / 2, 40, { align: "center" });
+    // Add logo centered
+    const logoWidth = 120;
+    const logoHeight = 40;
+    doc.addImage(logoDataUrl, "PNG", (pageWidth - logoWidth) / 2, 10, logoWidth, logoHeight);
+  } catch (error) {
+    // Fallback to text if logo fails to load
+    doc.setFillColor(...darkColor);
+    doc.rect(0, 0, pageWidth, 60, "F");
+
+    doc.setTextColor(...goldColor);
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("RAYN ADAM", pageWidth / 2, 28, { align: "center" });
+
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.text("LUXURY PERFUMES", pageWidth / 2, 45, { align: "center" });
+  }
 
   // Order Number
   doc.setFillColor(248, 248, 248);
-  doc.rect(0, 50, pageWidth, 35, "F");
+  doc.rect(0, 60, pageWidth, 35, "F");
 
   doc.setTextColor(...darkColor);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.text("ORDER #", 15, 70);
+  doc.text("ORDER #", 15, 80);
   doc.setFontSize(14);
-  doc.text(order.order_number, 75, 70);
+  doc.text(order.order_number, 75, 80);
 
   // Ship To Section
-  let yPos = 100;
+  let yPos = 110;
 
   doc.setTextColor(136, 136, 136);
   doc.setFontSize(10);
