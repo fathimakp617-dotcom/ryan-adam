@@ -28,9 +28,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, Search, RefreshCw, Truck, Package, CheckCircle, X, Clock, Loader2, Download, FileText, Calendar, Trash2, AlertTriangle, ChevronRight, Check } from "lucide-react";
+import { Eye, Search, RefreshCw, Truck, Package, CheckCircle, X, Clock, Loader2, Download, FileText, Calendar, Trash2, AlertTriangle, ChevronRight, Check, Printer } from "lucide-react";
 import jsPDF from "jspdf";
 import OrderViewDialog from "@/components/OrderViewDialog";
+import ShippingSlipDialog from "@/components/ShippingSlipDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -63,6 +64,7 @@ const AdminOrders = () => {
   const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
+  const [shippingSlipOrder, setShippingSlipOrder] = useState<Order | null>(null);
   const { toast } = useToast();
 
   // Handle expired admin session (avoid blank/error loops)
@@ -775,6 +777,14 @@ const AdminOrders = () => {
                         <Button 
                           variant="ghost" 
                           size="sm"
+                          onClick={() => setShippingSlipOrder(order)}
+                          title="Print shipping slip"
+                        >
+                          <Printer className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
                           onClick={() => generateShippingLabelPDF(order)}
                           title="Download shipping label"
                         >
@@ -1061,6 +1071,12 @@ const AdminOrders = () => {
         order={viewOrder} 
         open={!!viewOrder} 
         onOpenChange={(open) => !open && setViewOrder(null)} 
+      />
+      {/* Shipping Slip Dialog */}
+      <ShippingSlipDialog
+        order={shippingSlipOrder}
+        open={!!shippingSlipOrder}
+        onOpenChange={(open) => !open && setShippingSlipOrder(null)}
       />
     </div>
   );
