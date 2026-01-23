@@ -191,12 +191,18 @@ const AdminOrders = () => {
     }
   };
 
+  // Only allow selecting orders that need shipping (not delivered, processing, or cancelled)
+  const isOrderSelectable = (order: Order) => {
+    return order.order_status === "pending" || order.order_status === "shipped";
+  };
+
   // Bulk selection handlers
   const handleSelectAll = () => {
-    if (selectedOrderIds.size === filteredOrders.length) {
+    const selectableOrders = filteredOrders.filter(isOrderSelectable);
+    if (selectedOrderIds.size === selectableOrders.length && selectableOrders.length > 0) {
       setSelectedOrderIds(new Set());
     } else {
-      setSelectedOrderIds(new Set(filteredOrders.map(o => o.id)));
+      setSelectedOrderIds(new Set(selectableOrders.map(o => o.id)));
     }
   };
 
@@ -214,7 +220,7 @@ const AdminOrders = () => {
     if (selectedOrderIds.size === 0) {
       toast({
         title: "No orders selected",
-        description: "Please select orders to print labels",
+        description: "Please select pending or shipped orders to print labels",
         variant: "destructive",
       });
       return;
@@ -222,7 +228,17 @@ const AdminOrders = () => {
 
     setIsBulkPrinting(true);
     try {
-      const selectedOrders = filteredOrders.filter(o => selectedOrderIds.has(o.id));
+      const selectedOrders = filteredOrders.filter(o => selectedOrderIds.has(o.id) && isOrderSelectable(o));
+      
+      if (selectedOrders.length === 0) {
+        toast({
+          title: "No valid orders",
+          description: "Selected orders are already delivered or processing",
+          variant: "destructive",
+        });
+        return;
+      }
+
       for (const order of selectedOrders) {
         await generateShippingLabelPDF(order);
       }
@@ -664,7 +680,7 @@ const AdminOrders = () => {
             <TableRow className="bg-muted/50">
               <TableHead className="w-12">
                 <Checkbox
-                  checked={filteredOrders.length > 0 && selectedOrderIds.size === filteredOrders.length}
+                  checked={filteredOrders.filter(isOrderSelectable).length > 0 && selectedOrderIds.size === filteredOrders.filter(isOrderSelectable).length}
                   onCheckedChange={handleSelectAll}
                 />
               </TableHead>
@@ -688,12 +704,15 @@ const AdminOrders = () => {
             ) : (
               filteredOrders.map((order) => {
                 const isCancelled = order.order_status === "cancelled";
+                const canSelect = isOrderSelectable(order);
                 return (
                   <TableRow key={order.id} className={isCancelled ? "opacity-60" : ""}>
                     <TableCell>
                       <Checkbox
                         checked={selectedOrderIds.has(order.id)}
                         onCheckedChange={() => handleSelectOrder(order.id)}
+                        disabled={!canSelect}
+                        className={!canSelect ? "opacity-30" : ""}
                       />
                     </TableCell>
                     <TableCell className={`font-medium ${isCancelled ? "line-through" : ""}`}>
