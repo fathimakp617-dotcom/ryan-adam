@@ -43,6 +43,7 @@ const AdminReturns = lazy(() => import("./pages/admin/AdminReturns"));
 const AdminExpenses = lazy(() => import("./pages/admin/AdminExpenses"));
 const AdminReviewsPage = lazy(() => import("./pages/admin/AdminReviewsPage"));
 const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
+const AdminWithdrawals = lazy(() => import("./pages/admin/AdminWithdrawals"));
 
 // Shipping pages - all lazy loaded
 const ShippingLayout = lazy(() => import("./pages/shipping/ShippingLayout"));
@@ -113,6 +114,7 @@ const App = () => (
                         <Route path="expenses" element={<AdminExpenses />} />
                         <Route path="reviews" element={<AdminReviewsPage />} />
                         <Route path="products" element={<AdminProducts />} />
+                        <Route path="withdrawals" element={<AdminWithdrawals />} />
                       </Route>
                       <Route path="/shipping" element={<ShippingLayout />}>
                         <Route index element={<ShippingDashboard />} />

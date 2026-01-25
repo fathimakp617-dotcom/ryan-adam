@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import ReturnRequestDialog from "@/components/ReturnRequestDialog";
 import LoyaltyCoupons from "@/components/LoyaltyCoupons";
+import WithdrawalRequestDialog from "@/components/WithdrawalRequestDialog";
 
 interface AffiliateData {
   id: string;
@@ -115,6 +116,7 @@ const Account = () => {
   const [copied, setCopied] = useState(false);
   const [isCreatingAffiliate, setIsCreatingAffiliate] = useState(false);
   const [affiliateName, setAffiliateName] = useState("");
+  const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
   const [profileForm, setProfileForm] = useState({
     first_name: "",
@@ -974,12 +976,7 @@ const Account = () => {
                           <Button 
                             variant="outline"
                             className="border-green-500/30 text-green-500 hover:bg-green-500/10"
-                            onClick={() => {
-                              toast({
-                                title: "Withdraw Request",
-                                description: "Minimum withdrawal amount is ₹500. This feature will be available soon!",
-                              });
-                            }}
+                            onClick={() => setWithdrawDialogOpen(true)}
                             disabled={affiliate.total_earnings < 500}
                           >
                             <IndianRupee size={16} className="mr-2" />
@@ -990,6 +987,17 @@ const Account = () => {
                       <p className="text-xs text-muted-foreground mt-4">
                         Minimum withdrawal: ₹500 • Withdrawals are processed within 3-5 business days
                       </p>
+                      
+                      {/* Withdrawal Dialog */}
+                      <WithdrawalRequestDialog
+                        open={withdrawDialogOpen}
+                        onOpenChange={setWithdrawDialogOpen}
+                        affiliate={{ id: affiliate.id, total_earnings: affiliate.total_earnings, email: affiliate.email }}
+                        userId={user?.id || ""}
+                        userPhone={profile?.phone}
+                        userEmail={user?.email || ""}
+                        onSuccess={fetchData}
+                      />
                     </motion.div>
 
                     {/* How it works */}

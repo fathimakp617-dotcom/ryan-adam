@@ -116,3 +116,6 @@ verify_jwt = false
 
 [functions.manage-products]
 verify_jwt = false
+
+[functions.manage-withdrawals]
+verify_jwt = false
