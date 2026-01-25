@@ -84,13 +84,8 @@ serve(async (req) => {
     let isBogo = false;
     let couponDescription = "";
 
-    if (orderCount === 1) {
-      // After 1st order: 20% discount for 2nd order
-      couponType = "loyalty_20";
-      discountPercent = 20;
-      couponDescription = "20% off your next order!";
-    } else if (orderCount >= 2 && orderCount <= 8) {
-      // After 2nd-8th order: 10% discount
+    if (orderCount >= 1 && orderCount <= 8) {
+      // After 1st-8th order: 10% discount
       couponType = "loyalty_10";
       discountPercent = 10;
       couponDescription = "10% off your next order!";
