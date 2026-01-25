@@ -41,6 +41,7 @@ import {
 import ReturnRequestDialog from "@/components/ReturnRequestDialog";
 import LoyaltyCoupons from "@/components/LoyaltyCoupons";
 import WithdrawalRequestDialog from "@/components/WithdrawalRequestDialog";
+import WithdrawalHistory from "@/components/WithdrawalHistory";
 
 interface AffiliateData {
   id: string;
@@ -999,6 +1000,9 @@ const Account = () => {
                         onSuccess={fetchData}
                       />
                     </motion.div>
+
+                    {/* Withdrawal History */}
+                    <WithdrawalHistory userId={user?.id || ""} />
 
                     {/* How it works */}
                     <motion.div
