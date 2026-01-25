@@ -684,6 +684,72 @@ export type Database = {
           },
         ]
       }
+      withdrawal_requests: {
+        Row: {
+          account_holder_name: string | null
+          account_number: string | null
+          admin_notes: string | null
+          affiliate_id: string
+          amount: number
+          bank_name: string | null
+          created_at: string
+          email: string
+          id: string
+          ifsc_code: string | null
+          payment_method: string
+          phone: string
+          processed_at: string | null
+          processed_by: string | null
+          status: string
+          transaction_id: string | null
+          updated_at: string
+          upi_id: string | null
+          user_id: string
+        }
+        Insert: {
+          account_holder_name?: string | null
+          account_number?: string | null
+          admin_notes?: string | null
+          affiliate_id: string
+          amount: number
+          bank_name?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          ifsc_code?: string | null
+          payment_method: string
+          phone: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+          upi_id?: string | null
+          user_id: string
+        }
+        Update: {
+          account_holder_name?: string | null
+          account_number?: string | null
+          admin_notes?: string | null
+          affiliate_id?: string
+          amount?: number
+          bank_name?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          ifsc_code?: string | null
+          payment_method?: string
+          phone?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+          upi_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       product_reviews_public: {
