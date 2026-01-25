@@ -198,15 +198,7 @@ serve(async (req) => {
 
       let query = supabase
         .from("withdrawal_requests")
-        .select(`
-          *,
-          affiliates:affiliate_id (
-            name,
-            email,
-            code,
-            total_earnings
-          )
-        `)
+        .select("*")
         .order("created_at", { ascending: false });
 
       if (filterStatus && filterStatus !== "all") {
@@ -220,10 +212,24 @@ serve(async (req) => {
         throw listError;
       }
 
-      console.log(`Found ${requests?.length || 0} withdrawal requests`);
+      // Fetch affiliate details separately for each request
+      const affiliateIds = [...new Set(requests?.map(r => r.affiliate_id) || [])];
+      const { data: affiliates } = await supabase
+        .from("affiliates")
+        .select("id, name, email, code, total_earnings")
+        .in("id", affiliateIds);
+
+      // Map affiliates to requests
+      const affiliateMap = new Map(affiliates?.map(a => [a.id, a]) || []);
+      const enrichedRequests = requests?.map(r => ({
+        ...r,
+        affiliates: affiliateMap.get(r.affiliate_id) || null
+      })) || [];
+
+      console.log(`Found ${enrichedRequests.length} withdrawal requests`);
 
       return new Response(
-        JSON.stringify({ requests }),
+        JSON.stringify({ requests: enrichedRequests }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
 
@@ -327,7 +333,7 @@ serve(async (req) => {
       // Get the request details
       const { data: existingRequest } = await supabase
         .from("withdrawal_requests")
-        .select("*, affiliates:affiliate_id(total_earnings)")
+        .select("*")
         .eq("id", request_id)
         .maybeSingle();
 
@@ -337,6 +343,13 @@ serve(async (req) => {
           { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+
+      // Get affiliate earnings separately
+      const { data: affiliateData } = await supabase
+        .from("affiliates")
+        .select("total_earnings")
+        .eq("id", existingRequest.affiliate_id)
+        .maybeSingle();
 
       if (existingRequest.status !== "approved" && existingRequest.status !== "pending") {
         return new Response(
@@ -365,7 +378,7 @@ serve(async (req) => {
       }
 
       // Deduct amount from affiliate earnings
-      const currentEarnings = existingRequest.affiliates?.total_earnings || 0;
+      const currentEarnings = affiliateData?.total_earnings || 0;
       const newEarnings = Math.max(0, currentEarnings - existingRequest.amount);
 
       await supabase
