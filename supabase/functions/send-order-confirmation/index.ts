@@ -850,198 +850,411 @@ const generateAdminOrderEmailHTML = (order: OrderConfirmationRequest): string =>
 
 const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promise<Uint8Array> => {
   const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([400, 400]); // Increased height to accommodate customer email
+  const page = pdfDoc.addPage([595, 842]); // A4 size
   
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   
   const { width, height } = page.getSize();
+  const margin = 40;
+  const contentWidth = width - margin * 2;
   
-  // Draw border
+  const isPrepaid = order.payment_method !== 'cod';
+  const totalAmount = Math.round(order.total);
+  const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+  const orderDate = new Date().toISOString().split('T')[0];
+  
+  let yPos = height - 50;
+  
+  // Outer border
   page.drawRectangle({
-    x: 10,
-    y: 10,
-    width: width - 20,
-    height: height - 20,
+    x: margin - 10,
+    y: 80,
+    width: contentWidth + 20,
+    height: height - 110,
     borderColor: rgb(0, 0, 0),
     borderWidth: 2,
   });
   
-  // Header - FROM
-  page.drawText('FROM:', {
-    x: 20,
-    y: height - 35,
-    size: 8,
-    font: font,
-    color: rgb(0.4, 0.4, 0.4),
-  });
-  
-  page.drawText('RAYN ADAM PRIVATE LIMITED', {
-    x: 20,
-    y: height - 48,
-    size: 10,
+  // Header - RAYN ADAM
+  page.drawText('RAYN ADAM', {
+    x: margin,
+    y: yPos,
+    size: 28,
     font: boldFont,
     color: rgb(0, 0, 0),
   });
   
-  page.drawText('Ward No. 21, Door No. 553/1, Kavumpadi', {
-    x: 20,
-    y: height - 62,
-    size: 9,
+  yPos -= 18;
+  page.drawText('LUXURY PERFUME', {
+    x: margin,
+    y: yPos,
+    size: 11,
     font: font,
-    color: rgb(0.2, 0.2, 0.2),
-  });
-
-  page.drawText('Pallikkal, Tirurangadi, Malappuram – 673634', {
-    x: 20,
-    y: height - 76,
-    size: 9,
-    font: font,
-    color: rgb(0.2, 0.2, 0.2),
-  });
-
-  page.drawText('Kerala, India', {
-    x: 20,
-    y: height - 90,
-    size: 9,
-    font: font,
-    color: rgb(0.2, 0.2, 0.2),
-  });
-
-  // Company phone number
-  page.drawText('Ph: +91 99466 47442', {
-    x: 20,
-    y: height - 104,
-    size: 9,
-    font: font,
-    color: rgb(0.2, 0.2, 0.2),
-  });
-
-  // Company email
-  page.drawText('Email: support@raynadamperfume.com', {
-    x: 20,
-    y: height - 118,
-    size: 9,
-    font: font,
-    color: rgb(0.2, 0.2, 0.2),
+    color: rgb(0, 0, 0),
   });
   
-  // Divider line
+  // Header divider
+  yPos -= 15;
   page.drawLine({
-    start: { x: 20, y: height - 135 },
-    end: { x: width - 20, y: height - 135 },
-    thickness: 1,
-    color: rgb(0.7, 0.7, 0.7),
-  });
-  
-  // TO section
-  page.drawText('SHIP TO:', {
-    x: 20,
-    y: height - 155,
-    size: 10,
-    font: boldFont,
+    start: { x: margin - 10, y: yPos },
+    end: { x: width - margin + 10, y: yPos },
+    thickness: 2,
     color: rgb(0, 0, 0),
   });
   
-  // Customer name
-  page.drawText(order.customer_name.toUpperCase(), {
-    x: 20,
-    y: height - 180,
-    size: 14,
-    font: boldFont,
-    color: rgb(0, 0, 0),
-  });
-
-  // Customer phone number
-  const customerPhone = order.customer_phone || 'N/A';
-  page.drawText(`Ph: ${customerPhone}`, {
-    x: 20,
-    y: height - 197,
-    size: 10,
-    font: font,
-    color: rgb(0, 0, 0),
-  });
-
-  // Customer email
-  page.drawText(`Email: ${order.customer_email}`, {
-    x: 20,
-    y: height - 211,
-    size: 9,
-    font: font,
-    color: rgb(0, 0, 0),
-  });
-  
-  // Address
-  page.drawText(order.shipping_address.address, {
-    x: 20,
-    y: height - 230,
-    size: 11,
-    font: font,
-    color: rgb(0, 0, 0),
-  });
-  
-  // City, State, ZIP
-  page.drawText(`${order.shipping_address.city}, ${order.shipping_address.state} ${order.shipping_address.zipCode}`, {
-    x: 20,
-    y: height - 247,
-    size: 11,
-    font: font,
-    color: rgb(0, 0, 0),
-  });
-  
-  // Country
-  page.drawText((order.shipping_address.country || 'India').toUpperCase(), {
-    x: 20,
-    y: height - 264,
-    size: 11,
-    font: boldFont,
-    color: rgb(0, 0, 0),
-  });
-  
-  // Divider line
-  page.drawLine({
-    start: { x: 20, y: 70 },
-    end: { x: width - 20, y: 70 },
-    thickness: 1,
-    color: rgb(0.7, 0.7, 0.7),
-  });
-  
-  // Order number box
+  // Order Info Box
+  yPos -= 25;
+  const orderBoxY = yPos - 55;
   page.drawRectangle({
-    x: 20,
-    y: 20,
-    width: width - 40,
-    height: 40,
-    color: rgb(0.95, 0.95, 0.95),
-    borderColor: rgb(0.7, 0.7, 0.7),
-    borderWidth: 1,
+    x: margin,
+    y: orderBoxY,
+    width: contentWidth,
+    height: 80,
+    borderColor: rgb(0, 0, 0),
+    borderWidth: 2,
   });
   
-  page.drawText('ORDER:', {
-    x: 30,
-    y: 45,
-    size: 8,
-    font: font,
-    color: rgb(0.4, 0.4, 0.4),
-  });
-  
-  page.drawText(order.order_number, {
-    x: 70,
-    y: 43,
+  page.drawText(`ORDER: ${order.order_number}`, {
+    x: margin + 10,
+    y: yPos,
     size: 12,
     font: boldFont,
     color: rgb(0, 0, 0),
   });
   
-  // Payment method indicator
-  const totalInr = `INR ${order.total.toLocaleString('en-IN')}`;
-  const paymentText = order.payment_method === 'cod' ? `COD: ${totalInr}` : 'PREPAID';
-  page.drawText(paymentText, {
-    x: width - 120,
-    y: 43,
+  yPos -= 16;
+  page.drawText(`DATE: ${orderDate}`, {
+    x: margin + 10,
+    y: yPos,
+    size: 12,
+    font: boldFont,
+    color: rgb(0, 0, 0),
+  });
+  
+  // Payment Label Box
+  yPos -= 25;
+  const paymentLabel = isPrepaid ? `PREPAID : INR ${totalAmount}` : `CASH ON DELIVERY : INR ${totalAmount}`;
+  const paymentBoxWidth = paymentLabel.length * 9 + 20;
+  
+  page.drawRectangle({
+    x: margin + 10,
+    y: yPos - 8,
+    width: paymentBoxWidth,
+    height: 25,
+    borderColor: rgb(0, 0, 0),
+    borderWidth: 3,
+  });
+  
+  page.drawText(paymentLabel, {
+    x: margin + 20,
+    y: yPos,
+    size: 14,
+    font: boldFont,
+    color: rgb(0, 0, 0),
+  });
+  
+  // Items count on the right
+  page.drawText(`Items: ${itemCount}`, {
+    x: width - margin - 60,
+    y: yPos + 35,
+    size: 12,
+    font: boldFont,
+    color: rgb(0, 0, 0),
+  });
+  
+  // Address Tables
+  yPos = orderBoxY - 20;
+  const addressBoxHeight = 130;
+  const halfWidth = (contentWidth - 10) / 2;
+  
+  // Ship To Box
+  page.drawRectangle({
+    x: margin,
+    y: yPos - addressBoxHeight,
+    width: halfWidth,
+    height: addressBoxHeight,
+    borderColor: rgb(0, 0, 0),
+    borderWidth: 2,
+  });
+  
+  page.drawText('SHIP TO', {
+    x: margin + 10,
+    y: yPos - 18,
+    size: 12,
+    font: boldFont,
+    color: rgb(0, 0, 0),
+  });
+  
+  page.drawLine({
+    start: { x: margin + 10, y: yPos - 23 },
+    end: { x: margin + halfWidth - 10, y: yPos - 23 },
+    thickness: 2,
+    color: rgb(0, 0, 0),
+  });
+  
+  let addrY = yPos - 40;
+  page.drawText(order.customer_name, {
+    x: margin + 10,
+    y: addrY,
+    size: 11,
+    font: boldFont,
+    color: rgb(0, 0, 0),
+  });
+  
+  addrY -= 16;
+  page.drawText(order.shipping_address.address.substring(0, 40), {
+    x: margin + 10,
+    y: addrY,
+    size: 10,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
+  
+  addrY -= 14;
+  page.drawText(`${order.shipping_address.city}, ${order.shipping_address.state} - ${order.shipping_address.zipCode || order.shipping_address.pincode || ''}`, {
+    x: margin + 10,
+    y: addrY,
+    size: 10,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
+  
+  addrY -= 14;
+  page.drawText(order.shipping_address.country || 'India', {
+    x: margin + 10,
+    y: addrY,
+    size: 10,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
+  
+  addrY -= 14;
+  page.drawText(`PHONE: ${order.customer_phone || 'N/A'}`, {
+    x: margin + 10,
+    y: addrY,
     size: 10,
     font: boldFont,
-    color: order.payment_method === 'cod' ? rgb(0.8, 0.2, 0) : rgb(0, 0.5, 0),
+    color: rgb(0, 0, 0),
+  });
+  
+  // Seller Box
+  const sellerX = margin + halfWidth + 10;
+  page.drawRectangle({
+    x: sellerX,
+    y: yPos - addressBoxHeight,
+    width: halfWidth,
+    height: addressBoxHeight,
+    borderColor: rgb(0, 0, 0),
+    borderWidth: 2,
+  });
+  
+  page.drawText('SELLER', {
+    x: sellerX + 10,
+    y: yPos - 18,
+    size: 12,
+    font: boldFont,
+    color: rgb(0, 0, 0),
+  });
+  
+  page.drawLine({
+    start: { x: sellerX + 10, y: yPos - 23 },
+    end: { x: sellerX + halfWidth - 10, y: yPos - 23 },
+    thickness: 2,
+    color: rgb(0, 0, 0),
+  });
+  
+  let sellerY = yPos - 40;
+  page.drawText('RAYN ADAM PRIVATE LIMITED', {
+    x: sellerX + 10,
+    y: sellerY,
+    size: 11,
+    font: boldFont,
+    color: rgb(0, 0, 0),
+  });
+  
+  sellerY -= 14;
+  page.drawText('Ward No. 21, Door No. 553/1', {
+    x: sellerX + 10,
+    y: sellerY,
+    size: 10,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
+  
+  sellerY -= 14;
+  page.drawText('Kavumpadi, Pallikkal, Tirurangadi', {
+    x: sellerX + 10,
+    y: sellerY,
+    size: 10,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
+  
+  sellerY -= 14;
+  page.drawText('Malappuram, Kerala – 673634', {
+    x: sellerX + 10,
+    y: sellerY,
+    size: 10,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
+  
+  sellerY -= 14;
+  page.drawText('PHONE: +91 99466 47442', {
+    x: sellerX + 10,
+    y: sellerY,
+    size: 10,
+    font: boldFont,
+    color: rgb(0, 0, 0),
+  });
+  
+  // Product Table
+  yPos = yPos - addressBoxHeight - 30;
+  const productColWidth = contentWidth * 0.8;
+  const qtyColWidth = contentWidth * 0.2;
+  
+  // Table header
+  page.drawRectangle({
+    x: margin,
+    y: yPos - 25,
+    width: productColWidth,
+    height: 25,
+    borderColor: rgb(0, 0, 0),
+    borderWidth: 2,
+  });
+  page.drawRectangle({
+    x: margin + productColWidth,
+    y: yPos - 25,
+    width: qtyColWidth,
+    height: 25,
+    borderColor: rgb(0, 0, 0),
+    borderWidth: 2,
+  });
+  
+  page.drawText('PRODUCT', {
+    x: margin + 10,
+    y: yPos - 17,
+    size: 12,
+    font: boldFont,
+    color: rgb(0, 0, 0),
+  });
+  
+  page.drawText('QTY', {
+    x: margin + productColWidth + 10,
+    y: yPos - 17,
+    size: 12,
+    font: boldFont,
+    color: rgb(0, 0, 0),
+  });
+  
+  // Table rows
+  yPos -= 25;
+  for (const item of order.items) {
+    page.drawRectangle({
+      x: margin,
+      y: yPos - 25,
+      width: productColWidth,
+      height: 25,
+      borderColor: rgb(0, 0, 0),
+      borderWidth: 2,
+    });
+    page.drawRectangle({
+      x: margin + productColWidth,
+      y: yPos - 25,
+      width: qtyColWidth,
+      height: 25,
+      borderColor: rgb(0, 0, 0),
+      borderWidth: 2,
+    });
+    
+    page.drawText(item.name.substring(0, 45), {
+      x: margin + 10,
+      y: yPos - 17,
+      size: 11,
+      font: boldFont,
+      color: rgb(0, 0, 0),
+    });
+    
+    page.drawText(String(item.quantity), {
+      x: margin + productColWidth + qtyColWidth - 25,
+      y: yPos - 17,
+      size: 11,
+      font: boldFont,
+      color: rgb(0, 0, 0),
+    });
+    
+    yPos -= 25;
+  }
+  
+  // Total Box
+  yPos -= 20;
+  page.drawRectangle({
+    x: margin,
+    y: yPos - 30,
+    width: contentWidth,
+    height: 30,
+    borderColor: rgb(0, 0, 0),
+    borderWidth: 2,
+  });
+  
+  page.drawText(`TOTAL : INR ${totalAmount}`, {
+    x: width - margin - 130,
+    y: yPos - 20,
+    size: 12,
+    font: boldFont,
+    color: rgb(0, 0, 0),
+  });
+  
+  // Return Address Box
+  yPos -= 50;
+  page.drawRectangle({
+    x: margin,
+    y: yPos - 60,
+    width: contentWidth,
+    height: 60,
+    borderColor: rgb(0, 0, 0),
+    borderWidth: 2,
+  });
+  
+  page.drawText('RETURN ADDRESS', {
+    x: margin + 10,
+    y: yPos - 18,
+    size: 12,
+    font: boldFont,
+    color: rgb(0, 0, 0),
+  });
+  
+  page.drawLine({
+    start: { x: margin + 10, y: yPos - 23 },
+    end: { x: margin + 120, y: yPos - 23 },
+    thickness: 2,
+    color: rgb(0, 0, 0),
+  });
+  
+  page.drawText('RAYN ADAM PRIVATE LIMITED, Ward No. 21, Door No. 553/1, Kavumpadi, Pallikkal,', {
+    x: margin + 20,
+    y: yPos - 40,
+    size: 9,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
+  
+  page.drawText('Tirurangadi, Malappuram, Kerala – 673634, PHONE: +91 99466 47442', {
+    x: margin + 70,
+    y: yPos - 52,
+    size: 9,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
+  
+  // Footer
+  page.drawText('THANK YOU FOR SHOPPING', {
+    x: width / 2 - 70,
+    y: 100,
+    size: 12,
+    font: boldFont,
+    color: rgb(0, 0, 0),
   });
   
   const pdfBytes = await pdfDoc.save();

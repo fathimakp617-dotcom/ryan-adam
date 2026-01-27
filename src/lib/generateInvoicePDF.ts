@@ -281,16 +281,22 @@ export const downloadInvoicePDF = async (data: InvoiceData): Promise<void> => {
   doc.save(`invoice-${data.orderNumber}.pdf`);
 };
 
-// Shipping Label PDF - 4x6 inches (288 x 432 points)
+// Shipping Slip PDF - A4 size, matches the ShippingSlip component design
 interface ShippingLabelOrder {
   order_number: string;
   customer_name: string;
   customer_phone?: string | null;
+  payment_method?: string;
+  payment_status?: string;
+  total?: number;
+  created_at?: string;
   shipping_address: {
     address?: string;
     city?: string;
     state?: string;
+    zipCode?: string;
     pincode?: string;
+    country?: string;
   };
   items?: any[];
 }
@@ -299,135 +305,186 @@ export const generateShippingLabelPDF = async (order: ShippingLabelOrder): Promi
   const doc = new jsPDF({
     orientation: "portrait",
     unit: "pt",
-    format: [288, 432], // 4x6 inches
+    format: "a4",
   });
 
-  const pageWidth = 288;
-  const pageHeight = 432;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 40;
+  const contentWidth = pageWidth - margin * 2;
+  const darkColor: [number, number, number] = [0, 0, 0];
+  const isPrepaid = order.payment_status === "paid" || order.payment_method !== "cod";
+  const totalAmount = Math.round(order.total || 0);
+  const itemCount = order.items?.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0) || 0;
 
-  // Colors
-  const darkColor: [number, number, number] = [26, 26, 26];
-  const goldColor: [number, number, number] = [168, 124, 57]; // #a87c39
+  let yPos = 50;
 
-  // Load and add logo
-  const logoUrl = "https://ryanadamperfume.lovable.app/lovable-uploads/eb8b7d91-8b18-4a81-a5e1-9d3f91d4f7df.png";
-  
-  try {
-    const response = await fetch(logoUrl);
-    const blob = await response.blob();
-    const logoDataUrl = await new Promise<string>((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.readAsDataURL(blob);
-    });
+  // Outer border
+  doc.setDrawColor(0);
+  doc.setLineWidth(2);
+  doc.rect(margin - 10, 30, contentWidth + 20, 700);
 
-    // Header with dark background
-    doc.setFillColor(...darkColor);
-    doc.rect(0, 0, pageWidth, 60, "F");
-
-    // Add logo centered
-    const logoWidth = 120;
-    const logoHeight = 40;
-    doc.addImage(logoDataUrl, "PNG", (pageWidth - logoWidth) / 2, 10, logoWidth, logoHeight);
-  } catch (error) {
-    // Fallback to text if logo fails to load
-    doc.setFillColor(...darkColor);
-    doc.rect(0, 0, pageWidth, 60, "F");
-
-    doc.setTextColor(...goldColor);
-    doc.setFontSize(18);
-    doc.setFont("helvetica", "bold");
-    doc.text("RAYN ADAM", pageWidth / 2, 28, { align: "center" });
-
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.text("LUXURY PERFUMES", pageWidth / 2, 45, { align: "center" });
-  }
-
-  // Order Number
-  doc.setFillColor(248, 248, 248);
-  doc.rect(0, 60, pageWidth, 35, "F");
-
+  // Header - RAYN ADAM
+  doc.setFontSize(28);
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(...darkColor);
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "bold");
-  doc.text("ORDER #", 15, 80);
-  doc.setFontSize(14);
-  doc.text(order.order_number, 75, 80);
+  doc.text("RAYN ADAM", margin, yPos);
 
-  // Ship To Section
-  let yPos = 110;
-
-  doc.setTextColor(136, 136, 136);
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "bold");
-  doc.text("SHIP TO:", 15, yPos);
-
-  yPos += 20;
-  doc.setTextColor(...darkColor);
-  doc.setFontSize(14);
-  doc.setFont("helvetica", "bold");
-  doc.text(order.customer_name.toUpperCase(), 15, yPos, { maxWidth: pageWidth - 30 });
-
-  yPos += 25;
+  yPos += 15;
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
+  doc.text("LUXURY PERFUME", margin, yPos);
 
+  // Header divider
+  yPos += 12;
+  doc.setLineWidth(2);
+  doc.line(margin - 10, yPos, pageWidth - margin + 10, yPos);
+
+  // Order Info Table
+  yPos += 25;
+  doc.setLineWidth(2);
+  doc.rect(margin, yPos - 15, contentWidth, 80);
+
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text(`ORDER: ${order.order_number}`, margin + 10, yPos);
+
+  yPos += 16;
+  const orderDate = order.created_at ? new Date(order.created_at).toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
+  doc.text(`DATE: ${orderDate}`, margin + 10, yPos);
+
+  yPos += 20;
+  doc.setFontSize(16);
+  const paymentLabel = isPrepaid ? `PREPAID : INR ${totalAmount}` : `CASH ON DELIVERY : INR ${totalAmount}`;
+  
+  // Payment box
+  const paymentBoxWidth = doc.getTextWidth(paymentLabel) + 20;
+  doc.setLineWidth(3);
+  doc.rect(margin + 10, yPos - 15, paymentBoxWidth, 25);
+  doc.text(paymentLabel, margin + 20, yPos);
+
+  // Items count on the right
+  doc.setFontSize(12);
+  doc.text(`Items: ${itemCount}`, pageWidth - margin - 10, yPos - 35, { align: "right" });
+
+  // Address Table
+  yPos += 45;
+  const addressBoxHeight = 130;
+  const halfWidth = (contentWidth - 10) / 2;
+
+  // Ship To Box
+  doc.setLineWidth(2);
+  doc.rect(margin, yPos, halfWidth, addressBoxHeight);
+  
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text("SHIP TO", margin + 10, yPos + 20);
+  doc.setLineWidth(2);
+  doc.line(margin + 10, yPos + 25, margin + halfWidth - 10, yPos + 25);
+
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  let addrY = yPos + 42;
+  doc.text(order.customer_name, margin + 10, addrY);
+  
+  addrY += 16;
+  doc.setFont("helvetica", "normal");
   const address = order.shipping_address;
   if (address?.address) {
-    const addressLines = doc.splitTextToSize(address.address, pageWidth - 30);
-    doc.text(addressLines, 15, yPos);
-    yPos += addressLines.length * 14;
+    const lines = doc.splitTextToSize(address.address, halfWidth - 25);
+    doc.text(lines, margin + 10, addrY);
+    addrY += lines.length * 14;
   }
+  
+  const cityState = `${address?.city || ""}, ${address?.state || ""} - ${address?.zipCode || address?.pincode || ""}`;
+  doc.text(cityState, margin + 10, addrY);
+  addrY += 14;
+  
+  doc.text(address?.country || "India", margin + 10, addrY);
+  addrY += 14;
+  
+  doc.text(`PHONE: ${order.customer_phone || "N/A"}`, margin + 10, addrY);
 
-  if (address?.city || address?.state) {
-    doc.text(`${address.city || ""}, ${address.state || ""}`, 15, yPos);
-    yPos += 16;
-  }
-
-  if (address?.pincode) {
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text(`PIN: ${address.pincode}`, 15, yPos);
-    yPos += 20;
-  }
-
-  if (order.customer_phone) {
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Phone: ${order.customer_phone}`, 15, yPos);
-    yPos += 20;
-  }
-
-  // Items count
-  yPos += 10;
-  doc.setDrawColor(200, 200, 200);
-  doc.line(15, yPos, pageWidth - 15, yPos);
-  yPos += 15;
-
-  const itemCount = order.items?.length || 0;
-  doc.setFontSize(10);
-  doc.setTextColor(136, 136, 136);
-  doc.text(`ITEMS: ${itemCount}`, 15, yPos);
-
-  // From section at bottom
-  const fromY = pageHeight - 90;
-  doc.setDrawColor(200, 200, 200);
-  doc.line(15, fromY - 10, pageWidth - 15, fromY - 10);
-
-  doc.setTextColor(136, 136, 136);
-  doc.setFontSize(8);
-  doc.text("FROM:", 15, fromY);
-
-  doc.setTextColor(...darkColor);
-  doc.setFontSize(9);
+  // Seller Box
+  const sellerX = margin + halfWidth + 10;
+  doc.rect(sellerX, yPos, halfWidth, addressBoxHeight);
+  
+  doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
-  doc.text("RAYN ADAM PRIVATE LIMITED", 15, fromY + 12);
+  doc.text("SELLER", sellerX + 10, yPos + 20);
+  doc.line(sellerX + 10, yPos + 25, sellerX + halfWidth - 10, yPos + 25);
+
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  let sellerY = yPos + 42;
+  doc.text("RAYN ADAM PRIVATE LIMITED", sellerX + 10, sellerY);
+  
+  sellerY += 16;
   doc.setFont("helvetica", "normal");
-  doc.text("Ward No. 21, Door No. 553/1, Kavumpadi", 15, fromY + 24);
-  doc.text("Pallikkal, Tirurangadi, Malappuram – 673634", 15, fromY + 36);
-  doc.text("Kerala, India | Ph: +91 99466 47442", 15, fromY + 48);
+  doc.text("Ward No. 21, Door No. 553/1", sellerX + 10, sellerY);
+  sellerY += 14;
+  doc.text("Kavumpadi, Pallikkal, Tirurangadi", sellerX + 10, sellerY);
+  sellerY += 14;
+  doc.text("Malappuram, Kerala – 673634", sellerX + 10, sellerY);
+  sellerY += 14;
+  doc.text("PHONE: +91 99466 47442", sellerX + 10, sellerY);
+
+  // Product Details Table
+  yPos += addressBoxHeight + 20;
+  
+  // Table header
+  doc.setFillColor(255, 255, 255);
+  doc.setLineWidth(2);
+  doc.rect(margin, yPos, contentWidth * 0.8, 25);
+  doc.rect(margin + contentWidth * 0.8, yPos, contentWidth * 0.2, 25);
+  
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text("PRODUCT", margin + 10, yPos + 17);
+  doc.text("QTY", margin + contentWidth * 0.8 + 10, yPos + 17);
+
+  // Table rows
+  yPos += 25;
+  const items = order.items || [];
+  items.forEach((item: any) => {
+    doc.rect(margin, yPos, contentWidth * 0.8, 25);
+    doc.rect(margin + contentWidth * 0.8, yPos, contentWidth * 0.2, 25);
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text(item.name || item.product_name || "Product", margin + 10, yPos + 17);
+    doc.text(String(item.quantity || 1), margin + contentWidth - 30, yPos + 17, { align: "right" });
+    yPos += 25;
+  });
+
+  // Total Amount Box
+  yPos += 15;
+  doc.setLineWidth(2);
+  doc.rect(margin, yPos, contentWidth, 30);
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text(`TOTAL : INR ${totalAmount}`, pageWidth - margin - 10, yPos + 20, { align: "right" });
+
+  // Return Address Box
+  yPos += 45;
+  doc.rect(margin, yPos, contentWidth, 65);
+  
+  doc.setFontSize(12);
+  doc.text("RETURN ADDRESS", margin + 10, yPos + 18);
+  doc.setLineWidth(2);
+  doc.line(margin + 10, yPos + 23, margin + 120, yPos + 23);
+
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  const returnAddr = "RAYN ADAM PRIVATE LIMITED, Ward No. 21, Door No. 553/1, Kavumpadi, Pallikkal, Tirurangadi, Malappuram, Kerala – 673634, PHONE: +91 99466 47442";
+  const returnLines = doc.splitTextToSize(returnAddr, contentWidth - 20);
+  doc.text(returnLines, pageWidth / 2, yPos + 42, { align: "center" });
+
+  // Footer
+  yPos += 80;
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.text("THANK YOU FOR SHOPPING", pageWidth / 2, yPos, { align: "center" });
 
   // Save
-  doc.save(`shipping-label-${order.order_number}.pdf`);
+  doc.save(`shipping-slip-${order.order_number}.pdf`);
 };
