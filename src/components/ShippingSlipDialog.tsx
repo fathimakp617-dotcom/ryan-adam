@@ -45,13 +45,47 @@ export default function ShippingSlipDialog({ order, open, onOpenChange }: Shippi
               font-size: 15px;
               font-weight: bold;
               padding: 20px;
+              background: white;
+              color: black;
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
             }
+            table {
+              border-collapse: collapse;
+              width: 100%;
+            }
+            td, th {
+              border: 2px solid black;
+              padding: 10px;
+              vertical-align: top;
+            }
+            .border-2 { border: 2px solid black; }
+            .border-b-2 { border-bottom: 2px solid black; }
+            .p-5 { padding: 20px; }
+            .p-2\\.5 { padding: 10px; }
+            .pb-2\\.5 { padding-bottom: 10px; }
+            .pb-1\\.5 { padding-bottom: 6px; }
+            .mb-4 { margin-bottom: 16px; }
+            .mb-1\\.5 { margin-bottom: 6px; }
+            .mt-2\\.5 { margin-top: 10px; }
+            .w-full { width: 100%; }
+            .w-1\\/2 { width: 50%; }
+            .text-center { text-align: center; }
+            .text-right { text-align: right; }
+            .text-left { text-align: left; }
+            .text-xl { font-size: 20px; }
+            .text-base { font-size: 16px; }
+            .font-bold { font-weight: bold; }
+            .uppercase { text-transform: uppercase; }
+            .inline-block { display: inline-block; }
+            .align-top { vertical-align: top; }
             @media print {
               @page {
                 size: A4;
                 margin: 10mm;
+              }
+              body {
+                padding: 0;
               }
             }
           </style>
@@ -60,10 +94,12 @@ export default function ShippingSlipDialog({ order, open, onOpenChange }: Shippi
           ${content}
           <script>
             window.onload = function() {
-              window.print();
-              window.onafterprint = function() {
-                window.close();
-              };
+              setTimeout(function() {
+                window.print();
+                window.onafterprint = function() {
+                  window.close();
+                };
+              }, 100);
             };
           </script>
         </body>

@@ -16,15 +16,23 @@ const ShippingSlip = forwardRef<HTMLDivElement, ShippingSlipProps>(({ order }, r
       style={{ fontFamily: "Arial, Helvetica, sans-serif", fontSize: "15px", fontWeight: "bold" }}
     >
       <div className="border-2 border-black p-5">
-        {/* Header with Logo */}
-        <div className="text-right border-b-2 border-black pb-2.5 mb-4">
-          <img
-            src="https://ryanadamperfume.lovable.app/lovable-uploads/eb8b7d91-8b18-4a81-a5e1-9d3f91d4f7df.png"
-            alt="Rayn Adam"
-            width={180}
-            className="ml-auto"
-            crossOrigin="anonymous"
-          />
+        {/* Header with Company Name */}
+        <div className="border-b-2 border-black pb-2.5 mb-4">
+          <h1 
+            style={{ 
+              fontSize: "28px", 
+              fontWeight: "bold", 
+              letterSpacing: "2px",
+              textAlign: "left",
+              margin: 0,
+              fontFamily: "Georgia, serif"
+            }}
+          >
+            RAYN ADAM
+          </h1>
+          <p style={{ fontSize: "11px", letterSpacing: "3px", marginTop: "2px" }}>
+            LUXURY PERFUME
+          </p>
         </div>
 
         {/* Order Info */}
