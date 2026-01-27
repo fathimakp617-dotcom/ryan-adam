@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Package, 
@@ -40,10 +41,12 @@ import {
   Eye,
   ChevronRight,
   Check,
-  X
+  X,
+  Printer
 } from "lucide-react";
 import { generateShippingLabelPDF } from "@/lib/generateInvoicePDF";
 import OrderViewDialog from "@/components/OrderViewDialog";
+import BulkShippingSlipPrint from "@/components/BulkShippingSlipPrint";
 import { useShippingOrders, useInvalidateAdminData, type Order } from "@/hooks/useAdminData";
 
 const SHIPPING_SESSION_KEY = "rayn_shipping_session";
@@ -61,6 +64,8 @@ const ShippingOrders = () => {
   const [trackingUrl, setTrackingUrl] = useState("");
   const [newStatus, setNewStatus] = useState("");
   const [viewOrder, setViewOrder] = useState<Order | null>(null);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
+  const [showBulkSlipPrint, setShowBulkSlipPrint] = useState(false);
   const { toast } = useToast();
 
   // Sync cached orders to local state
@@ -163,6 +168,31 @@ const ShippingOrders = () => {
         variant: "destructive",
       });
     }
+  };
+
+  // Only allow selecting orders that need shipping (not delivered or cancelled)
+  const isOrderSelectable = (order: Order) => {
+    return order.order_status === "pending" || order.order_status === "shipped" || order.order_status === "processing";
+  };
+
+  // Bulk selection handlers
+  const handleSelectAll = () => {
+    const selectableOrders = filteredOrders.filter(isOrderSelectable);
+    if (selectedOrderIds.size === selectableOrders.length && selectableOrders.length > 0) {
+      setSelectedOrderIds(new Set());
+    } else {
+      setSelectedOrderIds(new Set(selectableOrders.map(o => o.id)));
+    }
+  };
+
+  const handleSelectOrder = (orderId: string) => {
+    const newSet = new Set(selectedOrderIds);
+    if (newSet.has(orderId)) {
+      newSet.delete(orderId);
+    } else {
+      newSet.add(orderId);
+    }
+    setSelectedOrderIds(newSet);
   };
 
   const getStatusColor = (status: string) => {
@@ -281,6 +311,32 @@ const ShippingOrders = () => {
         </CardContent>
       </Card>
 
+      {/* Bulk Actions Bar */}
+      {selectedOrderIds.size > 0 && (
+        <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-lg p-3">
+          <span className="text-sm font-medium">
+            {selectedOrderIds.size} order{selectedOrderIds.size > 1 ? 's' : ''} selected
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setSelectedOrderIds(new Set())}
+            >
+              Clear Selection
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setShowBulkSlipPrint(true)}
+              className="bg-primary hover:bg-primary/90"
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              Print Slips ({selectedOrderIds.size})
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Orders Table */}
       <Card>
         <CardHeader>
@@ -300,6 +356,12 @@ const ShippingOrders = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={filteredOrders.filter(isOrderSelectable).length > 0 && selectedOrderIds.size === filteredOrders.filter(isOrderSelectable).length}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead>Order</TableHead>
                     <TableHead>Customer</TableHead>
                     <TableHead>Products</TableHead>
@@ -316,9 +378,18 @@ const ShippingOrders = () => {
                     const isDelivered = order.order_status === "delivered";
                     const isLocked = isCancelled || isDelivered;
                     const items = Array.isArray(order.items) ? order.items : [];
+                    const canSelect = isOrderSelectable(order);
                     
                     return (
                       <TableRow key={order.id} className={isCancelled ? "opacity-60" : ""}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedOrderIds.has(order.id)}
+                            onCheckedChange={() => handleSelectOrder(order.id)}
+                            disabled={!canSelect}
+                            className={!canSelect ? "opacity-30" : ""}
+                          />
+                        </TableCell>
                         <TableCell className={`font-medium ${isCancelled ? "line-through" : ""}`}>
                           {order.order_number}
                         </TableCell>
@@ -573,6 +644,13 @@ const ShippingOrders = () => {
         order={viewOrder} 
         open={!!viewOrder} 
         onOpenChange={(open) => !open && setViewOrder(null)} 
+      />
+
+      {/* Bulk Shipping Slip Print Dialog */}
+      <BulkShippingSlipPrint
+        orders={filteredOrders.filter(o => selectedOrderIds.has(o.id))}
+        open={showBulkSlipPrint}
+        onOpenChange={setShowBulkSlipPrint}
       />
     </div>
   );

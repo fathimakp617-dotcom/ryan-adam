@@ -32,6 +32,7 @@ import { Eye, Search, RefreshCw, Truck, Package, CheckCircle, X, Clock, Loader2,
 import { generateShippingLabelPDF } from "@/lib/generateInvoicePDF";
 import OrderViewDialog from "@/components/OrderViewDialog";
 import ShippingSlipDialog from "@/components/ShippingSlipDialog";
+import BulkShippingSlipPrint from "@/components/BulkShippingSlipPrint";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
@@ -68,6 +69,7 @@ const AdminOrders = () => {
   const [shippingSlipOrder, setShippingSlipOrder] = useState<Order | null>(null);
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   const [isBulkPrinting, setIsBulkPrinting] = useState(false);
+  const [showBulkSlipPrint, setShowBulkSlipPrint] = useState(false);
   const { toast } = useToast();
 
   // Handle expired admin session (avoid blank/error loops)
@@ -653,6 +655,14 @@ const AdminOrders = () => {
             </Button>
             <Button
               size="sm"
+              variant="outline"
+              onClick={() => setShowBulkSlipPrint(true)}
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              Print Slips
+            </Button>
+            <Button
+              size="sm"
               onClick={handleBulkPrintLabels}
               disabled={isBulkPrinting}
               className="bg-primary hover:bg-primary/90"
@@ -660,12 +670,12 @@ const AdminOrders = () => {
               {isBulkPrinting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Printing...
+                  Downloading...
                 </>
               ) : (
                 <>
                   <FileText className="h-4 w-4 mr-2" />
-                  Print Shipping Labels
+                  Download PDFs
                 </>
               )}
             </Button>
@@ -1109,6 +1119,12 @@ const AdminOrders = () => {
         order={shippingSlipOrder}
         open={!!shippingSlipOrder}
         onOpenChange={(open) => !open && setShippingSlipOrder(null)}
+      />
+      {/* Bulk Shipping Slip Print Dialog */}
+      <BulkShippingSlipPrint
+        orders={filteredOrders.filter(o => selectedOrderIds.has(o.id))}
+        open={showBulkSlipPrint}
+        onOpenChange={setShowBulkSlipPrint}
       />
     </div>
   );
