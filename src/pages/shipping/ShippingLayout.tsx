@@ -39,26 +39,74 @@ const ShippingLayout = () => {
   const location = useLocation();
   const { toast } = useToast();
 
+  // Check existing session on mount only
   useEffect(() => {
-    checkExistingSession();
-  }, []);
-
-  const checkExistingSession = () => {
-    try {
-      const stored = sessionStorage.getItem(SHIPPING_SESSION_KEY);
-      if (stored) {
-        const session: ShippingSession = JSON.parse(stored);
-        if (session.expiry > Date.now() && session.role === "shipping") {
-          setShippingSession(session);
-        } else {
-          sessionStorage.removeItem(SHIPPING_SESSION_KEY);
+    const checkExistingSession = () => {
+      try {
+        const stored = sessionStorage.getItem(SHIPPING_SESSION_KEY);
+        if (stored) {
+          const session: ShippingSession = JSON.parse(stored);
+          if (session.expiry > Date.now() && session.role === "shipping") {
+            setShippingSession(session);
+          } else {
+            sessionStorage.removeItem(SHIPPING_SESSION_KEY);
+            if (session.expiry <= Date.now()) {
+              toast({
+                title: "Session Expired",
+                description: "Your session has expired. Please log in again.",
+                variant: "destructive",
+              });
+            }
+          }
         }
+      } catch (error) {
+        sessionStorage.removeItem(SHIPPING_SESSION_KEY);
       }
-    } catch (error) {
-      sessionStorage.removeItem(SHIPPING_SESSION_KEY);
-    }
-    setIsChecking(false);
-  };
+      setIsChecking(false);
+    };
+
+    checkExistingSession();
+  }, [toast]);
+
+  // Sync session with storage periodically
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      const stored = sessionStorage.getItem(SHIPPING_SESSION_KEY);
+      
+      if (!stored) {
+        setShippingSession(prev => {
+          if (prev !== null) return null;
+          return prev;
+        });
+        return;
+      }
+
+      try {
+        const session: ShippingSession = JSON.parse(stored);
+        if (session.expiry <= Date.now()) {
+          sessionStorage.removeItem(SHIPPING_SESSION_KEY);
+          setShippingSession(null);
+          toast({
+            title: "Session Expired",
+            description: "Your session has expired. Please log in again.",
+            variant: "destructive",
+          });
+        } else {
+          setShippingSession(prev => {
+            if (!prev || prev.token !== session.token || prev.expiry !== session.expiry) {
+              return session;
+            }
+            return prev;
+          });
+        }
+      } catch {
+        sessionStorage.removeItem(SHIPPING_SESSION_KEY);
+        setShippingSession(null);
+      }
+    }, 3000);
+    
+    return () => clearInterval(intervalId);
+  }, [toast]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,9 +129,8 @@ const ShippingLayout = () => {
       if (error) throw error;
 
       if (data.success) {
-        // Check if user has shipping role
+        // Check if user has admin role - redirect them to admin dashboard
         if (data.role === "admin") {
-          // Admin users should go to admin dashboard
           toast({
             title: "Admin Account",
             description: "Redirecting to admin dashboard...",
@@ -141,6 +188,7 @@ const ShippingLayout = () => {
     );
   }
 
+  // Show login screen if not authenticated
   if (!shippingSession) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -150,9 +198,10 @@ const ShippingLayout = () => {
           className="w-full max-w-md"
         >
           <div className="bg-card border border-border rounded-2xl p-8 shadow-lg">
+            {/* Header */}
             <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Truck className="w-8 h-8 text-blue-500" />
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Truck className="w-8 h-8 text-primary" />
               </div>
               <h1 className="text-2xl font-heading font-bold text-foreground">Shipping Access</h1>
               <p className="text-muted-foreground text-sm mt-2">
@@ -195,7 +244,7 @@ const ShippingLayout = () => {
 
               <Button 
                 type="submit" 
-                className="w-full bg-blue-600 hover:bg-blue-700"
+                className="w-full"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -225,6 +274,7 @@ const ShippingLayout = () => {
     );
   }
 
+  // Shipping user is authenticated - show dashboard
   const menuItems = [
     { title: "Dashboard", url: "/shipping", icon: LayoutDashboard },
     { title: "Orders", url: "/shipping/orders", icon: Package },
@@ -244,9 +294,10 @@ const ShippingLayout = () => {
       <div className="min-h-screen flex w-full bg-background">
         <Sidebar className="border-r border-border">
           <SidebarContent className="pt-4">
+            {/* Logo/Brand */}
             <div className="px-4 py-4 mb-4">
               <Link to="/" className="block">
-                <h1 className="text-xl font-heading font-bold text-blue-600">RAYN ADAM</h1>
+                <h1 className="text-xl font-heading font-bold text-primary">RAYN ADAM</h1>
                 <p className="text-xs text-muted-foreground">Shipping Dashboard</p>
               </Link>
             </div>
@@ -262,7 +313,7 @@ const ShippingLayout = () => {
                           to={item.url}
                           className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
                             isActive(item.url)
-                              ? "bg-blue-500/10 text-blue-600"
+                              ? "bg-primary/10 text-primary"
                               : "text-muted-foreground hover:bg-muted hover:text-foreground"
                           }`}
                         >
@@ -276,6 +327,7 @@ const ShippingLayout = () => {
               </SidebarGroupContent>
             </SidebarGroup>
 
+            {/* Bottom Actions */}
             <div className="mt-auto px-4 py-4 border-t border-border">
               <div className="text-sm text-muted-foreground mb-3 truncate">
                 {shippingSession.email}
