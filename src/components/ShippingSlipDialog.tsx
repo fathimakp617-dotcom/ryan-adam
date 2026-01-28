@@ -6,7 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Printer, Download } from "lucide-react";
+import { Printer, Download, Eye } from "lucide-react";
 import type { Order } from "@/hooks/useAdminData";
 import ShippingSlip from "./ShippingSlip";
 import jsPDF from "jspdf";
@@ -20,6 +20,85 @@ interface ShippingSlipDialogProps {
 
 export default function ShippingSlipDialog({ order, open, onOpenChange }: ShippingSlipDialogProps) {
   const slipRef = useRef<HTMLDivElement>(null);
+
+  const handlePreview = () => {
+    if (!slipRef.current || !order) return;
+    
+    const previewWindow = window.open("", "_blank");
+    if (!previewWindow) return;
+
+    const content = slipRef.current.innerHTML;
+    
+    previewWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Preview - Shipping Slip ${order.order_number}</title>
+          <style>
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            body {
+              font-family: Arial, Helvetica, sans-serif;
+              font-size: 15px;
+              font-weight: bold;
+              padding: 40px;
+              background: #f5f5f5;
+              color: black;
+              display: flex;
+              justify-content: center;
+              min-height: 100vh;
+            }
+            .preview-container {
+              background: white;
+              padding: 20px;
+              box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+              max-width: 800px;
+              width: 100%;
+              height: fit-content;
+            }
+            table {
+              border-collapse: collapse;
+              width: 100%;
+            }
+            td, th {
+              border: 2px solid black;
+              padding: 10px;
+              vertical-align: top;
+            }
+            .border-2 { border: 2px solid black; }
+            .border-b-2 { border-bottom: 2px solid black; }
+            .p-5 { padding: 20px; }
+            .p-2\\.5 { padding: 10px; }
+            .pb-2\\.5 { padding-bottom: 10px; }
+            .pb-1\\.5 { padding-bottom: 6px; }
+            .mb-4 { margin-bottom: 16px; }
+            .mb-1\\.5 { margin-bottom: 6px; }
+            .mt-2\\.5 { margin-top: 10px; }
+            .w-full { width: 100%; }
+            .w-1\\/2 { width: 50%; }
+            .text-center { text-align: center; }
+            .text-right { text-align: right; }
+            .text-left { text-align: left; }
+            .text-xl { font-size: 20px; }
+            .text-base { font-size: 16px; }
+            .font-bold { font-weight: bold; }
+            .uppercase { text-transform: uppercase; }
+            .inline-block { display: inline-block; }
+            .align-top { vertical-align: top; }
+          </style>
+        </head>
+        <body>
+          <div class="preview-container">
+            ${content}
+          </div>
+        </body>
+      </html>
+    `);
+    previewWindow.document.close();
+  };
 
   const handlePrint = () => {
     if (!slipRef.current) return;
@@ -147,6 +226,10 @@ export default function ShippingSlipDialog({ order, open, onOpenChange }: Shippi
           <DialogTitle className="flex items-center justify-between">
             <span>Shipping Slip - {order.order_number}</span>
             <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handlePreview}>
+                <Eye className="h-4 w-4 mr-2" />
+                Preview
+              </Button>
               <Button variant="outline" size="sm" onClick={handlePrint}>
                 <Printer className="h-4 w-4 mr-2" />
                 Print
