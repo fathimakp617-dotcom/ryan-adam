@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import FloatingParticles from "@/components/FloatingParticles";
 import ProductReviews from "@/components/ProductReviews";
 import RelatedProducts from "@/components/RelatedProducts";
 import PageTransition from "@/components/PageTransition";
@@ -157,8 +156,6 @@ const ProductDetail = () => {
         <meta property="product:price:amount" content={product.price.toString()} />
         <meta property="product:price:currency" content="INR" />
       </Helmet>
-
-      <FloatingParticles />
 
       <PageTransition>
         <main className="min-h-screen bg-background relative z-10">

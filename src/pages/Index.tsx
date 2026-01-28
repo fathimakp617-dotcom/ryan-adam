@@ -9,7 +9,6 @@ const Collection = lazy(() => import("@/components/Collection"));
 const About = lazy(() => import("@/components/About"));
 const Contact = lazy(() => import("@/components/Contact"));
 const Footer = lazy(() => import("@/components/Footer"));
-const FloatingParticles = lazy(() => import("@/components/FloatingParticles"));
 const OrderSuccessModal = lazy(() => import("@/components/OrderSuccessModal"));
 const CookieConsent = lazy(() => import("@/components/CookieConsent"));
 
@@ -34,9 +33,8 @@ const Index = () => {
         />
       </Helmet>
 
-      {/* Defer particles loading */}
+      {/* Defer modals loading */}
       <Suspense fallback={null}>
-        <FloatingParticles />
         <OrderSuccessModal />
         <CookieConsent />
       </Suspense>

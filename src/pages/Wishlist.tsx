@@ -6,7 +6,6 @@ import { Heart, Trash2, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import FloatingParticles from "@/components/FloatingParticles";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useCart } from "@/contexts/CartContext";
 import { formatPrice } from "@/data/products";
@@ -28,8 +27,6 @@ const Wishlist = () => {
         <title>Wishlist | Rayn Adam Luxury Perfumes</title>
         <meta name="description" content="Your saved fragrances at Rayn Adam Luxury Perfumes." />
       </Helmet>
-
-      <FloatingParticles />
 
       <main className="min-h-screen bg-background relative z-10">
         <Navbar />
