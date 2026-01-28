@@ -15,7 +15,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import FloatingParticles from "@/components/FloatingParticles";
 import PageTransition from "@/components/PageTransition";
 import { products, formatPrice } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
@@ -118,8 +117,6 @@ const Shop = () => {
           content="Browse our exclusive collection of luxury fragrances. Premium perfumes crafted from the finest natural ingredients."
         />
       </Helmet>
-
-      <FloatingParticles />
 
       <PageTransition>
         <main className="min-h-screen bg-background relative z-10">
