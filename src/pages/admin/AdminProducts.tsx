@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Package, Loader2, AlertCircle, Upload, Image, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, Loader2, AlertCircle, Upload, Image, X, Eye } from "lucide-react";
 
 interface Product {
   id: string;
@@ -68,6 +68,10 @@ const AdminProducts = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const formFileInputRef = useRef<HTMLInputElement>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string>("");
+  const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [uploadingFor, setUploadingFor] = useState<string | null>(null);
@@ -293,6 +297,8 @@ const AdminProducts = () => {
       notes_middle: "",
       notes_base: "",
     });
+    setImagePreviewUrl("");
+    setPendingImageFile(null);
   };
 
   const openEditDialog = (product: Product) => {
@@ -313,14 +319,41 @@ const AdminProducts = () => {
       notes_middle: product.notes?.middle?.join(", ") || "",
       notes_base: product.notes?.base?.join(", ") || "",
     });
+    setImagePreviewUrl("");
+    setPendingImageFile(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingProduct) {
-      updateMutation.mutate({ ...formData, id: editingProduct.id });
+    
+    // If there's a pending image file, we need to upload it first after creating/updating the product
+    if (pendingImageFile) {
+      const productId = editingProduct ? editingProduct.id : formData.id;
+      
+      if (editingProduct) {
+        // Update product first, then upload image
+        updateMutation.mutate({ ...formData, id: editingProduct.id }, {
+          onSuccess: () => {
+            // Upload the image after product is updated
+            uploadImageMutation.mutate({ productId, file: pendingImageFile });
+          }
+        });
+      } else {
+        // Create product first, then upload image
+        createMutation.mutate(formData, {
+          onSuccess: () => {
+            // Upload the image after product is created
+            uploadImageMutation.mutate({ productId, file: pendingImageFile });
+          }
+        });
+      }
     } else {
-      createMutation.mutate(formData);
+      // No pending image, just create/update normally
+      if (editingProduct) {
+        updateMutation.mutate({ ...formData, id: editingProduct.id });
+      } else {
+        createMutation.mutate(formData);
+      }
     }
   };
 
@@ -513,14 +546,101 @@ const AdminProducts = () => {
         </div>
       </div>
 
-      <div>
-        <Label htmlFor="image_url">Image URL (or upload after creating)</Label>
+      <div className="space-y-3">
+        <Label>Product Image</Label>
+        
+        {/* Image Preview */}
+        {(formData.image_url || imagePreviewUrl) && (
+          <div className="relative w-32 h-32 rounded-lg overflow-hidden border bg-muted group">
+            <img
+              src={imagePreviewUrl || formData.image_url}
+              alt="Product preview"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsImagePreviewOpen(true)}
+                className="p-2 bg-white/20 rounded-full hover:bg-white/30"
+              >
+                <Eye className="h-4 w-4 text-white" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData({ ...formData, image_url: "" });
+                  setImagePreviewUrl("");
+                  setPendingImageFile(null);
+                }}
+                className="p-2 bg-white/20 rounded-full hover:bg-white/30"
+              >
+                <X className="h-4 w-4 text-white" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Upload or URL options */}
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => formFileInputRef.current?.click()}
+            className="flex-1"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Upload Image
+          </Button>
+          <input
+            type="file"
+            ref={formFileInputRef}
+            className="hidden"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                if (!file.type.startsWith("image/")) {
+                  toast({ title: "Error", description: "Please select an image file", variant: "destructive" });
+                  return;
+                }
+                if (file.size > 5 * 1024 * 1024) {
+                  toast({ title: "Error", description: "Image must be less than 5MB", variant: "destructive" });
+                  return;
+                }
+                // Create preview URL
+                const previewUrl = URL.createObjectURL(file);
+                setImagePreviewUrl(previewUrl);
+                setPendingImageFile(file);
+              }
+              e.target.value = "";
+            }}
+          />
+        </div>
+
+        {/* URL input as alternative */}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>or enter URL:</span>
+        </div>
         <Input
           id="image_url"
           value={formData.image_url}
-          onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-          placeholder="https://..."
+          onChange={(e) => {
+            setFormData({ ...formData, image_url: e.target.value });
+            setImagePreviewUrl("");
+            setPendingImageFile(null);
+          }}
+          placeholder="https://example.com/image.jpg"
         />
+        
+        {pendingImageFile && (
+          <p className="text-sm text-muted-foreground">
+            📎 {pendingImageFile.name} will be uploaded when you save the product
+          </p>
+        )}
       </div>
 
       <div className="flex items-center gap-2">
@@ -598,6 +718,22 @@ const AdminProducts = () => {
             <DialogTitle>Edit Product</DialogTitle>
           </DialogHeader>
           <ProductForm />
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Preview Dialog */}
+      <Dialog open={isImagePreviewOpen} onOpenChange={setIsImagePreviewOpen}>
+        <DialogContent className="max-w-3xl p-2">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Image Preview</DialogTitle>
+          </DialogHeader>
+          <div className="relative">
+            <img
+              src={imagePreviewUrl || formData.image_url}
+              alt="Product preview"
+              className="w-full h-auto max-h-[80vh] object-contain rounded-lg"
+            />
+          </div>
         </DialogContent>
       </Dialog>
 
