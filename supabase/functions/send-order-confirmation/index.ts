@@ -17,13 +17,24 @@ interface OrderItem {
 }
 
 interface ShippingAddress {
-  address: string;
+  address?: string;
+  street?: string;
   city: string;
   state: string;
   zipCode?: string;
   pincode?: string;
   country?: string;
 }
+
+// Helper function to safely get address string from shipping address
+const getAddressString = (addr: ShippingAddress): string => {
+  return addr.address || addr.street || '';
+};
+
+// Helper function to safely get zipcode string
+const getZipCode = (addr: ShippingAddress): string => {
+  return addr.zipCode || addr.pincode || '';
+};
 
 interface OrderConfirmationRequest {
   order_number: string;
@@ -82,9 +93,9 @@ Customer: ${order.customer_name}
 Email: ${order.customer_email}
 
 Shipping Address:
-${order.shipping_address.address}
-${order.shipping_address.city}, ${order.shipping_address.state} ${order.shipping_address.zipCode}
-${order.shipping_address.country}
+${getAddressString(order.shipping_address)}
+${order.shipping_address.city}, ${order.shipping_address.state} ${getZipCode(order.shipping_address)}
+${order.shipping_address.country || 'India'}
 
 --------------------------------
 ORDER ITEMS
@@ -246,9 +257,9 @@ For questions: support@raynadamperfume.com
                     </h4>
                     <p style="margin: 0; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.7;">
                       ${order.customer_name}<br>
-                      ${order.shipping_address.address}<br>
-                      ${order.shipping_address.city}, ${order.shipping_address.state} ${order.shipping_address.zipCode}<br>
-                      ${order.shipping_address.country}
+                      ${getAddressString(order.shipping_address)}<br>
+                      ${order.shipping_address.city}, ${order.shipping_address.state} ${getZipCode(order.shipping_address)}<br>
+                      ${order.shipping_address.country || 'India'}
                     </p>
                   </div>
                   
@@ -451,7 +462,7 @@ const generateInvoicePDF = async (order: OrderConfirmationRequest): Promise<Uint
     color: rgb(0.3, 0.3, 0.3),
   });
   
-  page.drawText(order.shipping_address.address, {
+  page.drawText(getAddressString(order.shipping_address), {
     x: width / 2 + 20,
     y: yPos,
     size: 10,
@@ -469,7 +480,7 @@ const generateInvoicePDF = async (order: OrderConfirmationRequest): Promise<Uint
     color: rgb(0.3, 0.3, 0.3),
   });
   
-  page.drawText(`${order.shipping_address.city}, ${order.shipping_address.state} ${order.shipping_address.zipCode}`, {
+  page.drawText(`${order.shipping_address.city}, ${order.shipping_address.state} ${getZipCode(order.shipping_address)}`, {
     x: width / 2 + 20,
     y: yPos,
     size: 10,
@@ -778,9 +789,9 @@ const generateAdminOrderEmailHTML = (order: OrderConfirmationRequest): string =>
                   <div style="background-color: #e7f3ff; border: 1px solid #0066cc; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
                     <p style="margin: 0; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6;">
                       <strong>${order.customer_name}</strong><br>
-                      ${order.shipping_address.address}<br>
-                      ${order.shipping_address.city}, ${order.shipping_address.state} ${order.shipping_address.zipCode}<br>
-                      <strong>${order.shipping_address.country}</strong>
+                      ${getAddressString(order.shipping_address)}<br>
+                      ${order.shipping_address.city}, ${order.shipping_address.state} ${getZipCode(order.shipping_address)}<br>
+                      <strong>${order.shipping_address.country || 'India'}</strong>
                     </p>
                   </div>
                   
@@ -1003,7 +1014,7 @@ const generateShippingLabelPDF = async (order: OrderConfirmationRequest): Promis
   });
   
   addrY -= 16;
-  page.drawText(order.shipping_address.address.substring(0, 40), {
+  page.drawText(getAddressString(order.shipping_address).substring(0, 40), {
     x: margin + 10,
     y: addrY,
     size: 10,
@@ -1295,8 +1306,8 @@ Total: ₹${orderData.total.toLocaleString('en-IN')}
 
 Shipping Address:
 ${orderData.customer_name}
-${orderData.shipping_address.address}
-${orderData.shipping_address.city}, ${orderData.shipping_address.state} ${orderData.shipping_address.zipCode || orderData.shipping_address.pincode || ''}
+${getAddressString(orderData.shipping_address)}
+${orderData.shipping_address.city}, ${orderData.shipping_address.state} ${getZipCode(orderData.shipping_address)}
 ${orderData.shipping_address.country || 'India'}
 
 Payment Method: ${orderData.payment_method === 'cod' ? 'Cash on Delivery' : 'Online Payment'}
@@ -1370,7 +1381,7 @@ Items:
 ${orderData.items.map(item => `- ${item.name} x${item.quantity}`).join('\n')}
 
 Shipping Address:
-${orderData.shipping_address.address}
+${getAddressString(orderData.shipping_address)}
 ${orderData.shipping_address.city}, ${orderData.shipping_address.state}
 
 Invoice and shipping label are attached.
