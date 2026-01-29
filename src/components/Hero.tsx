@@ -6,14 +6,8 @@ import eliteMain from "@/assets/products/elite.jpg";
 import amberCrownMain from "@/assets/products/amber-crown.jpg";
 import legacyMain from "@/assets/products/legacy.jpg";
 import comboMain from "@/assets/products/combo.jpg";
-import amberCrownCollection from "@/assets/products/amber-crown-collection.png";
 
 const slides = [
-  {
-    image: amberCrownCollection,
-    title: "AMBER CROWN COLLECTION",
-    subtitle: "Complete Luxury Set",
-  },
   {
     image: eliteMain,
     title: "ELITE",
@@ -39,7 +33,7 @@ const slides = [
 // Preload first image immediately
 const preloadFirstImage = () => {
   const img = new Image();
-  img.src = amberCrownCollection;
+  img.src = eliteMain;
 };
 preloadFirstImage();
 
