@@ -6,6 +6,10 @@ import amberCrown3 from "@/assets/products/amber-crown-3.jpg";
 import legacyMain from "@/assets/products/legacy.jpg";
 import comboMain from "@/assets/products/combo.jpg";
 import combo2 from "@/assets/products/combo-2.jpg";
+import amberCrownAttar from "@/assets/products/amber-crown-attar.jpg";
+import amberCrownEdp from "@/assets/products/amber-crown-edp.png";
+import amberCrownSolid from "@/assets/products/amber-crown-solid.png";
+import amberCrownCollection from "@/assets/products/amber-crown-collection.png";
 
 export interface Product {
   id: string;
@@ -133,6 +137,81 @@ export const products: Product[] = [
     sillage: "Moderate to Strong",
     season: ["Fall", "Winter"],
     occasion: ["Daily Wear", "Cozy Evenings", "Date Night"]
+  },
+  {
+    id: "amber-crown-attar",
+    name: "AMBER CROWN ATTAR",
+    tagline: "Pure & Concentrated",
+    description: "The purest form of Amber Crown, this concentrated attar oil delivers an intense, long-lasting fragrance experience. A single drop creates an aura of warmth and sophistication.",
+    story: "Crafted using traditional methods passed down through generations, our Amber Crown Attar captures the soul of amber in its most authentic form. Each bottle contains weeks of careful distillation.",
+    price: 299,
+    originalPrice: 599,
+    discountPercent: 50,
+    category: "Unisex",
+    size: "3ml",
+    image: amberCrownAttar,
+    gallery: [amberCrownAttar, amberCrownCollection, amberCrownAttar],
+    notes: {
+      top: ["Saffron", "Cardamom", "Bergamot"],
+      heart: ["Rose Absolute", "Amber", "Labdanum"],
+      base: ["Sandalwood", "Musk", "Vanilla"]
+    },
+    ingredients: ["Natural Amber Extract", "Sandalwood Oil", "Rose Absolute", "Saffron", "Vanilla Extract"],
+    concentration: "Perfume Oil (Attar)",
+    longevity: "12-16 hours",
+    sillage: "Intimate to Moderate",
+    season: ["Fall", "Winter"],
+    occasion: ["Special Occasions", "Evenings", "Traditional Events"]
+  },
+  {
+    id: "amber-crown-edp",
+    name: "AMBER CROWN EDP",
+    tagline: "Elegant & Refined",
+    description: "The signature Amber Crown experience in an elegant spray format. This Eau de Parfum offers the perfect balance of projection and longevity for everyday luxury.",
+    story: "Our master perfumers spent years perfecting this EDP formulation, ensuring every spray releases a harmonious symphony of amber, florals, and precious woods.",
+    price: 599,
+    originalPrice: 1199,
+    discountPercent: 50,
+    category: "Unisex",
+    size: "12ml",
+    image: amberCrownEdp,
+    gallery: [amberCrownEdp, amberCrownCollection, amberCrownEdp],
+    notes: {
+      top: ["Orange Blossom", "Pink Pepper", "Bergamot"],
+      heart: ["Damask Rose", "Amber", "Jasmine"],
+      base: ["Sandalwood", "Tonka Bean", "White Musk"]
+    },
+    ingredients: ["Alcohol Denat", "Parfum", "Aqua", "Benzyl Benzoate", "Coumarin", "Linalool"],
+    concentration: "Eau de Parfum",
+    longevity: "8-10 hours",
+    sillage: "Moderate to Strong",
+    season: ["Fall", "Winter", "Spring"],
+    occasion: ["Daily Wear", "Office", "Date Night", "Special Events"]
+  },
+  {
+    id: "amber-crown-solid",
+    name: "AMBER CROWN SOLID",
+    tagline: "Portable & Luxurious",
+    description: "Experience Amber Crown in its most travel-friendly form. This solid perfume balm glides on smoothly, releasing a subtle yet captivating scent throughout the day.",
+    story: "Inspired by ancient perfume traditions, our solid perfume is crafted with nourishing oils and waxes, making it gentle on skin while delivering the luxurious Amber Crown experience.",
+    price: 249,
+    originalPrice: 499,
+    discountPercent: 50,
+    category: "Unisex",
+    size: "9g",
+    image: amberCrownSolid,
+    gallery: [amberCrownSolid, amberCrownCollection, amberCrownSolid],
+    notes: {
+      top: ["Honey", "Cardamom", "Mandarin"],
+      heart: ["Amber", "Rose", "Benzoin"],
+      base: ["Vanilla", "Sandalwood", "Cedarwood"]
+    },
+    ingredients: ["Beeswax", "Jojoba Oil", "Parfum", "Coconut Oil", "Vitamin E"],
+    concentration: "Solid Perfume Balm",
+    longevity: "4-6 hours",
+    sillage: "Intimate",
+    season: ["All Seasons"],
+    occasion: ["Daily Wear", "Travel", "Touch-ups", "Layering"]
   }
 ];
 
