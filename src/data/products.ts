@@ -139,79 +139,29 @@ export const products: Product[] = [
     occasion: ["Daily Wear", "Cozy Evenings", "Date Night"]
   },
   {
-    id: "amber-crown-attar",
-    name: "AMBER CROWN ATTAR",
-    tagline: "Pure & Concentrated",
-    description: "The purest form of Amber Crown, this concentrated attar oil delivers an intense, long-lasting fragrance experience. A single drop creates an aura of warmth and sophistication.",
-    story: "Crafted using traditional methods passed down through generations, our Amber Crown Attar captures the soul of amber in its most authentic form. Each bottle contains weeks of careful distillation.",
-    price: 299,
-    originalPrice: 599,
+    id: "amber-crown-collection",
+    name: "AMBER CROWN COLLECTION",
+    tagline: "Complete Luxury Set",
+    description: "The ultimate Amber Crown experience — a luxurious trio featuring the concentrated Attar (3ml), elegant Eau de Parfum spray (12ml), and portable Solid Perfume (9g). Three formats, one signature scent.",
+    story: "Crafted for the true fragrance connoisseur, this collection offers versatility for every occasion. Layer them for depth, or choose based on your mood — from intimate attar moments to bold EDP statements.",
+    price: 999,
+    originalPrice: 1999,
     discountPercent: 50,
     category: "Unisex",
-    size: "3ml",
-    image: amberCrownAttar,
-    gallery: [amberCrownAttar, amberCrownCollection, amberCrownAttar],
+    size: "Attar 3ml + EDP 12ml + Solid 9g",
+    image: amberCrownCollection,
+    gallery: [amberCrownCollection, amberCrownAttar, amberCrownEdp, amberCrownSolid],
     notes: {
-      top: ["Saffron", "Cardamom", "Bergamot"],
-      heart: ["Rose Absolute", "Amber", "Labdanum"],
-      base: ["Sandalwood", "Musk", "Vanilla"]
+      top: ["Saffron", "Orange Blossom", "Cardamom"],
+      heart: ["Amber", "Damask Rose", "Labdanum"],
+      base: ["Sandalwood", "Vanilla", "White Musk"]
     },
-    ingredients: ["Natural Amber Extract", "Sandalwood Oil", "Rose Absolute", "Saffron", "Vanilla Extract"],
-    concentration: "Perfume Oil (Attar)",
-    longevity: "12-16 hours",
-    sillage: "Intimate to Moderate",
-    season: ["Fall", "Winter"],
-    occasion: ["Special Occasions", "Evenings", "Traditional Events"]
-  },
-  {
-    id: "amber-crown-edp",
-    name: "AMBER CROWN EDP",
-    tagline: "Elegant & Refined",
-    description: "The signature Amber Crown experience in an elegant spray format. This Eau de Parfum offers the perfect balance of projection and longevity for everyday luxury.",
-    story: "Our master perfumers spent years perfecting this EDP formulation, ensuring every spray releases a harmonious symphony of amber, florals, and precious woods.",
-    price: 599,
-    originalPrice: 1199,
-    discountPercent: 50,
-    category: "Unisex",
-    size: "12ml",
-    image: amberCrownEdp,
-    gallery: [amberCrownEdp, amberCrownCollection, amberCrownEdp],
-    notes: {
-      top: ["Orange Blossom", "Pink Pepper", "Bergamot"],
-      heart: ["Damask Rose", "Amber", "Jasmine"],
-      base: ["Sandalwood", "Tonka Bean", "White Musk"]
-    },
-    ingredients: ["Alcohol Denat", "Parfum", "Aqua", "Benzyl Benzoate", "Coumarin", "Linalool"],
-    concentration: "Eau de Parfum",
-    longevity: "8-10 hours",
-    sillage: "Moderate to Strong",
+    ingredients: ["Alcohol Denat", "Parfum", "Natural Amber Extract", "Sandalwood Oil", "Beeswax", "Jojoba Oil"],
+    concentration: "Attar + EDP + Solid",
+    longevity: "8-16 hours",
+    sillage: "Intimate to Strong",
     season: ["Fall", "Winter", "Spring"],
-    occasion: ["Daily Wear", "Office", "Date Night", "Special Events"]
-  },
-  {
-    id: "amber-crown-solid",
-    name: "AMBER CROWN SOLID",
-    tagline: "Portable & Luxurious",
-    description: "Experience Amber Crown in its most travel-friendly form. This solid perfume balm glides on smoothly, releasing a subtle yet captivating scent throughout the day.",
-    story: "Inspired by ancient perfume traditions, our solid perfume is crafted with nourishing oils and waxes, making it gentle on skin while delivering the luxurious Amber Crown experience.",
-    price: 249,
-    originalPrice: 499,
-    discountPercent: 50,
-    category: "Unisex",
-    size: "9g",
-    image: amberCrownSolid,
-    gallery: [amberCrownSolid, amberCrownCollection, amberCrownSolid],
-    notes: {
-      top: ["Honey", "Cardamom", "Mandarin"],
-      heart: ["Amber", "Rose", "Benzoin"],
-      base: ["Vanilla", "Sandalwood", "Cedarwood"]
-    },
-    ingredients: ["Beeswax", "Jojoba Oil", "Parfum", "Coconut Oil", "Vitamin E"],
-    concentration: "Solid Perfume Balm",
-    longevity: "4-6 hours",
-    sillage: "Intimate",
-    season: ["All Seasons"],
-    occasion: ["Daily Wear", "Travel", "Touch-ups", "Layering"]
+    occasion: ["Daily Wear", "Special Occasions", "Gifting", "Travel"]
   }
 ];
 
