@@ -1,7 +1,7 @@
 import { useState, useEffect, memo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, CreditCard, Truck, Check, Lock, LogIn, AlertTriangle, Smartphone } from "lucide-react";
+import { ArrowLeft, CreditCard, Truck, Check, Lock, LogIn, AlertTriangle, Smartphone, Zap, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +24,17 @@ declare global {
   }
 }
 
+interface SavedAddress {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+}
+
 const Checkout = () => {
   const { items, totalPrice, clearCart, totalItems, bulkDiscountPercent, bulkDiscountAmount } = useCart();
   const { affiliateCode, appliedCoupon, calculateDiscount, removeCoupon } = useAffiliate();
@@ -33,6 +44,9 @@ const Checkout = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showTermsDialog, setShowTermsDialog] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("upi");
+  const [savedAddress, setSavedAddress] = useState<SavedAddress | null>(null);
+  const [isExpressMode, setIsExpressMode] = useState(false);
+  const [loadingSavedAddress, setLoadingSavedAddress] = useState(true);
   const [formData, setFormData] = useState({
     email: "",
     firstName: "",
@@ -44,6 +58,39 @@ const Checkout = () => {
     zipCode: "",
     country: "India",
   });
+
+  // Load saved address for returning customers
+  useEffect(() => {
+    const loadSavedAddress = async () => {
+      if (!user) {
+        setLoadingSavedAddress(false);
+        return;
+      }
+      
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('saved_address, first_name, last_name, phone')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (error) throw error;
+        
+        if (data?.saved_address && typeof data.saved_address === 'object' && !Array.isArray(data.saved_address)) {
+          const addr = data.saved_address as unknown as SavedAddress;
+          if (addr.firstName && addr.address && addr.city) {
+            setSavedAddress(addr);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading saved address:', error);
+      } finally {
+        setLoadingSavedAddress(false);
+      }
+    };
+    
+    loadSavedAddress();
+  }, [user]);
 
   // Auto-fill user data when logged in
   useEffect(() => {
@@ -64,6 +111,59 @@ const Checkout = () => {
       removeCoupon();
     }
   }, [bulkDiscountPercent, appliedCoupon, removeCoupon]);
+
+  // Handle express checkout - auto-fill saved address
+  const handleExpressCheckout = () => {
+    if (!savedAddress) return;
+    
+    setFormData(prev => ({
+      ...prev,
+      firstName: savedAddress.firstName,
+      lastName: savedAddress.lastName,
+      phone: savedAddress.phone,
+      address: savedAddress.address,
+      city: savedAddress.city,
+      state: savedAddress.state,
+      zipCode: savedAddress.zipCode,
+      country: savedAddress.country,
+    }));
+    setIsExpressMode(true);
+    
+    toast({
+      title: "Express Checkout Activated",
+      description: "Your saved address has been applied. Review and place your order!",
+    });
+    
+    // Scroll to payment section
+    setTimeout(() => {
+      document.getElementById('payment-section')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
+
+  // Save address after successful order
+  const saveAddressToProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const addressData: Record<string, string> = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zipCode,
+        country: formData.country,
+      };
+      
+      await supabase
+        .from('profiles')
+        .update({ saved_address: addressData })
+        .eq('user_id', user.id);
+    } catch (error) {
+      console.error('Error saving address:', error);
+    }
+  };
 
   // Free shipping for online payment (UPI/Card), coupon with free shipping, or COD orders ≥₹999
   const hasFreeShipping = appliedCoupon?.freeShipping || paymentMethod === "upi" || paymentMethod === "card" || totalPrice >= 999;
@@ -144,6 +244,9 @@ const Checkout = () => {
           : `Order #${data.order.order_number}. You will receive a confirmation email shortly.`,
       });
 
+      // Save address for future express checkout
+      await saveAddressToProfile();
+      
       clearCart();
       navigate(`/?order=${data.order.order_number}`);
     } catch (error) {
@@ -489,6 +592,9 @@ const Checkout = () => {
         description: `Order #${data.order.order_number}. You will receive a confirmation email shortly.`,
       });
 
+      // Save address for future express checkout
+      await saveAddressToProfile();
+      
       clearCart();
       navigate(`/?order=${data.order.order_number}`);
     } catch (error) {
@@ -584,6 +690,67 @@ const Checkout = () => {
           </Link>
 
           <h1 className="text-3xl md:text-4xl font-heading text-foreground mb-8">Checkout</h1>
+
+          {/* Express Checkout Banner */}
+          {savedAddress && !isExpressMode && !loadingSavedAddress && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 border border-primary/30 rounded-lg p-4 mb-8"
+            >
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                    <Zap className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-heading text-foreground">Express Checkout</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Use your saved address: {savedAddress.address}, {savedAddress.city}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  onClick={handleExpressCheckout}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+                >
+                  <Zap className="w-4 h-4" />
+                  Use Saved Address
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Express Mode Active Indicator */}
+          {isExpressMode && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4 mb-8"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                  <Check className="w-5 h-5 text-emerald-500" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-heading text-emerald-500">Express Checkout Active</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Your saved address has been applied. Just select payment and place your order!
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsExpressMode(false)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  Edit Details
+                </Button>
+              </div>
+            </motion.div>
+          )}
 
           <form onSubmit={handleSubmit}>
             <div className="grid lg:grid-cols-3 gap-12">
@@ -717,7 +884,7 @@ const Checkout = () => {
                 </div>
 
                 {/* Payment Method */}
-                <div className="bg-card border border-border rounded-lg p-6">
+                <div id="payment-section" className="bg-card border border-border rounded-lg p-6">
                   <h2 className="text-xl font-heading text-foreground mb-6 flex items-center gap-2">
                     <span className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm">
                       3
