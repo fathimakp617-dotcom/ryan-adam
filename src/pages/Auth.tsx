@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, memo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, KeyRound, Phone, Clock } from "lucide-react";
+import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, KeyRound, Phone, Clock, MapPin, Building, Map } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,6 +46,12 @@ const Auth = () => {
     otpEmail: "",
     otp: "",
     forgotOtp: "",
+    // Address fields
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    state: "",
+    pincode: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [resendCountdown, setResendCountdown] = useState(0);
@@ -384,12 +390,23 @@ const Auth = () => {
           }
         });
 
-        // Update or create profile
+        // Update or create profile with address if provided
+        const hasAddress = formData.addressLine1 || formData.city || formData.state || formData.pincode;
+        const savedAddress = hasAddress ? {
+          addressLine1: formData.addressLine1,
+          addressLine2: formData.addressLine2,
+          city: formData.city,
+          state: formData.state,
+          pincode: formData.pincode,
+          country: "India",
+        } : null;
+
         await supabase.from('profiles').upsert({
           user_id: user.id,
           first_name: formData.firstName,
           last_name: formData.lastName,
           phone: fullPhone,
+          saved_address: savedAddress,
         }, { onConflict: 'user_id' });
       }
 
@@ -888,6 +905,85 @@ const Auth = () => {
                     {errors.phone && (
                       <p className="text-destructive text-xs">{errors.phone}</p>
                     )}
+                  </div>
+
+                  {/* Address Section */}
+                  <div className="space-y-3 pt-2">
+                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                      <MapPin className="w-4 h-4" />
+                      <span>Shipping Address (Optional)</span>
+                    </div>
+                    
+                    <div className="space-y-1.5">
+                      <Label htmlFor="addressLine1" className="text-sm font-medium">Address Line 1</Label>
+                      <div className="relative">
+                        <Building className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="addressLine1"
+                          name="addressLine1"
+                          value={formData.addressLine1}
+                          onChange={handleInputChange}
+                          className="pl-11 h-12 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl text-base"
+                          placeholder="House/Flat No., Building Name"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="addressLine2" className="text-sm font-medium">Address Line 2</Label>
+                      <div className="relative">
+                        <Map className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="addressLine2"
+                          name="addressLine2"
+                          value={formData.addressLine2}
+                          onChange={handleInputChange}
+                          className="pl-11 h-12 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl text-base"
+                          placeholder="Street, Area, Landmark"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="city" className="text-sm font-medium">City</Label>
+                        <Input
+                          id="city"
+                          name="city"
+                          value={formData.city}
+                          onChange={handleInputChange}
+                          className="h-12 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl text-base"
+                          placeholder="City"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="state" className="text-sm font-medium">State</Label>
+                        <Input
+                          id="state"
+                          name="state"
+                          value={formData.state}
+                          onChange={handleInputChange}
+                          className="h-12 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl text-base"
+                          placeholder="State"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="pincode" className="text-sm font-medium">PIN Code</Label>
+                      <Input
+                        id="pincode"
+                        name="pincode"
+                        value={formData.pincode}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                          setFormData(prev => ({ ...prev, pincode: value }));
+                        }}
+                        className="h-12 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl text-base"
+                        placeholder="6-digit PIN code"
+                        maxLength={6}
+                      />
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2 text-xs text-muted-foreground bg-primary/5 border border-primary/10 p-3 rounded-xl">
