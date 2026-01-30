@@ -239,11 +239,20 @@ const Account = () => {
         setProfile(updatedProfile);
       }
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update profile",
-        variant: "destructive",
-      });
+      // Handle duplicate phone number error
+      if (error.message?.includes('profiles_phone_unique') || error.code === '23505') {
+        toast({
+          title: "Phone Number Already Registered",
+          description: "This phone number is already associated with another account.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to update profile",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsSavingProfile(false);
     }
