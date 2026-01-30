@@ -208,14 +208,18 @@ const Account = () => {
     
     setIsSavingProfile(true);
     try {
+      // Use upsert to create profile if it doesn't exist, or update if it does
       const { error } = await supabase
         .from("profiles")
-        .update({
+        .upsert({
+          user_id: user.id,
           first_name: profileForm.first_name,
           last_name: profileForm.last_name,
           phone: profileForm.phone,
-        })
-        .eq("user_id", user.id);
+          updated_at: new Date().toISOString(),
+        }, { 
+          onConflict: 'user_id' 
+        });
 
       if (error) throw error;
 
