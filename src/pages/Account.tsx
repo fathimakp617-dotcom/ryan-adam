@@ -130,7 +130,7 @@ const Account = () => {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate("/auth");
+      navigate("/auth?redirect=/account");
       return;
     }
     if (user) {

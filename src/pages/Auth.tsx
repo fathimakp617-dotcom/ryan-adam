@@ -92,7 +92,9 @@ const Auth = () => {
   const navigate = useNavigate();
   const { user, signIn, signUp, signInWithEmailOtp, sendPasswordResetOtp, verifyEmailOtp, resetPassword, updatePassword, isLoading } = useAuth();
 
-  // Check URL for password reset mode
+  // Check URL for password reset mode and redirect destination
+  const redirectTo = searchParams.get("redirect") || "/";
+  
   useEffect(() => {
     const urlMode = searchParams.get("mode");
     if (urlMode === "reset") {
@@ -102,9 +104,9 @@ const Auth = () => {
 
   useEffect(() => {
     if (user && !isLoading && mode !== "reset") {
-      navigate("/");
+      navigate(redirectTo);
     }
-  }, [user, isLoading, navigate, mode]);
+  }, [user, isLoading, navigate, mode, redirectTo]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
