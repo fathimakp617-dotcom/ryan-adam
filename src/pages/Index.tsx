@@ -11,6 +11,8 @@ const Contact = lazy(() => import("@/components/Contact"));
 const Footer = lazy(() => import("@/components/Footer"));
 const OrderSuccessModal = lazy(() => import("@/components/OrderSuccessModal"));
 const CookieConsent = lazy(() => import("@/components/CookieConsent"));
+const AddressPromptPopup = lazy(() => import("@/components/AddressPromptPopup"));
+const SignUpPromptPopup = lazy(() => import("@/components/SignUpPromptPopup"));
 
 const SectionLoader = () => (
   <div className="py-12 flex items-center justify-center">
@@ -33,10 +35,12 @@ const Index = () => {
         />
       </Helmet>
 
-      {/* Defer modals loading */}
+      {/* Defer modals/popups loading */}
       <Suspense fallback={null}>
         <OrderSuccessModal />
         <CookieConsent />
+        <AddressPromptPopup />
+        <SignUpPromptPopup />
       </Suspense>
 
       <PageTransition>
