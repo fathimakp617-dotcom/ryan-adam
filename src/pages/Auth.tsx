@@ -284,7 +284,8 @@ const Auth = () => {
         title: "Welcome back!",
         description: "You have successfully logged in.",
       });
-      navigate("/");
+      // Redirect to intended destination (keeps users on checkout/account instead of landing)
+      navigate(redirectTo, { replace: true });
     } finally {
       setIsSubmitting(false);
     }
@@ -416,7 +417,7 @@ const Auth = () => {
         title: "Account Created!",
         description: "Your email has been verified. Welcome to RAYN ADAM!",
       });
-      navigate("/");
+      navigate(redirectTo, { replace: true });
     } finally {
       setIsSubmitting(false);
     }
@@ -542,7 +543,7 @@ const Auth = () => {
         title: "Password Updated!",
         description: "Your password has been successfully reset.",
       });
-      navigate("/");
+      navigate(redirectTo, { replace: true });
     } finally {
       setIsSubmitting(false);
     }
@@ -594,7 +595,7 @@ const Auth = () => {
         title: "Welcome!",
         description: "You have successfully logged in.",
       });
-      navigate("/");
+      navigate(redirectTo, { replace: true });
     } finally {
       setIsSubmitting(false);
     }
