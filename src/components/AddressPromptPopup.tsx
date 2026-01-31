@@ -35,11 +35,16 @@ const AddressPromptPopup = () => {
       }
 
       // Check if user has a saved address
-      const { data: profile } = await supabase
+      const { data: profile, error } = await supabase
         .from("profiles")
         .select("saved_address")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error checking address:", error);
+        return;
+      }
 
       const savedAddress = profile?.saved_address as Record<string, string> | null;
       const addressExists = savedAddress && 
@@ -49,6 +54,7 @@ const AddressPromptPopup = () => {
 
       // Show popup after delay if no address
       if (!addressExists) {
+        console.log("No address found, showing popup in 5s");
         const timer = setTimeout(() => {
           setIsOpen(true);
         }, POPUP_DELAY_MS);
