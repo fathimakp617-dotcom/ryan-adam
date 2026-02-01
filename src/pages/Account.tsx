@@ -1,6 +1,6 @@
 import { useEffect, useState, memo } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,7 +36,9 @@ import {
   X,
   RotateCcw,
   AlertCircle,
-  Gift
+  Gift,
+  MapPin,
+  Home
 } from "lucide-react";
 import ReturnRequestDialog from "@/components/ReturnRequestDialog";
 import LoyaltyCoupons from "@/components/LoyaltyCoupons";
@@ -124,9 +126,24 @@ const Account = () => {
     last_name: "",
     phone: "",
   });
+  const [addressForm, setAddressForm] = useState({
+    firstName: "",
+    lastName: "",
+    phone: "",
+    address: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    country: "India",
+  });
+  const [isSavingAddress, setIsSavingAddress] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { user, signOut, isLoading: authLoading } = useAuth();
+  
+  // Get default tab from URL query params
+  const defaultTab = searchParams.get("tab") || "profile";
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -157,6 +174,21 @@ const Account = () => {
           last_name: profileData.last_name || "",
           phone: profileData.phone || "",
         });
+        
+        // Load saved address if exists
+        if (profileData.saved_address && typeof profileData.saved_address === 'object') {
+          const addr = profileData.saved_address as Record<string, string>;
+          setAddressForm({
+            firstName: addr.firstName || "",
+            lastName: addr.lastName || "",
+            phone: addr.phone || "",
+            address: addr.address || "",
+            city: addr.city || "",
+            state: addr.state || "",
+            zipCode: addr.zipCode || "",
+            country: addr.country || "India",
+          });
+        }
       }
 
       // Fetch affiliate data
@@ -201,6 +233,52 @@ const Account = () => {
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setProfileForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setAddressForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveAddress = async () => {
+    if (!user) return;
+    
+    setIsSavingAddress(true);
+    try {
+      const addressData = {
+        firstName: addressForm.firstName,
+        lastName: addressForm.lastName,
+        phone: addressForm.phone,
+        address: addressForm.address,
+        city: addressForm.city,
+        state: addressForm.state,
+        zipCode: addressForm.zipCode,
+        country: addressForm.country,
+      };
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({ 
+          saved_address: addressData,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Address Saved",
+        description: "Your shipping address has been saved for express checkout.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save address",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingAddress(false);
+    }
   };
 
   const handleSaveProfile = async () => {
@@ -529,7 +607,7 @@ const Account = () => {
             </div>
 
             {/* Tabs */}
-            <Tabs defaultValue="profile" className="space-y-6">
+            <Tabs defaultValue={defaultTab} className="space-y-6">
               <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-flex">
                 <TabsTrigger value="profile" className="gap-2">
                   <User size={16} />
@@ -1235,6 +1313,140 @@ const Account = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Saved Shipping Address */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="bg-card border border-border rounded-xl p-6"
+                >
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <MapPin size={20} className="text-primary" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-semibold text-foreground">Shipping Address</h2>
+                      <p className="text-sm text-muted-foreground">Save your address for express checkout</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="addr_firstName">First Name</Label>
+                      <Input
+                        id="addr_firstName"
+                        name="firstName"
+                        value={addressForm.firstName}
+                        onChange={handleAddressChange}
+                        placeholder="First name"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="addr_lastName">Last Name</Label>
+                      <Input
+                        id="addr_lastName"
+                        name="lastName"
+                        value={addressForm.lastName}
+                        onChange={handleAddressChange}
+                        placeholder="Last name"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="addr_phone">Phone Number</Label>
+                      <div className="relative mt-1">
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="addr_phone"
+                          name="phone"
+                          type="tel"
+                          value={addressForm.phone}
+                          onChange={handleAddressChange}
+                          className="pl-10"
+                          placeholder="+91 9876543210"
+                        />
+                      </div>
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="addr_address">Street Address</Label>
+                      <div className="relative mt-1">
+                        <Home className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="addr_address"
+                          name="address"
+                          value={addressForm.address}
+                          onChange={handleAddressChange}
+                          className="pl-10"
+                          placeholder="House/Flat No., Street, Locality"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="addr_city">City</Label>
+                      <Input
+                        id="addr_city"
+                        name="city"
+                        value={addressForm.city}
+                        onChange={handleAddressChange}
+                        placeholder="City"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="addr_state">State</Label>
+                      <Input
+                        id="addr_state"
+                        name="state"
+                        value={addressForm.state}
+                        onChange={handleAddressChange}
+                        placeholder="State"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="addr_zipCode">PIN Code</Label>
+                      <Input
+                        id="addr_zipCode"
+                        name="zipCode"
+                        value={addressForm.zipCode}
+                        onChange={handleAddressChange}
+                        placeholder="6-digit PIN code"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="addr_country">Country</Label>
+                      <Input
+                        id="addr_country"
+                        name="country"
+                        value={addressForm.country}
+                        onChange={handleAddressChange}
+                        placeholder="India"
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    onClick={handleSaveAddress} 
+                    className="mt-6"
+                    disabled={isSavingAddress}
+                  >
+                    {isSavingAddress ? (
+                      <span className="flex items-center gap-2">
+                        <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        Saving...
+                      </span>
+                    ) : (
+                      <>
+                        <MapPin size={18} className="mr-2" />
+                        Save Address
+                      </>
+                    )}
+                  </Button>
+                </motion.div>
 
                 {/* Danger Zone */}
                 <div className="bg-card border border-destructive/30 rounded-xl p-6">

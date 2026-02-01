@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin, X, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,20 +14,32 @@ import { supabase } from "@/integrations/supabase/client";
 
 const POPUP_STORAGE_KEY = "address_prompt_dismissed";
 const POPUP_DELAY_MS = 5000; // Show after 5 seconds
+const JUST_LOGGED_IN_KEY = "rayn_just_logged_in";
 
 const AddressPromptPopup = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [hasAddress, setHasAddress] = useState(true);
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
+  const previousUserRef = useRef<string | null>(null);
 
   useEffect(() => {
     const checkAddress = async () => {
-      if (isLoading || !user) return;
+      if (isLoading || !user) {
+        previousUserRef.current = null;
+        return;
+      }
+
+      // Detect if user just logged in (user id changed from null to a value)
+      const justLoggedIn = previousUserRef.current === null && user.id;
+      const wasMarkedAsJustLoggedIn = sessionStorage.getItem(JUST_LOGGED_IN_KEY) === "true";
+      
+      // Update previous user ref
+      previousUserRef.current = user.id;
 
       // Check if popup was dismissed recently (within 24 hours)
       const dismissed = localStorage.getItem(POPUP_STORAGE_KEY);
-      if (dismissed) {
+      if (dismissed && !wasMarkedAsJustLoggedIn) {
         const dismissedTime = parseInt(dismissed, 10);
         const now = Date.now();
         const hoursElapsed = (now - dismissedTime) / (1000 * 60 * 60);
@@ -48,17 +60,28 @@ const AddressPromptPopup = () => {
 
       const savedAddress = profile?.saved_address as Record<string, string> | null;
       const addressExists = savedAddress && 
-        (savedAddress.addressLine1 || savedAddress.city || savedAddress.pincode);
+        (savedAddress.addressLine1 || savedAddress.address || savedAddress.city || savedAddress.pincode || savedAddress.zipCode);
 
       setHasAddress(!!addressExists);
 
-      // Show popup after delay if no address
+      // If no address exists
       if (!addressExists) {
+        // If just logged in, show popup immediately
+        if (wasMarkedAsJustLoggedIn) {
+          sessionStorage.removeItem(JUST_LOGGED_IN_KEY);
+          setIsOpen(true);
+          return;
+        }
+        
+        // Otherwise, show popup after 5 second delay
         console.log("No address found, showing popup in 5s");
         const timer = setTimeout(() => {
           setIsOpen(true);
         }, POPUP_DELAY_MS);
         return () => clearTimeout(timer);
+      } else {
+        // Clear the just logged in flag if address exists
+        sessionStorage.removeItem(JUST_LOGGED_IN_KEY);
       }
     };
 
@@ -72,7 +95,7 @@ const AddressPromptPopup = () => {
 
   const handleAddAddress = () => {
     handleDismiss();
-    navigate("/account");
+    navigate("/account?tab=settings");
   };
 
   // Don't render if user has address or not logged in
@@ -94,10 +117,10 @@ const AddressPromptPopup = () => {
             <MapPin className="h-8 w-8 text-primary" />
           </div>
           <DialogTitle className="text-xl font-semibold">
-            Add Your Shipping Address
+            Save Your Shipping Address
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Save your address for a faster, seamless checkout experience!
+            Save your address now for a faster, seamless checkout experience!
           </DialogDescription>
         </DialogHeader>
 
@@ -132,6 +155,11 @@ const AddressPromptPopup = () => {
       </DialogContent>
     </Dialog>
   );
+};
+
+// Export a function to mark that user just logged in
+export const markJustLoggedIn = () => {
+  sessionStorage.setItem(JUST_LOGGED_IN_KEY, "true");
 };
 
 export default AddressPromptPopup;
