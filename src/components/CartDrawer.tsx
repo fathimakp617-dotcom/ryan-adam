@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Minus, Plus, ShoppingBag, Trash2, Gift } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -5,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { formatPrice } from "@/data/products";
 
-const CartDrawer = () => {
+const CartDrawer = memo(() => {
   const { items, isOpen, closeCart, updateQuantity, removeFromCart, totalPrice, totalItems, bulkDiscountPercent, bulkDiscountAmount } = useCart();
 
   return (
@@ -169,6 +170,8 @@ const CartDrawer = () => {
       )}
     </AnimatePresence>
   );
-};
+});
+
+CartDrawer.displayName = "CartDrawer";
 
 export default CartDrawer;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin, X, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ const POPUP_STORAGE_KEY = "address_prompt_dismissed";
 const POPUP_DELAY_MS = 5000; // Show after 5 seconds
 const JUST_LOGGED_IN_KEY = "rayn_just_logged_in";
 
-const AddressPromptPopup = () => {
+const AddressPromptPopup = memo(() => {
   const [isOpen, setIsOpen] = useState(false);
   const [hasAddress, setHasAddress] = useState(true);
   const { user, isLoading } = useAuth();
@@ -155,7 +155,9 @@ const AddressPromptPopup = () => {
       </DialogContent>
     </Dialog>
   );
-};
+});
+
+AddressPromptPopup.displayName = "AddressPromptPopup";
 
 // Export a function to mark that user just logged in
 export const markJustLoggedIn = () => {

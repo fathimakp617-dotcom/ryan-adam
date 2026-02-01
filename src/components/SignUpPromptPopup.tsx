@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, X, Gift, Zap, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const POPUP_STORAGE_KEY = "signup_prompt_dismissed";
 const POPUP_DELAY_MS = 15000; // Show after 15 seconds of browsing
 
-const SignUpPromptPopup = () => {
+const SignUpPromptPopup = memo(() => {
   const [isOpen, setIsOpen] = useState(false);
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -127,6 +127,8 @@ const SignUpPromptPopup = () => {
       </DialogContent>
     </Dialog>
   );
-};
+});
+
+SignUpPromptPopup.displayName = "SignUpPromptPopup";
 
 export default SignUpPromptPopup;
