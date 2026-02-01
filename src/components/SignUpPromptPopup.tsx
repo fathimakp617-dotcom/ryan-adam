@@ -12,7 +12,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 
 const POPUP_STORAGE_KEY = "signup_prompt_dismissed";
-const POPUP_DELAY_MS = 15000; // Show after 15 seconds of browsing
+const POPUP_DELAY_MS = 5000; // Show after 5 seconds of browsing
 
 const SignUpPromptPopup = memo(() => {
   const [isOpen, setIsOpen] = useState(false);
