@@ -474,8 +474,52 @@ const Auth = () => {
         return;
       }
 
-      // After OTP login completes, the useEffect above will persist the profile seed (address+phone)
-      // to the user's profile reliably, even if the OTP flow redirects.
+      // Persist the address/phone immediately after verification so it shows up in /account right away.
+      // (The useEffect above is kept as a fallback in case this step is interrupted.)
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        const verifiedUser = userData?.user;
+        const rawSeed = localStorage.getItem(PENDING_PROFILE_SEED_KEY);
+
+        if (verifiedUser && rawSeed) {
+          const seed = JSON.parse(rawSeed) as {
+            first_name: string;
+            last_name: string;
+            phone: string;
+            saved_address: {
+              firstName: string;
+              lastName: string;
+              phone: string;
+              address: string;
+              city: string;
+              state: string;
+              zipCode: string;
+              country: string;
+            };
+          };
+
+          const { error: seedError } = await supabase
+            .from("profiles")
+            .upsert(
+              {
+                user_id: verifiedUser.id,
+                first_name: seed.first_name,
+                last_name: seed.last_name,
+                phone: seed.phone,
+                saved_address: seed.saved_address,
+              },
+              { onConflict: "user_id" }
+            );
+
+          if (seedError) {
+            console.error("Failed to persist signup address:", seedError);
+          } else {
+            localStorage.removeItem(PENDING_PROFILE_SEED_KEY);
+          }
+        }
+      } catch (persistErr) {
+        console.error("Error persisting signup address:", persistErr);
+      }
 
       toast({
         title: "Account Created!",
