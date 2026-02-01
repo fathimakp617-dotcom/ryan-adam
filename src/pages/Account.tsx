@@ -108,6 +108,52 @@ interface ProfileData {
   avatar_url: string | null;
 }
 
+type LegacySavedAddress = {
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  country?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  address?: string;
+  zipCode?: string;
+};
+
+const normalizeSavedAddressForAccount = (raw: unknown) => {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const addr = raw as LegacySavedAddress & Record<string, unknown>;
+
+  const canonicalAddress = typeof addr.address === "string" ? addr.address.trim() : "";
+  const line1 = typeof addr.addressLine1 === "string" ? addr.addressLine1.trim() : "";
+  const line2 = typeof addr.addressLine2 === "string" ? addr.addressLine2.trim() : "";
+  const merged = [line1, line2].filter(Boolean).join(", ");
+
+  const address = canonicalAddress || merged;
+  const city = typeof addr.city === "string" ? addr.city.trim() : "";
+  const state = typeof addr.state === "string" ? addr.state.trim() : "";
+  const zipCode =
+    (typeof addr.zipCode === "string" && addr.zipCode.trim()) ||
+    (typeof addr.pincode === "string" && addr.pincode.trim()) ||
+    "";
+  const country = typeof addr.country === "string" ? addr.country.trim() : "India";
+
+  if (!address && !city && !state && !zipCode) return null;
+
+  return {
+    firstName: (typeof addr.firstName === "string" && addr.firstName) || "",
+    lastName: (typeof addr.lastName === "string" && addr.lastName) || "",
+    phone: (typeof addr.phone === "string" && addr.phone) || "",
+    address,
+    city,
+    state,
+    zipCode,
+    country,
+  };
+};
+
 const Account = () => {
   const [affiliate, setAffiliate] = useState<AffiliateData | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -165,11 +211,13 @@ const Account = () => {
     setIsLoading(true);
     try {
       // Fetch profile data
-      const { data: profileData } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("*")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
+
+      if (profileError) throw profileError;
 
       if (profileData) {
         setProfile(profileData);
@@ -180,19 +228,8 @@ const Account = () => {
         });
         
         // Load saved address if exists
-        if (profileData.saved_address && typeof profileData.saved_address === 'object') {
-          const addr = profileData.saved_address as Record<string, string>;
-          setAddressForm({
-            firstName: addr.firstName || "",
-            lastName: addr.lastName || "",
-            phone: addr.phone || "",
-            address: addr.address || "",
-            city: addr.city || "",
-            state: addr.state || "",
-            zipCode: addr.zipCode || "",
-            country: addr.country || "India",
-          });
-        }
+        const normalized = normalizeSavedAddressForAccount(profileData.saved_address);
+        if (normalized) setAddressForm({ ...normalized, country: normalized.country || "India" });
       }
 
       // Fetch affiliate data
@@ -285,11 +322,14 @@ const Account = () => {
 
       const { error } = await supabase
         .from("profiles")
-        .update({ 
-          saved_address: addressData,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("user_id", user.id);
+        .upsert(
+          {
+            user_id: user.id,
+            saved_address: addressData,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
 
       if (error) throw error;
 

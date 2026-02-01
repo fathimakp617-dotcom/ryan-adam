@@ -17,6 +17,8 @@ import CountryCodeSelect from "@/components/CountryCodeSelect";
 
 import { z } from "zod";
 
+const PENDING_PROFILE_SEED_KEY = "pending_profile_seed_v1";
+
 const emailSchema = z.string().email("Invalid email address").max(255, "Email too long");
 const passwordSchema = z
   .string()
@@ -93,6 +95,8 @@ const Auth = () => {
   const navigate = useNavigate();
   const { user, signIn, signUp, signInWithEmailOtp, sendPasswordResetOtp, verifyEmailOtp, resetPassword, updatePassword, isLoading } = useAuth();
 
+  const hasProcessedPendingSeed = useState(false);
+
   // Check URL for password reset mode and redirect destination
   const redirectTo = searchParams.get("redirect") || "/";
   
@@ -104,9 +108,62 @@ const Auth = () => {
   }, [searchParams]);
 
   useEffect(() => {
-    if (user && !isLoading && mode !== "reset") {
-      navigate(redirectTo);
-    }
+    const processPendingProfileSeed = async () => {
+      if (!user || isLoading || mode === "reset") return;
+      if (hasProcessedPendingSeed[0]) return;
+
+      hasProcessedPendingSeed[1](true);
+
+      try {
+        const raw = localStorage.getItem(PENDING_PROFILE_SEED_KEY);
+        if (!raw) {
+          navigate(redirectTo);
+          return;
+        }
+
+        const seed = JSON.parse(raw) as {
+          first_name: string;
+          last_name: string;
+          phone: string;
+          saved_address: {
+            firstName: string;
+            lastName: string;
+            phone: string;
+            address: string;
+            city: string;
+            state: string;
+            zipCode: string;
+            country: string;
+          };
+        };
+
+        // Upsert profile (address + phone) after session is guaranteed
+        const { error } = await supabase
+          .from("profiles")
+          .upsert(
+            {
+              user_id: user.id,
+              first_name: seed.first_name,
+              last_name: seed.last_name,
+              phone: seed.phone,
+              saved_address: seed.saved_address,
+            },
+            { onConflict: "user_id" }
+          );
+
+        if (error) {
+          console.error("Failed to persist signup profile seed:", error);
+        } else {
+          localStorage.removeItem(PENDING_PROFILE_SEED_KEY);
+        }
+      } catch (e) {
+        console.error("Error processing pending profile seed:", e);
+      } finally {
+        navigate(redirectTo);
+      }
+    };
+
+    processPendingProfileSeed();
   }, [user, isLoading, navigate, mode, redirectTo]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -370,6 +427,27 @@ const Auth = () => {
         description: "Please check your email for the 4-digit code.",
       });
       // Store the OTP in state and move to verify mode
+      // Also store a pending profile seed so we can persist the address AFTER OTP login completes
+      const address = [formData.addressLine1, formData.addressLine2].filter(Boolean).join(", ");
+      localStorage.setItem(
+        PENDING_PROFILE_SEED_KEY,
+        JSON.stringify({
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          phone: fullPhone,
+          saved_address: {
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            phone: fullPhone,
+            address,
+            city: formData.city,
+            state: formData.state,
+            zipCode: formData.pincode,
+            country: "India",
+          },
+        })
+      );
+
       setFormData(prev => ({ ...prev, otp: "" }));
       startResendCountdown();
       startOtpExpiryTimer();
@@ -396,39 +474,8 @@ const Auth = () => {
         return;
       }
 
-      // OTP verified - now update the user's profile with additional data
-      // The user is now logged in via OTP, update their profile
-      const fullPhone = getFullPhoneNumber();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        // Update auth user metadata
-        await supabase.auth.updateUser({
-          data: {
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            phone: fullPhone,
-          }
-        });
-
-        // Update or create profile with address if provided
-        const hasAddress = formData.addressLine1 || formData.city || formData.state || formData.pincode;
-        const savedAddress = hasAddress ? {
-          addressLine1: formData.addressLine1,
-          addressLine2: formData.addressLine2,
-          city: formData.city,
-          state: formData.state,
-          pincode: formData.pincode,
-          country: "India",
-        } : null;
-
-        await supabase.from('profiles').upsert({
-          user_id: user.id,
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          phone: fullPhone,
-          saved_address: savedAddress,
-        }, { onConflict: 'user_id' });
-      }
+      // After OTP login completes, the useEffect above will persist the profile seed (address+phone)
+      // to the user's profile reliably, even if the OTP flow redirects.
 
       toast({
         title: "Account Created!",
