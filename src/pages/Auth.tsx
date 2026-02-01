@@ -14,6 +14,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
 import CountryCodeSelect from "@/components/CountryCodeSelect";
+import { markJustLoggedIn } from "@/components/AddressPromptPopup";
 import { z } from "zod";
 
 const emailSchema = z.string().email("Invalid email address").max(255, "Email too long");
@@ -284,6 +285,8 @@ const Auth = () => {
         title: "Welcome back!",
         description: "You have successfully logged in.",
       });
+      // Mark that user just logged in (for address prompt popup)
+      markJustLoggedIn();
       // Redirect to intended destination (keeps users on checkout/account instead of landing)
       navigate(redirectTo, { replace: true });
     } finally {
@@ -417,6 +420,8 @@ const Auth = () => {
         title: "Account Created!",
         description: "Your email has been verified. Welcome to RAYN ADAM!",
       });
+      // Mark that user just logged in (for address prompt popup)
+      markJustLoggedIn();
       navigate(redirectTo, { replace: true });
     } finally {
       setIsSubmitting(false);
@@ -595,6 +600,8 @@ const Auth = () => {
         title: "Welcome!",
         description: "You have successfully logged in.",
       });
+      // Mark that user just logged in (for address prompt popup)
+      markJustLoggedIn();
       navigate(redirectTo, { replace: true });
     } finally {
       setIsSubmitting(false);
