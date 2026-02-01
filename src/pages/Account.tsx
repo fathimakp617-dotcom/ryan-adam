@@ -1,4 +1,4 @@
-import { useEffect, useState, memo } from "react";
+import { useEffect, useState, memo, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePinCodeLookup } from "@/hooks/usePinCodeLookup";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { downloadInvoicePDF } from "@/lib/generateInvoicePDF";
@@ -38,7 +39,8 @@ import {
   AlertCircle,
   Gift,
   MapPin,
-  Home
+  Home,
+  Loader2
 } from "lucide-react";
 import ReturnRequestDialog from "@/components/ReturnRequestDialog";
 import LoyaltyCoupons from "@/components/LoyaltyCoupons";
@@ -239,6 +241,23 @@ const Account = () => {
     const { name, value } = e.target;
     setAddressForm((prev) => ({ ...prev, [name]: value }));
   };
+
+  // PIN code lookup hook
+  const { isLoading: isPinLoading, lookupPinCode } = usePinCodeLookup();
+
+  const handlePinCodeBlur = useCallback(async (pinCode: string) => {
+    if (pinCode.length === 6) {
+      const pinData = await lookupPinCode(pinCode);
+      if (pinData) {
+        setAddressForm((prev) => ({
+          ...prev,
+          city: pinData.city,
+          state: pinData.state,
+          country: pinData.country,
+        }));
+      }
+    }
+  }, [lookupPinCode]);
 
   const handleSaveAddress = async () => {
     if (!user) return;
@@ -1407,14 +1426,24 @@ const Account = () => {
                     </div>
                     <div>
                       <Label htmlFor="addr_zipCode">PIN Code</Label>
-                      <Input
-                        id="addr_zipCode"
-                        name="zipCode"
-                        value={addressForm.zipCode}
-                        onChange={handleAddressChange}
-                        placeholder="6-digit PIN code"
-                        className="mt-1"
-                      />
+                      <div className="relative mt-1">
+                        <Input
+                          id="addr_zipCode"
+                          name="zipCode"
+                          value={addressForm.zipCode}
+                          onChange={handleAddressChange}
+                          onBlur={(e) => handlePinCodeBlur(e.target.value)}
+                          placeholder="6-digit PIN code"
+                          maxLength={6}
+                          className={isPinLoading ? "pr-10" : ""}
+                        />
+                        {isPinLoading && (
+                          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary animate-spin" />
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Enter PIN code to auto-fill city and state
+                      </p>
                     </div>
                     <div>
                       <Label htmlFor="addr_country">Country</Label>
