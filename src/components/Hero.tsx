@@ -1,7 +1,10 @@
 import { useState, useEffect, memo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useCart } from "@/contexts/CartContext";
+import { products } from "@/data/products";
 import eliteMain from "@/assets/products/elite.jpg";
 import amberCrownMain from "@/assets/products/amber-crown.jpg";
 import legacyMain from "@/assets/products/legacy.jpg";
@@ -12,21 +15,25 @@ const slides = [
     image: eliteMain,
     title: "ELITE",
     subtitle: "Smooth & Seductive",
+    productId: "elite",
   },
   {
     image: amberCrownMain,
     title: "AMBER CROWN",
     subtitle: "Romantic & Enchanting",
+    productId: "amber-crown",
   },
   {
     image: legacyMain,
     title: "LEGACY",
     subtitle: "Warm & Captivating",
+    productId: "legacy",
   },
   {
     image: comboMain,
     title: "COMBO",
     subtitle: "Fresh & Invigorating",
+    productId: "combo",
   },
 ];
 
@@ -40,6 +47,17 @@ preloadFirstImage();
 const Hero = memo(() => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [imagesLoaded, setImagesLoaded] = useState<Set<number>>(new Set([0]));
+  const { addToCart } = useCart();
+  const navigate = useNavigate();
+
+  const handleShopNow = () => {
+    const currentProductId = slides[currentSlide].productId;
+    const product = products.find(p => p.id === currentProductId);
+    if (product) {
+      addToCart(product, 1);
+      navigate("/checkout");
+    }
+  };
 
   // Preload next slides in the background
   useEffect(() => {
@@ -146,14 +164,14 @@ const Hero = memo(() => {
 
             {/* CTA Buttons */}
             <div className="flex flex-col gap-3 pt-2 sm:pt-0 sm:flex-row sm:gap-4">
-              <Link to="/shop" className="w-full sm:w-auto">
-                <Button
-                  size="lg"
-                  className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground px-6 sm:px-10 py-5 sm:py-6 text-xs sm:text-sm tracking-widest font-medium transition-all duration-300 hover:shadow-[0_0_30px_hsl(var(--primary)/0.4)]"
-                >
-                  SHOP NOW
-                </Button>
-              </Link>
+              <Button
+                size="lg"
+                onClick={handleShopNow}
+                className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground px-6 sm:px-10 py-5 sm:py-6 text-xs sm:text-sm tracking-widest font-medium transition-all duration-300 hover:shadow-[0_0_30px_hsl(var(--primary)/0.4)]"
+              >
+                <ShoppingCart className="w-4 h-4 mr-2" />
+                SHOP NOW
+              </Button>
               <a href="#collection" className="w-full sm:w-auto">
                 <Button
                   variant="outline"
