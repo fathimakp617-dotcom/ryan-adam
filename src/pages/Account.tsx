@@ -916,10 +916,15 @@ const Account = () => {
                         )}
                       </div>
                       {postOfficeName && (
-                        <p className="text-xs text-primary mt-1 flex items-center gap-1">
-                          <MapPin size={12} />
-                          {postOfficeName} Post Office
-                        </p>
+                        <div className="mt-2 p-2.5 bg-primary/10 border border-primary/20 rounded-lg flex items-center gap-2">
+                          <div className="p-1.5 bg-primary/20 rounded-full">
+                            <MapPin size={14} className="text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Post Office</p>
+                            <p className="text-sm font-medium text-foreground">{postOfficeName}</p>
+                          </div>
+                        </div>
                       )}
                     </div>
                     <div>
