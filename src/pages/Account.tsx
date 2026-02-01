@@ -246,9 +246,13 @@ const Account = () => {
   // PIN code lookup hook
   const { isLoading: isPinLoading, lookupPinCode } = usePinCodeLookup();
 
-  const handlePinCodeBlur = useCallback(async (pinCode: string) => {
-    if (pinCode.length === 6) {
-      const pinData = await lookupPinCode(pinCode);
+  const handlePinCodeChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    setAddressForm((prev) => ({ ...prev, zipCode: value }));
+    
+    // Auto-lookup when 6 digits entered
+    if (value.length === 6 && /^\d{6}$/.test(value)) {
+      const pinData = await lookupPinCode(value);
       if (pinData) {
         setAddressForm((prev) => ({
           ...prev,
@@ -896,19 +900,18 @@ const Account = () => {
                           id="addr_zipCode"
                           name="zipCode"
                           value={addressForm.zipCode}
-                          onChange={handleAddressChange}
-                          onBlur={(e) => handlePinCodeBlur(e.target.value)}
+                          onChange={handlePinCodeChange}
                           placeholder="6-digit PIN code"
                           maxLength={6}
-                          className={isPinLoading ? "pr-10" : ""}
                         />
                         {isPinLoading && (
-                          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary animate-spin" />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-0.5">
+                            <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+                            <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse [animation-delay:150ms]" />
+                            <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse [animation-delay:300ms]" />
+                          </span>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Enter PIN code to auto-fill city and state
-                      </p>
                     </div>
                     <div>
                       <Label htmlFor="addr_city">City</Label>

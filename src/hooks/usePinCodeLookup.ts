@@ -1,5 +1,4 @@
-import { useState, useCallback } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { useState, useCallback, useRef } from "react";
 
 interface PinCodeData {
   city: string;
@@ -9,54 +8,44 @@ interface PinCodeData {
 
 interface PinCodeLookupResult {
   isLoading: boolean;
-  error: string | null;
-  data: PinCodeData | null;
   lookupPinCode: (pinCode: string) => Promise<PinCodeData | null>;
 }
 
-// India Post API response structure
-interface PostOffice {
-  Name: string;
-  District: string;
-  State: string;
-  Country: string;
-}
-
-interface IndiaPostResponse {
-  Status: string;
-  Message: string;
-  PostOffice: PostOffice[] | null;
-}
+// Simple cache to avoid repeated API calls
+const pinCodeCache = new Map<string, PinCodeData>();
 
 export const usePinCodeLookup = (): PinCodeLookupResult => {
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<PinCodeData | null>(null);
-  const { toast } = useToast();
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const lookupPinCode = useCallback(async (pinCode: string): Promise<PinCodeData | null> => {
-    // Validate PIN code format (6 digits for India)
     const cleanPinCode = pinCode.replace(/\s/g, "");
     if (!/^\d{6}$/.test(cleanPinCode)) {
-      setError(null);
-      setData(null);
       return null;
     }
 
+    // Check cache first
+    if (pinCodeCache.has(cleanPinCode)) {
+      return pinCodeCache.get(cleanPinCode)!;
+    }
+
+    // Cancel any pending request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
     setIsLoading(true);
-    setError(null);
 
     try {
-      // Use India Post public API
       const response = await fetch(
-        `https://api.postalpincode.in/pincode/${cleanPinCode}`
+        `https://api.postalpincode.in/pincode/${cleanPinCode}`,
+        { signal: abortControllerRef.current.signal }
       );
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch PIN code data");
-      }
+      if (!response.ok) return null;
 
-      const result: IndiaPostResponse[] = await response.json();
+      const result = await response.json();
 
       if (result[0]?.Status === "Success" && result[0]?.PostOffice?.length > 0) {
         const postOffice = result[0].PostOffice[0];
@@ -66,38 +55,19 @@ export const usePinCodeLookup = (): PinCodeLookupResult => {
           country: postOffice.Country,
         };
         
-        setData(pinData);
-        setError(null);
-        
-        toast({
-          title: "Address Auto-filled",
-          description: `${pinData.city}, ${pinData.state}`,
-          duration: 2000,
-        });
-        
+        // Cache the result
+        pinCodeCache.set(cleanPinCode, pinData);
         return pinData;
-      } else {
-        setError("Invalid PIN code");
-        setData(null);
-        toast({
-          title: "Invalid PIN Code",
-          description: "Please enter a valid 6-digit Indian PIN code",
-          variant: "destructive",
-          duration: 3000,
-        });
-        return null;
       }
-    } catch (err) {
-      const errorMessage = "Unable to lookup PIN code";
-      setError(errorMessage);
-      setData(null);
+      return null;
+    } catch {
       return null;
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, []);
 
-  return { isLoading, error, data, lookupPinCode };
+  return { isLoading, lookupPinCode };
 };
 
 export default usePinCodeLookup;
