@@ -100,9 +100,9 @@ const SignUpPromptPopup = memo(() => {
           <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
             <Gift className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
             <div className="text-sm">
-              <p className="font-medium text-foreground">Loyalty Rewards</p>
+              <p className="font-medium text-foreground">Exclusive Offers</p>
               <p className="text-muted-foreground text-xs">
-                Earn exclusive discounts with every purchase
+                Get access to special deals and early sales
               </p>
             </div>
           </div>

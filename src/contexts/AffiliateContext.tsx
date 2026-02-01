@@ -13,7 +13,6 @@ interface CouponData {
   discountPercent: number;
   discountAmount: number | null;
   minOrderAmount: number;
-  isLoyalty?: boolean;
   freeShipping?: boolean;
 }
 
@@ -59,43 +58,6 @@ export const AffiliateProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // Auto-apply loyalty coupon when user logs in (only if no bulk discount)
-  // Note: We don't auto-apply here anymore - it's handled in Checkout where we know cart state
-  useEffect(() => {
-    // Only fetch if user is logged in and no coupon applied yet
-    // Bulk discount check will be done in Checkout.tsx
-    if (user && !appliedCoupon) {
-      fetchAndApplyLoyaltyCoupon(user.id);
-    }
-  }, [user]);
-
-  const fetchAndApplyLoyaltyCoupon = async (userId: string) => {
-    try {
-      const { data: coupon, error } = await supabase
-        .from("coupons")
-        .select("code, discount_percent, discount_amount, min_order_amount, is_bogo")
-        .eq("user_id", userId)
-        .eq("is_active", true)
-        .eq("current_uses", 0)
-        .like("coupon_type", "loyalty%")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (!error && coupon?.code) {
-        setAppliedCoupon({
-          code: coupon.code,
-          discountPercent: coupon.discount_percent,
-          discountAmount: coupon.discount_amount,
-          minOrderAmount: coupon.min_order_amount || 0,
-          isLoyalty: true,
-        });
-        setCouponCode(coupon.code);
-      }
-    } catch (error) {
-      console.log("No loyalty coupon to auto-apply");
-    }
-  };
 
   const fetchAffiliateData = async (code: string) => {
     setIsLoading(true);
@@ -112,16 +74,14 @@ export const AffiliateProvider = ({ children }: { children: ReactNode }) => {
           couponDiscountPercent: affiliate.discount_percent || 10,
         });
         
-        // Auto-apply affiliate coupon (only if no loyalty coupon already applied)
-        if (!appliedCoupon?.isLoyalty) {
-          setAppliedCoupon({
-            code: affiliate.code,
-            discountPercent: affiliate.discount_percent || 10,
-            discountAmount: null,
-            minOrderAmount: 0,
-          });
-          setCouponCode(affiliate.code);
-        }
+        // Auto-apply affiliate coupon
+        setAppliedCoupon({
+          code: affiliate.code,
+          discountPercent: affiliate.discount_percent || 10,
+          discountAmount: null,
+          minOrderAmount: 0,
+        });
+        setCouponCode(affiliate.code);
       }
     } catch (error) {
       console.error("Error fetching affiliate data:", error);
