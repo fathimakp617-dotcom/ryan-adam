@@ -106,6 +106,7 @@ interface ProfileData {
   last_name: string | null;
   phone: string | null;
   avatar_url: string | null;
+  saved_address?: unknown;
 }
 
 type LegacySavedAddress = {
