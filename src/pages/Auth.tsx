@@ -161,6 +161,22 @@ const Auth = () => {
       }
     }
 
+    // Address validation - required
+    if (!formData.addressLine1.trim()) {
+      newErrors.addressLine1 = "Address is required";
+    }
+    if (!formData.city.trim()) {
+      newErrors.city = "City is required";
+    }
+    if (!formData.state.trim()) {
+      newErrors.state = "State is required";
+    }
+    if (!formData.pincode.trim()) {
+      newErrors.pincode = "PIN code is required";
+    } else if (!/^\d{6}$/.test(formData.pincode)) {
+      newErrors.pincode = "Enter a valid 6-digit PIN code";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -919,13 +935,13 @@ const Auth = () => {
 
                   {/* Address Section */}
                   <div className="space-y-3 pt-2">
-                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                      <MapPin className="w-4 h-4" />
-                      <span>Shipping Address (Optional)</span>
+                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      <MapPin className="w-4 h-4 text-primary" />
+                      <span>Shipping Address <span className="text-destructive">*</span></span>
                     </div>
                     
                     <div className="space-y-1.5">
-                      <Label htmlFor="addressLine1" className="text-sm font-medium">Address Line 1</Label>
+                      <Label htmlFor="addressLine1" className="text-sm font-medium">Address Line 1 <span className="text-destructive">*</span></Label>
                       <div className="relative">
                         <Building className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
@@ -937,6 +953,9 @@ const Auth = () => {
                           placeholder="House/Flat No., Building Name"
                         />
                       </div>
+                      {errors.addressLine1 && (
+                        <p className="text-destructive text-xs">{errors.addressLine1}</p>
+                      )}
                     </div>
 
                     <div className="space-y-1.5">
@@ -956,7 +975,7 @@ const Auth = () => {
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
-                        <Label htmlFor="city" className="text-sm font-medium">City</Label>
+                        <Label htmlFor="city" className="text-sm font-medium">City <span className="text-destructive">*</span></Label>
                         <Input
                           id="city"
                           name="city"
@@ -965,9 +984,12 @@ const Auth = () => {
                           className="h-12 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl text-base"
                           placeholder="City"
                         />
+                        {errors.city && (
+                          <p className="text-destructive text-xs">{errors.city}</p>
+                        )}
                       </div>
                       <div className="space-y-1.5">
-                        <Label htmlFor="state" className="text-sm font-medium">State</Label>
+                        <Label htmlFor="state" className="text-sm font-medium">State <span className="text-destructive">*</span></Label>
                         <Input
                           id="state"
                           name="state"
@@ -976,11 +998,14 @@ const Auth = () => {
                           className="h-12 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl text-base"
                           placeholder="State"
                         />
+                        {errors.state && (
+                          <p className="text-destructive text-xs">{errors.state}</p>
+                        )}
                       </div>
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label htmlFor="pincode" className="text-sm font-medium">PIN Code</Label>
+                      <Label htmlFor="pincode" className="text-sm font-medium">PIN Code <span className="text-destructive">*</span></Label>
                       <Input
                         id="pincode"
                         name="pincode"
@@ -988,11 +1013,15 @@ const Auth = () => {
                         onChange={(e) => {
                           const value = e.target.value.replace(/\D/g, '').slice(0, 6);
                           setFormData(prev => ({ ...prev, pincode: value }));
+                          setErrors(prev => ({ ...prev, pincode: "" }));
                         }}
                         className="h-12 bg-background/50 border-border/50 focus:border-primary/50 rounded-xl text-base"
                         placeholder="6-digit PIN code"
                         maxLength={6}
                       />
+                      {errors.pincode && (
+                        <p className="text-destructive text-xs">{errors.pincode}</p>
+                      )}
                     </div>
                   </div>
 
