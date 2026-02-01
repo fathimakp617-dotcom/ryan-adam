@@ -36,6 +36,66 @@ interface SavedAddress {
   country: string;
 }
 
+type LegacySavedAddress = {
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  country?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+};
+
+const normalizeSavedAddress = (
+  raw: unknown,
+  fallback?: { firstName?: string | null; lastName?: string | null; phone?: string | null }
+): SavedAddress | null => {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+
+  const anyAddr = raw as Partial<SavedAddress> & LegacySavedAddress & Record<string, unknown>;
+
+  // Canonical shape (used by checkout/account pages)
+  const canonicalAddress = typeof anyAddr.address === "string" ? anyAddr.address.trim() : "";
+  const canonicalCity = typeof anyAddr.city === "string" ? anyAddr.city.trim() : "";
+
+  // Legacy shape (saved during signup)
+  const line1 = typeof anyAddr.addressLine1 === "string" ? anyAddr.addressLine1.trim() : "";
+  const line2 = typeof anyAddr.addressLine2 === "string" ? anyAddr.addressLine2.trim() : "";
+  const legacyAddress = [line1, line2].filter(Boolean).join(", ");
+
+  const address = canonicalAddress || legacyAddress;
+  const city = canonicalCity || (typeof anyAddr.city === "string" ? anyAddr.city.trim() : "");
+
+  if (!address || !city) return null;
+
+  const zipCode =
+    (typeof anyAddr.zipCode === "string" && anyAddr.zipCode.trim()) ||
+    (typeof anyAddr.pincode === "string" && anyAddr.pincode.trim()) ||
+    "";
+
+  return {
+    firstName:
+      (typeof anyAddr.firstName === "string" && anyAddr.firstName) ||
+      (fallback?.firstName ?? "") ||
+      "",
+    lastName:
+      (typeof anyAddr.lastName === "string" && anyAddr.lastName) ||
+      (fallback?.lastName ?? "") ||
+      "",
+    phone:
+      (typeof anyAddr.phone === "string" && anyAddr.phone) ||
+      (fallback?.phone ?? "") ||
+      "",
+    address,
+    city,
+    state: (typeof anyAddr.state === "string" && anyAddr.state.trim()) || "",
+    zipCode,
+    country: (typeof anyAddr.country === "string" && anyAddr.country.trim()) || "India",
+  };
+};
+
 const Checkout = () => {
   const { items, totalPrice, clearCart, totalItems, bulkDiscountPercent, bulkDiscountAmount } = useCart();
   const { affiliateCode, appliedCoupon, calculateDiscount, removeCoupon } = useAffiliate();
@@ -79,7 +139,7 @@ const Checkout = () => {
           .from('profiles')
           .select('saved_address, first_name, last_name, phone')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
         
         if (error) throw error;
         
@@ -87,28 +147,31 @@ const Checkout = () => {
         
         // Always set email from user
         const email = user.email || "";
-        
-        if (data?.saved_address && typeof data.saved_address === 'object' && !Array.isArray(data.saved_address)) {
-          const addr = data.saved_address as unknown as SavedAddress;
-          if (addr.address && addr.city) {
-            setSavedAddress(addr);
-            
-            // Auto-fill form with saved address immediately
-            setFormData({
-              email,
-              firstName: addr.firstName || data.first_name || metadata.first_name || "",
-              lastName: addr.lastName || data.last_name || metadata.last_name || "",
-              phone: addr.phone || data.phone || "",
-              address: addr.address,
-              city: addr.city,
-              state: addr.state || "",
-              zipCode: addr.zipCode || "",
-              country: addr.country || "India",
-            });
-            setIsExpressMode(true);
-            setLoadingSavedAddress(false);
-            return;
-          }
+
+        const normalized = normalizeSavedAddress(data?.saved_address, {
+          firstName: data?.first_name ?? metadata.first_name,
+          lastName: data?.last_name ?? metadata.last_name,
+          phone: data?.phone,
+        });
+
+        if (normalized) {
+          setSavedAddress(normalized);
+
+          // Auto-fill form with saved address immediately
+          setFormData({
+            email,
+            firstName: normalized.firstName || data?.first_name || metadata.first_name || "",
+            lastName: normalized.lastName || data?.last_name || metadata.last_name || "",
+            phone: normalized.phone || data?.phone || "",
+            address: normalized.address,
+            city: normalized.city,
+            state: normalized.state || "",
+            zipCode: normalized.zipCode || "",
+            country: normalized.country || "India",
+          });
+          setIsExpressMode(true);
+          setLoadingSavedAddress(false);
+          return;
         }
         
         // No saved address - just fill basic user info
