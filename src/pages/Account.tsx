@@ -37,14 +37,14 @@ import {
   X,
   RotateCcw,
   AlertCircle,
-  Gift,
+  
   MapPin,
   Home,
   Loader2,
   Zap
 } from "lucide-react";
 import ReturnRequestDialog from "@/components/ReturnRequestDialog";
-import LoyaltyCoupons from "@/components/LoyaltyCoupons";
+
 import WithdrawalRequestDialog from "@/components/WithdrawalRequestDialog";
 import WithdrawalHistory from "@/components/WithdrawalHistory";
 
@@ -648,10 +648,6 @@ const Account = () => {
                   <Package size={16} />
                   <span className="hidden sm:inline">Orders</span>
                 </TabsTrigger>
-                <TabsTrigger value="rewards" className="gap-2">
-                  <Gift size={16} />
-                  <span className="hidden sm:inline">Rewards</span>
-                </TabsTrigger>
                 <TabsTrigger value="affiliate" className="gap-2">
                   <Share2 size={16} />
                   <span className="hidden sm:inline">Affiliate</span>
@@ -1150,16 +1146,6 @@ const Account = () => {
                 )}
               </TabsContent>
 
-              {/* Rewards Tab */}
-              <TabsContent value="rewards" className="space-y-6">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-card border border-border rounded-2xl p-6"
-                >
-                  <LoyaltyCoupons />
-                </motion.div>
-              </TabsContent>
 
               {/* Affiliate Tab */}
               <TabsContent value="affiliate" className="space-y-6">
