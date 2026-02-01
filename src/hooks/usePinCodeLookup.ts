@@ -4,6 +4,7 @@ interface PinCodeData {
   city: string;
   state: string;
   country: string;
+  postOffice: string;
 }
 
 interface PinCodeLookupResult {
@@ -53,6 +54,7 @@ export const usePinCodeLookup = (): PinCodeLookupResult => {
           city: postOffice.District,
           state: postOffice.State,
           country: postOffice.Country,
+          postOffice: postOffice.Name,
         };
         
         // Cache the result
