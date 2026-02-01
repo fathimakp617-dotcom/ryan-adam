@@ -35,7 +35,7 @@ const Auth = () => {
   const [mode, setMode] = useState<AuthMode>("login");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
+  // rememberMe removed - users stay logged in permanently
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -280,7 +280,7 @@ const Auth = () => {
         return;
       }
 
-      const { error } = await signIn(formData.email, formData.password, rememberMe);
+      const { error } = await signIn(formData.email, formData.password);
       if (error) {
         if (error.message.includes("Invalid login credentials")) {
           toast({
@@ -767,17 +767,7 @@ const Auth = () => {
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="rememberMe"
-                        checked={rememberMe}
-                        onCheckedChange={(checked) => setRememberMe(checked === true)}
-                      />
-                      <Label htmlFor="rememberMe" className="text-sm text-muted-foreground cursor-pointer">
-                        Remember me
-                      </Label>
-                    </div>
+                  <div className="flex items-center justify-end">
                     <button
                       type="button"
                       onClick={() => setMode("forgot")}
