@@ -60,7 +60,7 @@ const Checkout = () => {
     country: "India",
   });
 
-  // Load saved address for returning customers
+  // Load saved address for returning customers and auto-fill
   useEffect(() => {
     const loadSavedAddress = async () => {
       if (!user) {
@@ -79,8 +79,22 @@ const Checkout = () => {
         
         if (data?.saved_address && typeof data.saved_address === 'object' && !Array.isArray(data.saved_address)) {
           const addr = data.saved_address as unknown as SavedAddress;
-          if (addr.firstName && addr.address && addr.city) {
+          if (addr.address && addr.city) {
             setSavedAddress(addr);
+            
+            // Auto-fill form with saved address
+            setFormData(prev => ({
+              ...prev,
+              firstName: addr.firstName || data.first_name || prev.firstName,
+              lastName: addr.lastName || data.last_name || prev.lastName,
+              phone: addr.phone || data.phone || prev.phone,
+              address: addr.address || prev.address,
+              city: addr.city || prev.city,
+              state: addr.state || prev.state,
+              zipCode: addr.zipCode || prev.zipCode,
+              country: addr.country || prev.country || "India",
+            }));
+            setIsExpressMode(true);
           }
         }
       } catch (error) {
