@@ -24,6 +24,8 @@ const AddressPromptPopup = memo(() => {
   const previousUserRef = useRef<string | null>(null);
 
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    
     const checkAddress = async () => {
       if (isLoading || !user) {
         previousUserRef.current = null;
@@ -37,9 +39,9 @@ const AddressPromptPopup = memo(() => {
       // Update previous user ref
       previousUserRef.current = user.id;
 
-      // Check if popup was dismissed recently (within 24 hours)
+      // Check if popup was dismissed recently (within 24 hours) - but skip this check if just logged in
       const dismissed = localStorage.getItem(POPUP_STORAGE_KEY);
-      if (dismissed && !wasMarkedAsJustLoggedIn) {
+      if (dismissed && !wasMarkedAsJustLoggedIn && !justLoggedIn) {
         const dismissedTime = parseInt(dismissed, 10);
         const now = Date.now();
         const hoursElapsed = (now - dismissedTime) / (1000 * 60 * 60);
@@ -64,21 +66,25 @@ const AddressPromptPopup = memo(() => {
 
       setHasAddress(!!addressExists);
 
-      // If no address exists
+      // If no address exists, show the popup
       if (!addressExists) {
-        // If just logged in, show popup immediately
+        // Clear the flag now that we've processed it
         if (wasMarkedAsJustLoggedIn) {
           sessionStorage.removeItem(JUST_LOGGED_IN_KEY);
+        }
+        
+        // If just logged in (either by flag or by detection), show popup immediately
+        if (wasMarkedAsJustLoggedIn || justLoggedIn) {
+          console.log("Just logged in, showing address popup immediately");
           setIsOpen(true);
           return;
         }
         
         // Otherwise, show popup after 5 second delay
         console.log("No address found, showing popup in 5s");
-        const timer = setTimeout(() => {
+        timer = setTimeout(() => {
           setIsOpen(true);
         }, POPUP_DELAY_MS);
-        return () => clearTimeout(timer);
       } else {
         // Clear the just logged in flag if address exists
         sessionStorage.removeItem(JUST_LOGGED_IN_KEY);
@@ -86,6 +92,10 @@ const AddressPromptPopup = memo(() => {
     };
 
     checkAddress();
+    
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [user, isLoading]);
 
   const handleDismiss = () => {
