@@ -139,6 +139,7 @@ const Account = () => {
     zipCode: "",
     country: "India",
   });
+  const [postOfficeName, setPostOfficeName] = useState("");
   const [isSavingAddress, setIsSavingAddress] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -249,6 +250,7 @@ const Account = () => {
   const handlePinCodeChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
     setAddressForm((prev) => ({ ...prev, zipCode: value }));
+    setPostOfficeName("");
     
     // Auto-lookup when 6 digits entered
     if (value.length === 6 && /^\d{6}$/.test(value)) {
@@ -260,6 +262,7 @@ const Account = () => {
           state: pinData.state,
           country: pinData.country,
         }));
+        setPostOfficeName(pinData.postOffice);
       }
     }
   }, [lookupPinCode]);
@@ -912,6 +915,12 @@ const Account = () => {
                           </span>
                         )}
                       </div>
+                      {postOfficeName && (
+                        <p className="text-xs text-primary mt-1 flex items-center gap-1">
+                          <MapPin size={12} />
+                          {postOfficeName} Post Office
+                        </p>
+                      )}
                     </div>
                     <div>
                       <Label htmlFor="addr_city">City</Label>
