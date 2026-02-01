@@ -13,7 +13,7 @@ interface AuthContextType {
   session: Session | null;
   isLoading: boolean;
   signUp: (email: string, password: string, firstName: string, lastName: string, phone: string) => Promise<{ error: Error | null }>;
-  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signInWithEmailOtp: (email: string) => Promise<{ error: Error | null }>;
   sendPasswordResetOtp: (email: string) => Promise<{ error: Error | null }>;
@@ -46,21 +46,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if this is a session-only login (Remember me was unchecked)
-    // If there's no sessionStorage flag but we have a session, it means browser was closed
-    const isSessionOnly = sessionStorage.getItem("rayn_session_only");
-    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        // If session-only mode and browser was reopened, sign out
-        if (session && isSessionOnly === null && localStorage.getItem("rayn_session_only_active") === "true") {
-          // Browser was closed and reopened - clear session
-          localStorage.removeItem("rayn_session_only_active");
-          supabase.auth.signOut();
-          return;
-        }
-        
         setSession(session);
         setUser(session?.user ?? null);
         setIsLoading(false);
@@ -69,18 +57,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      // If session-only mode was active and browser reopened, sign out
-      if (session && isSessionOnly === null && localStorage.getItem("rayn_session_only_active") === "true") {
-        localStorage.removeItem("rayn_session_only_active");
-        supabase.auth.signOut();
-        return;
-      }
-      
-      // Mark that session-only mode is active (persists in localStorage to detect browser restart)
-      if (isSessionOnly === "true") {
-        localStorage.setItem("rayn_session_only_active", "true");
-      }
-      
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
@@ -122,19 +98,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error };
   };
 
-  const signIn = async (email: string, password: string, rememberMe: boolean = true) => {
+  const signIn = async (email: string, password: string) => {
     // Check rate limit first
     const rateCheck = await checkRateLimit(email, "login", "check");
     if (!rateCheck.allowed) {
       return { error: new Error(rateCheck.message || "Too many login attempts. Please try again later.") };
-    }
-
-    // If "Remember me" is unchecked, we'll clear the session when user closes browser
-    // by storing a flag that the app checks on load
-    if (!rememberMe) {
-      sessionStorage.setItem("rayn_session_only", "true");
-    } else {
-      sessionStorage.removeItem("rayn_session_only");
     }
 
     const { error } = await supabase.auth.signInWithPassword({
@@ -145,7 +113,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (error) {
       // Record failed attempt
       await checkRateLimit(email, "login", "record_failure");
-      sessionStorage.removeItem("rayn_session_only");
     } else {
       // Reset rate limit on success
       await checkRateLimit(email, "login", "reset");
