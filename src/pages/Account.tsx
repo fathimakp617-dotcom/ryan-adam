@@ -40,7 +40,8 @@ import {
   Gift,
   MapPin,
   Home,
-  Loader2
+  Loader2,
+  Zap
 } from "lucide-react";
 import ReturnRequestDialog from "@/components/ReturnRequestDialog";
 import LoyaltyCoupons from "@/components/LoyaltyCoupons";
@@ -627,10 +628,14 @@ const Account = () => {
 
             {/* Tabs */}
             <Tabs defaultValue={defaultTab} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-flex">
+              <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-flex">
                 <TabsTrigger value="profile" className="gap-2">
                   <User size={16} />
                   <span className="hidden sm:inline">Profile</span>
+                </TabsTrigger>
+                <TabsTrigger value="address" className="gap-2">
+                  <MapPin size={16} />
+                  <span className="hidden sm:inline">Address</span>
                 </TabsTrigger>
                 <TabsTrigger value="orders" className="gap-2">
                   <Package size={16} />
@@ -813,6 +818,178 @@ const Account = () => {
                     <p className="text-xs text-muted-foreground">Affiliate Earnings</p>
                   </motion.div>
                 </div>
+              </TabsContent>
+
+              {/* Address Tab */}
+              <TabsContent value="address" className="space-y-6">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-card border border-border rounded-xl p-6"
+                >
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <MapPin size={20} className="text-primary" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-semibold text-foreground">Shipping Address</h2>
+                      <p className="text-sm text-muted-foreground">Save your address for express checkout</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="addr_firstName">First Name</Label>
+                      <Input
+                        id="addr_firstName"
+                        name="firstName"
+                        value={addressForm.firstName}
+                        onChange={handleAddressChange}
+                        placeholder="First name"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="addr_lastName">Last Name</Label>
+                      <Input
+                        id="addr_lastName"
+                        name="lastName"
+                        value={addressForm.lastName}
+                        onChange={handleAddressChange}
+                        placeholder="Last name"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="addr_phone">Phone Number</Label>
+                      <div className="relative mt-1">
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="addr_phone"
+                          name="phone"
+                          type="tel"
+                          value={addressForm.phone}
+                          onChange={handleAddressChange}
+                          className="pl-10"
+                          placeholder="+91 9876543210"
+                        />
+                      </div>
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="addr_address">Street Address</Label>
+                      <div className="relative mt-1">
+                        <Home className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="addr_address"
+                          name="address"
+                          value={addressForm.address}
+                          onChange={handleAddressChange}
+                          className="pl-10"
+                          placeholder="House/Flat No., Street, Locality"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="addr_zipCode">PIN Code</Label>
+                      <div className="relative mt-1">
+                        <Input
+                          id="addr_zipCode"
+                          name="zipCode"
+                          value={addressForm.zipCode}
+                          onChange={handleAddressChange}
+                          onBlur={(e) => handlePinCodeBlur(e.target.value)}
+                          placeholder="6-digit PIN code"
+                          maxLength={6}
+                          className={isPinLoading ? "pr-10" : ""}
+                        />
+                        {isPinLoading && (
+                          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary animate-spin" />
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Enter PIN code to auto-fill city and state
+                      </p>
+                    </div>
+                    <div>
+                      <Label htmlFor="addr_city">City</Label>
+                      <Input
+                        id="addr_city"
+                        name="city"
+                        value={addressForm.city}
+                        onChange={handleAddressChange}
+                        placeholder="City"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="addr_state">State</Label>
+                      <Input
+                        id="addr_state"
+                        name="state"
+                        value={addressForm.state}
+                        onChange={handleAddressChange}
+                        placeholder="State"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="addr_country">Country</Label>
+                      <Input
+                        id="addr_country"
+                        name="country"
+                        value={addressForm.country}
+                        onChange={handleAddressChange}
+                        placeholder="India"
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    onClick={handleSaveAddress} 
+                    className="mt-6"
+                    disabled={isSavingAddress}
+                  >
+                    {isSavingAddress ? (
+                      <span className="flex items-center gap-2">
+                        <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        Saving...
+                      </span>
+                    ) : (
+                      <>
+                        <MapPin size={18} className="mr-2" />
+                        Save Address
+                      </>
+                    )}
+                  </Button>
+                </motion.div>
+
+                {/* Address Benefits Card */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-xl p-6"
+                >
+                  <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <Zap size={18} className="text-primary" />
+                    Express Checkout Benefits
+                  </h3>
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    <li className="flex items-center gap-2">
+                      <Check size={16} className="text-green-500" />
+                      Skip entering your address every time you order
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check size={16} className="text-green-500" />
+                      One-click checkout for faster purchases
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check size={16} className="text-green-500" />
+                      Your address is securely saved
+                    </li>
+                  </ul>
+                </motion.div>
               </TabsContent>
 
               {/* Orders Tab */}
@@ -1332,150 +1509,6 @@ const Account = () => {
                     </div>
                   </div>
                 </div>
-
-                {/* Saved Shipping Address */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="bg-card border border-border rounded-xl p-6"
-                >
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <MapPin size={20} className="text-primary" />
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-semibold text-foreground">Shipping Address</h2>
-                      <p className="text-sm text-muted-foreground">Save your address for express checkout</p>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="addr_firstName">First Name</Label>
-                      <Input
-                        id="addr_firstName"
-                        name="firstName"
-                        value={addressForm.firstName}
-                        onChange={handleAddressChange}
-                        placeholder="First name"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="addr_lastName">Last Name</Label>
-                      <Input
-                        id="addr_lastName"
-                        name="lastName"
-                        value={addressForm.lastName}
-                        onChange={handleAddressChange}
-                        placeholder="Last name"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <Label htmlFor="addr_phone">Phone Number</Label>
-                      <div className="relative mt-1">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="addr_phone"
-                          name="phone"
-                          type="tel"
-                          value={addressForm.phone}
-                          onChange={handleAddressChange}
-                          className="pl-10"
-                          placeholder="+91 9876543210"
-                        />
-                      </div>
-                    </div>
-                    <div className="md:col-span-2">
-                      <Label htmlFor="addr_address">Street Address</Label>
-                      <div className="relative mt-1">
-                        <Home className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="addr_address"
-                          name="address"
-                          value={addressForm.address}
-                          onChange={handleAddressChange}
-                          className="pl-10"
-                          placeholder="House/Flat No., Street, Locality"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="addr_city">City</Label>
-                      <Input
-                        id="addr_city"
-                        name="city"
-                        value={addressForm.city}
-                        onChange={handleAddressChange}
-                        placeholder="City"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="addr_state">State</Label>
-                      <Input
-                        id="addr_state"
-                        name="state"
-                        value={addressForm.state}
-                        onChange={handleAddressChange}
-                        placeholder="State"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="addr_zipCode">PIN Code</Label>
-                      <div className="relative mt-1">
-                        <Input
-                          id="addr_zipCode"
-                          name="zipCode"
-                          value={addressForm.zipCode}
-                          onChange={handleAddressChange}
-                          onBlur={(e) => handlePinCodeBlur(e.target.value)}
-                          placeholder="6-digit PIN code"
-                          maxLength={6}
-                          className={isPinLoading ? "pr-10" : ""}
-                        />
-                        {isPinLoading && (
-                          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary animate-spin" />
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Enter PIN code to auto-fill city and state
-                      </p>
-                    </div>
-                    <div>
-                      <Label htmlFor="addr_country">Country</Label>
-                      <Input
-                        id="addr_country"
-                        name="country"
-                        value={addressForm.country}
-                        onChange={handleAddressChange}
-                        placeholder="India"
-                        className="mt-1"
-                      />
-                    </div>
-                  </div>
-                  
-                  <Button 
-                    onClick={handleSaveAddress} 
-                    className="mt-6"
-                    disabled={isSavingAddress}
-                  >
-                    {isSavingAddress ? (
-                      <span className="flex items-center gap-2">
-                        <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                        Saving...
-                      </span>
-                    ) : (
-                      <>
-                        <MapPin size={18} className="mr-2" />
-                        Save Address
-                      </>
-                    )}
-                  </Button>
-                </motion.div>
 
                 {/* Danger Zone */}
                 <div className="bg-card border border-destructive/30 rounded-xl p-6">

@@ -95,7 +95,7 @@ const AddressPromptPopup = memo(() => {
 
   const handleAddAddress = () => {
     handleDismiss();
-    navigate("/account?tab=settings");
+    navigate("/account?tab=address");
   };
 
   // Don't render if user has address or not logged in
