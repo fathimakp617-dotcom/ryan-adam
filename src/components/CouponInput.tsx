@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tag, X, Check, Loader2, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { useAffiliate } from "@/contexts/AffiliateContext";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 
-const CouponInput = () => {
+const CouponInput = forwardRef<HTMLDivElement>((_, ref) => {
   const {
     couponCode,
     setCouponCode,
@@ -43,7 +43,7 @@ const CouponInput = () => {
   // If bulk discount is active, show a message instead of coupon input
   if (isBulkDiscountActive) {
     return (
-      <div className="space-y-3">
+      <div ref={ref} className="space-y-3">
         <div className="flex items-center gap-2">
           <Tag className="w-4 h-4 text-muted-foreground" />
           <span className="text-sm text-muted-foreground">Coupon / Affiliate Code</span>
@@ -59,7 +59,7 @@ const CouponInput = () => {
   }
 
   return (
-    <div className="space-y-3">
+    <div ref={ref} className="space-y-3">
       <div className="flex items-center gap-2">
         <Tag className="w-4 h-4 text-muted-foreground" />
         <span className="text-sm text-muted-foreground">Coupon / Affiliate Code</span>
@@ -118,6 +118,8 @@ const CouponInput = () => {
       </AnimatePresence>
     </div>
   );
-};
+});
+
+CouponInput.displayName = "CouponInput";
 
 export default CouponInput;

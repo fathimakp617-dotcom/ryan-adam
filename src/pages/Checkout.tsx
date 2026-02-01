@@ -1,4 +1,4 @@
-import { useState, useEffect, memo, useCallback } from "react";
+import { useState, useEffect, memo, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, CreditCard, Truck, Check, Lock, LogIn, AlertTriangle, Smartphone, Zap, MapPin, Loader2 } from "lucide-react";
@@ -60,14 +60,20 @@ const Checkout = () => {
     country: "India",
   });
 
-  // Load saved address for returning customers and auto-fill
+  // Track if we've already loaded address to prevent multiple loads
+  const hasLoadedAddress = useRef(false);
+
+  // Load saved address for returning customers and auto-fill - runs ONCE when user is available
   useEffect(() => {
+    // Skip if already loaded or no user
+    if (hasLoadedAddress.current || !user) {
+      if (!user) setLoadingSavedAddress(false);
+      return;
+    }
+    
+    hasLoadedAddress.current = true;
+    
     const loadSavedAddress = async () => {
-      if (!user) {
-        setLoadingSavedAddress(false);
-        return;
-      }
-      
       try {
         const { data, error } = await supabase
           .from('profiles')
@@ -77,47 +83,54 @@ const Checkout = () => {
         
         if (error) throw error;
         
+        const metadata = user.user_metadata || {};
+        
+        // Always set email from user
+        const email = user.email || "";
+        
         if (data?.saved_address && typeof data.saved_address === 'object' && !Array.isArray(data.saved_address)) {
           const addr = data.saved_address as unknown as SavedAddress;
           if (addr.address && addr.city) {
             setSavedAddress(addr);
             
-            // Auto-fill form with saved address
-            setFormData(prev => ({
-              ...prev,
-              firstName: addr.firstName || data.first_name || prev.firstName,
-              lastName: addr.lastName || data.last_name || prev.lastName,
-              phone: addr.phone || data.phone || prev.phone,
-              address: addr.address || prev.address,
-              city: addr.city || prev.city,
-              state: addr.state || prev.state,
-              zipCode: addr.zipCode || prev.zipCode,
-              country: addr.country || prev.country || "India",
-            }));
+            // Auto-fill form with saved address immediately
+            setFormData({
+              email,
+              firstName: addr.firstName || data.first_name || metadata.first_name || "",
+              lastName: addr.lastName || data.last_name || metadata.last_name || "",
+              phone: addr.phone || data.phone || "",
+              address: addr.address,
+              city: addr.city,
+              state: addr.state || "",
+              zipCode: addr.zipCode || "",
+              country: addr.country || "India",
+            });
             setIsExpressMode(true);
+            setLoadingSavedAddress(false);
+            return;
           }
         }
+        
+        // No saved address - just fill basic user info
+        setFormData(prev => ({
+          ...prev,
+          email,
+          firstName: data?.first_name || metadata.first_name || prev.firstName,
+          lastName: data?.last_name || metadata.last_name || prev.lastName,
+          phone: data?.phone || prev.phone,
+        }));
       } catch (error) {
         console.error('Error loading saved address:', error);
+        // Still set email on error
+        if (user.email) {
+          setFormData(prev => ({ ...prev, email: user.email || prev.email }));
+        }
       } finally {
         setLoadingSavedAddress(false);
       }
     };
     
     loadSavedAddress();
-  }, [user]);
-
-  // Auto-fill user data when logged in
-  useEffect(() => {
-    if (user) {
-      const metadata = user.user_metadata || {};
-      setFormData(prev => ({
-        ...prev,
-        email: user.email || prev.email,
-        firstName: metadata.first_name || prev.firstName,
-        lastName: metadata.last_name || prev.lastName,
-      }));
-    }
   }, [user]);
 
   // Clear coupon if bulk discount is active (they are mutually exclusive)
