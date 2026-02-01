@@ -1,7 +1,7 @@
-import { useState, useEffect, memo } from "react";
+import { useState, useEffect, memo, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, CreditCard, Truck, Check, Lock, LogIn, AlertTriangle, Smartphone, Zap, MapPin } from "lucide-react";
+import { ArrowLeft, CreditCard, Truck, Check, Lock, LogIn, AlertTriangle, Smartphone, Zap, MapPin, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import { useAffiliate } from "@/contexts/AffiliateContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatPrice } from "@/data/products";
 import { useToast } from "@/hooks/use-toast";
+import { usePinCodeLookup } from "@/hooks/usePinCodeLookup";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -173,10 +174,27 @@ const Checkout = () => {
   const totalDiscount = bulkDiscountAmount + couponDiscount;
   const orderTotal = totalPrice - totalDiscount + shipping;
 
+  // PIN code lookup hook
+  const { isLoading: isPinLoading, lookupPinCode } = usePinCodeLookup();
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
+  const handlePinCodeBlur = useCallback(async (pinCode: string) => {
+    if (pinCode.length === 6) {
+      const pinData = await lookupPinCode(pinCode);
+      if (pinData) {
+        setFormData((prev) => ({
+          ...prev,
+          city: pinData.city,
+          state: pinData.state,
+          country: pinData.country,
+        }));
+      }
+    }
+  }, [lookupPinCode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -860,14 +878,25 @@ const Checkout = () => {
                     </div>
                     <div>
                       <Label htmlFor="zipCode">PIN Code</Label>
-                      <Input
-                        id="zipCode"
-                        name="zipCode"
-                        value={formData.zipCode}
-                        onChange={handleInputChange}
-                        required
-                        className="mt-1 bg-input border-border"
-                      />
+                      <div className="relative mt-1">
+                        <Input
+                          id="zipCode"
+                          name="zipCode"
+                          value={formData.zipCode}
+                          onChange={handleInputChange}
+                          onBlur={(e) => handlePinCodeBlur(e.target.value)}
+                          required
+                          maxLength={6}
+                          placeholder="6-digit PIN code"
+                          className={`bg-input border-border ${isPinLoading ? "pr-10" : ""}`}
+                        />
+                        {isPinLoading && (
+                          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary animate-spin" />
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Enter PIN to auto-fill city & state
+                      </p>
                     </div>
                     <div>
                       <Label htmlFor="country">Country</Label>
