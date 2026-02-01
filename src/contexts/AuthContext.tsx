@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -7,6 +7,26 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 // Always use current origin - works on localhost, Lovable preview, or production domain
 const getAppOrigin = () => window.location.origin;
+
+// When using the custom OTP flow, verification redirects via an auth action_link.
+// We store profile seed data during signup and persist it right after the session is established.
+const PENDING_PROFILE_SEED_KEY = "pending_profile_seed_v1";
+
+type PendingProfileSeed = {
+  first_name: string;
+  last_name: string;
+  phone: string;
+  saved_address: {
+    firstName: string;
+    lastName: string;
+    phone: string;
+    address: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  };
+};
 
 interface AuthContextType {
   user: User | null;
@@ -45,6 +65,45 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const pendingSeedProcessedRef = useRef(false);
+
+  const persistPendingProfileSeedIfAny = async (session: Session | null) => {
+    if (!session?.user) return;
+    if (pendingSeedProcessedRef.current) return;
+
+    const raw = localStorage.getItem(PENDING_PROFILE_SEED_KEY);
+    if (!raw) return;
+
+    pendingSeedProcessedRef.current = true;
+    try {
+      const seed = JSON.parse(raw) as PendingProfileSeed;
+      const { error } = await supabase
+        .from("profiles")
+        .upsert(
+          {
+            user_id: session.user.id,
+            first_name: seed.first_name,
+            last_name: seed.last_name,
+            phone: seed.phone,
+            saved_address: seed.saved_address,
+          },
+          { onConflict: "user_id" }
+        );
+
+      if (error) {
+        console.error("Failed to persist pending signup profile seed:", error);
+        // Allow retry on next auth change
+        pendingSeedProcessedRef.current = false;
+        return;
+      }
+
+      localStorage.removeItem(PENDING_PROFILE_SEED_KEY);
+    } catch (e) {
+      console.error("Error processing pending signup profile seed:", e);
+      pendingSeedProcessedRef.current = false;
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -52,6 +111,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         setIsLoading(false);
+
+        // If we have a pending signup seed (address/phone), persist it right after session creation.
+        // This is critical for the custom OTP flow that redirects via action_link.
+        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
+          void persistPendingProfileSeedIfAny(session);
+        }
       }
     );
 
@@ -60,6 +125,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
+
+      // Also attempt on initial load in case the page was refreshed after signup.
+      void persistPendingProfileSeedIfAny(session);
     });
 
     return () => subscription.unsubscribe();
