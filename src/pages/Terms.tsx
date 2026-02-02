@@ -10,8 +10,10 @@ const Terms = () => {
   return (
     <div className="min-h-screen bg-background">
       <Helmet>
-        <title>Terms & Conditions | Rayn Adam</title>
-        <meta name="description" content="Terms and conditions for shopping at Rayn Adam Luxury Perfumes including shipping, payment, and return policies." />
+        <title>Terms & Conditions | Rayn Adam Luxury Perfumes India</title>
+        <meta name="description" content="Terms and conditions for Rayn Adam Luxury Perfumes. Shipping policy, COD terms, payment options, and return/refund policies for India." />
+        <meta name="keywords" content="Rayn Adam terms, perfume shipping India, COD perfume, return policy, refund policy" />
+        <link rel="canonical" href="https://ryanadamperfume.lovable.app/terms" />
       </Helmet>
       
       <Navbar />
