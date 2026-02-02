@@ -14,6 +14,7 @@ import { formatPrice } from "@/data/products";
 import { useToast } from "@/hooks/use-toast";
 import { usePinCodeLookup } from "@/hooks/usePinCodeLookup";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CouponInput from "@/components/CouponInput";
@@ -96,6 +97,8 @@ const normalizeSavedAddress = (
   };
 };
 
+const PENDING_PROFILE_SEED_KEY = "pending_profile_seed_v1";
+
 const Checkout = () => {
   const { items, totalPrice, clearCart, totalItems, bulkDiscountPercent, bulkDiscountAmount } = useCart();
   const { affiliateCode, appliedCoupon, calculateDiscount, removeCoupon } = useAffiliate();
@@ -135,6 +138,68 @@ const Checkout = () => {
     
     const loadSavedAddress = async () => {
       try {
+        // Fallback: immediately after signup (OTP redirect), the address may still be in localStorage.
+        // Use it to prefill checkout and persist it to the profile.
+        const pendingRaw = localStorage.getItem(PENDING_PROFILE_SEED_KEY);
+        if (pendingRaw) {
+          try {
+            const seed = JSON.parse(pendingRaw) as {
+              first_name?: string;
+              last_name?: string;
+              phone?: string;
+              saved_address?: unknown;
+            };
+
+            const pendingNormalized = normalizeSavedAddress(seed.saved_address, {
+              firstName: seed.first_name ?? user.user_metadata?.first_name,
+              lastName: seed.last_name ?? user.user_metadata?.last_name,
+              phone: seed.phone ?? null,
+            });
+
+            if (pendingNormalized) {
+              const email = user.email || "";
+
+              setSavedAddress(pendingNormalized);
+              setFormData({
+                email,
+                firstName: pendingNormalized.firstName,
+                lastName: pendingNormalized.lastName,
+                phone: pendingNormalized.phone,
+                address: pendingNormalized.address,
+                city: pendingNormalized.city,
+                state: pendingNormalized.state || "",
+                zipCode: pendingNormalized.zipCode || "",
+                country: pendingNormalized.country || "India",
+              });
+              setIsExpressMode(true);
+
+              // Best-effort persist so next visits auto-fill even if the auth-context upsert didn't run.
+              await supabase
+                .from("profiles")
+                .upsert(
+                  [
+                    {
+                      user_id: user.id,
+                      first_name: seed.first_name ?? null,
+                      last_name: seed.last_name ?? null,
+                      phone: seed.phone ?? null,
+                      // DB column is jsonb; generated types expect Json.
+                      saved_address: pendingNormalized as unknown as Json,
+                    },
+                  ],
+                  { onConflict: "user_id" }
+                );
+
+              localStorage.removeItem(PENDING_PROFILE_SEED_KEY);
+              setLoadingSavedAddress(false);
+              return;
+            }
+          } catch (e) {
+            console.error("Error applying pending signup address seed:", e);
+            // continue to DB fetch
+          }
+        }
+
         const { data, error } = await supabase
           .from('profiles')
           .select('saved_address, first_name, last_name, phone')
