@@ -7,8 +7,8 @@ import { useCart } from "@/contexts/CartContext";
 import { products } from "@/data/products";
 import eliteMain from "@/assets/products/elite.jpg";
 import amberCrownMain from "@/assets/products/amber-crown.jpg";
-import legacyMain from "@/assets/products/legacy.jpg";
-import comboMain from "@/assets/products/combo.jpg";
+import eliteCollection from "@/assets/products/elite-collection.png";
+import amberCrownCollection from "@/assets/products/amber-crown-collection.png";
 
 const slides = [
   {
@@ -24,16 +24,16 @@ const slides = [
     productId: "amber-crown",
   },
   {
-    image: legacyMain,
-    title: "LEGACY",
-    subtitle: "Warm & Captivating",
-    productId: "legacy",
+    image: eliteCollection,
+    title: "ELITE COLLECTION",
+    subtitle: "Complete Luxury Set",
+    productId: "elite-collection",
   },
   {
-    image: comboMain,
-    title: "COMBO",
-    subtitle: "Fresh & Invigorating",
-    productId: "combo",
+    image: amberCrownCollection,
+    title: "AMBER CROWN COLLECTION",
+    subtitle: "Complete Luxury Set",
+    productId: "amber-crown-collection",
   },
 ];
 
