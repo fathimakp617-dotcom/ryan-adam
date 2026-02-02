@@ -1,5 +1,5 @@
 # Robots.txt for Rayn Adam Luxury Perfumes
-# https://ryanadamperfume.lovable.app
+# https://raynadamperfume.com
 
 User-agent: *
 Allow: /
@@ -17,4 +17,4 @@ Allow: /contact
 Allow: /about
 
 # Sitemap location
-Sitemap: https://ryanadamperfume.lovable.app/sitemap.xml
+Sitemap: https://raynadamperfume.com/sitemap.xml

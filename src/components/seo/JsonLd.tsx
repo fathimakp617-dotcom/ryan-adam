@@ -1,6 +1,9 @@
 import { Helmet } from "react-helmet-async";
 import { Product as ProductType } from "@/data/products";
 
+// Production domain
+const SITE_URL = "https://raynadamperfume.com";
+
 interface OrganizationSchemaProps {
   name?: string;
   url?: string;
@@ -10,7 +13,7 @@ interface OrganizationSchemaProps {
 
 export const OrganizationSchema = ({
   name = "Rayn Adam",
-  url = "https://ryanadamperfume.lovable.app",
+  url = SITE_URL,
   logo = "https://storage.googleapis.com/gpt-engineer-file-uploads/9WSefgywaLh9J3niX7t9kD3292V2/uploads/1767712360626-Asset_91_4x_imresizer-removebg-preview.png",
   description = "Discover the essence of sophistication with Rayn Adam's exclusive collection of luxury fragrances.",
 }: OrganizationSchemaProps) => {
@@ -55,7 +58,7 @@ interface ProductSchemaProps {
 }
 
 export const ProductSchema = ({ product, averageRating = 0, totalReviews = 0 }: ProductSchemaProps) => {
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://ryanadamperfume.lovable.app';
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : SITE_URL;
   
   const schema = {
     "@context": "https://schema.org",
@@ -110,7 +113,7 @@ interface BreadcrumbSchemaProps {
 }
 
 export const BreadcrumbSchema = ({ items }: BreadcrumbSchemaProps) => {
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://ryanadamperfume.lovable.app';
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : SITE_URL;
   
   const schema = {
     "@context": "https://schema.org",
@@ -136,8 +139,8 @@ export const LocalBusinessSchema = () => {
     "@type": "Store",
     name: "Rayn Adam Luxury Perfumes",
     image: "https://storage.googleapis.com/gpt-engineer-file-uploads/9WSefgywaLh9J3niX7t9kD3292V2/social-images/social-1767808964506-ChatGPT Image Jan 4, 2026, 02_05_19 AM.png",
-    "@id": "https://ryanadamperfume.lovable.app",
-    url: "https://ryanadamperfume.lovable.app",
+    "@id": SITE_URL,
+    url: SITE_URL,
     telephone: "+91-99466-47442",
     priceRange: "₹₹₹",
     address: {
@@ -169,7 +172,7 @@ export const LocalBusinessSchema = () => {
 };
 
 export const WebsiteSchema = () => {
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://ryanadamperfume.lovable.app';
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : SITE_URL;
   
   const schema = {
     "@context": "https://schema.org",

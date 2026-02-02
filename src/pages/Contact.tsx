@@ -14,7 +14,7 @@ const Contact = () => {
           content="Contact Rayn Adam for luxury perfume inquiries, orders, and support. Located in Kerala, India. Email, phone, and WhatsApp support available."
         />
         <meta name="keywords" content="contact Rayn Adam, perfume store Kerala, luxury fragrance India, customer support" />
-        <link rel="canonical" href="https://ryanadamperfume.lovable.app/contact" />
+        <link rel="canonical" href="https://raynadamperfume.com/contact" />
       </Helmet>
 
       <PageTransition>
