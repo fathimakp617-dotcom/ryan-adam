@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, memo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, KeyRound, Phone, Clock, MapPin, Building, Map } from "lucide-react";
+import { Mail, Lock, User, ArrowLeft, Eye, EyeOff, KeyRound, Phone, Clock, MapPin, Building, Map, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
 import CountryCodeSelect from "@/components/CountryCodeSelect";
+import PhoneOtpLogin from "@/components/PhoneOtpLogin";
+import { getVerifiedPhoneNumber, clearVerifiedPhoneNumber } from "@/hooks/useFirebasePhoneAuth";
 
 import { z } from "zod";
 
@@ -30,7 +32,7 @@ const passwordSchema = z
 const otpSchema = z.string().length(4, "OTP must be 4 digits").regex(/^\d+$/, "OTP must contain only numbers");
 const phoneSchema = z.string().min(6, "Phone number must be at least 6 digits").max(15, "Phone number too long").regex(/^[\d]+$/, "Phone number must contain only digits");
 
-type AuthMode = "login" | "signup" | "signup-verify" | "forgot" | "forgot-verify" | "reset" | "email-otp" | "email-otp-verify";
+type AuthMode = "login" | "signup" | "signup-verify" | "forgot" | "forgot-verify" | "reset" | "email-otp" | "email-otp-verify" | "phone-otp";
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
@@ -741,6 +743,30 @@ const Auth = () => {
     );
   }
 
+  const handlePhoneOtpSuccess = useCallback((isNewUser: boolean) => {
+    const verifiedPhone = getVerifiedPhoneNumber();
+    if (isNewUser) {
+      // Pre-fill phone in signup form
+      if (verifiedPhone) {
+        const phoneDigits = verifiedPhone.replace(/^\+\d{1,3}/, '');
+        setFormData(prev => ({ ...prev, phone: phoneDigits }));
+      }
+      toast({
+        title: "Phone Verified!",
+        description: "Please complete your registration.",
+      });
+      setMode("signup");
+    } else {
+      // Existing user - redirect to email OTP login with message
+      toast({
+        title: "Phone Verified!",
+        description: "Please sign in with your email to continue.",
+      });
+      setMode("email-otp");
+    }
+    clearVerifiedPhoneNumber();
+  }, [toast]);
+
   const getTitle = () => {
     switch (mode) {
       case "signup": return "Create Account";
@@ -750,6 +776,7 @@ const Auth = () => {
       case "reset": return "Reset Password";
       case "email-otp": return "Email OTP Login";
       case "email-otp-verify": return "Verify Email";
+      case "phone-otp": return ""; // PhoneOtpLogin handles its own title
       default: return "Welcome Back";
     }
   };
@@ -763,6 +790,7 @@ const Auth = () => {
       case "reset": return "Enter your new password";
       case "email-otp": return "Enter your email to receive a verification code";
       case "email-otp-verify": return `Enter the 4-digit code sent to ${formData.otpEmail}`;
+      case "phone-otp": return ""; // PhoneOtpLogin handles its own subtitle
       default: return "Sign in to access your account";
     }
   };
@@ -795,19 +823,31 @@ const Auth = () => {
               </div>
             )}
 
-            {/* Logo for non-verification modes */}
-            {mode !== "email-otp-verify" && mode !== "signup-verify" && mode !== "forgot-verify" && (
+            {/* Logo for non-verification modes (excluding phone-otp which handles its own header) */}
+            {mode !== "email-otp-verify" && mode !== "signup-verify" && mode !== "forgot-verify" && mode !== "phone-otp" && (
               <div className="text-center mb-4">
                 <span className="text-primary font-heading text-lg tracking-[0.3em]">RAYN ADAM</span>
               </div>
             )}
             
-            <h1 className="text-xl md:text-2xl font-heading text-foreground mb-2 text-center">
-              {getTitle()}
-            </h1>
-            <p className="text-muted-foreground text-center mb-6 text-sm md:text-base">
-              {getSubtitle()}
-            </p>
+            {mode !== "phone-otp" && (
+              <>
+                <h1 className="text-xl md:text-2xl font-heading text-foreground mb-2 text-center">
+                  {getTitle()}
+                </h1>
+                <p className="text-muted-foreground text-center mb-6 text-sm md:text-base">
+                  {getSubtitle()}
+                </p>
+              </>
+            )}
+
+            {/* Phone OTP Login */}
+            {mode === "phone-otp" && (
+              <PhoneOtpLogin 
+                onSuccess={handlePhoneOtpSuccess}
+                onBack={() => setMode("login")}
+              />
+            )}
 
             {/* Login Form */}
             {mode === "login" && (
@@ -893,15 +933,27 @@ const Auth = () => {
                   </div>
                 </div>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full h-12 border-border/50 hover:border-primary/50 hover:bg-primary/5 rounded-xl font-medium transition-all"
-                  onClick={() => setMode("email-otp")}
-                >
-                  <Mail className="w-4 h-4 mr-2" />
-                  Sign in with Email OTP
-                </Button>
+                <div className="space-y-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-12 border-border/50 hover:border-primary/50 hover:bg-primary/5 rounded-xl font-medium transition-all"
+                    onClick={() => setMode("email-otp")}
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    Sign in with Email OTP
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-12 border-border/50 hover:border-primary/50 hover:bg-primary/5 rounded-xl font-medium transition-all"
+                    onClick={() => setMode("phone-otp")}
+                  >
+                    <Smartphone className="w-4 h-4 mr-2" />
+                    Sign in with Phone OTP
+                  </Button>
+                </div>
 
                 <div className="mt-6 text-center">
                   <p className="text-muted-foreground text-sm">
