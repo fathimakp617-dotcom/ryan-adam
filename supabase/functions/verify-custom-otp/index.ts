@@ -12,6 +12,41 @@ interface VerifyOtpRequest {
   otp_type: "login" | "signup" | "password_reset";
 }
 
+function getSafeRedirectTo(req: Request): string {
+  // Default to configured site URL (production) but prefer the current request origin
+  // so Preview auth flows return to Preview and can read localStorage.
+  const fallback = Deno.env.get("SITE_URL") || "https://raynadamperfume.com";
+  const origin = req.headers.get("origin")?.trim();
+  const referer = req.headers.get("referer")?.trim();
+
+  const candidate = origin || (referer ? (() => {
+    try {
+      return new URL(referer).origin;
+    } catch {
+      return null;
+    }
+  })() : null);
+
+  if (!candidate) return fallback;
+
+  // Prevent open-redirect: only allow known/expected hosts.
+  try {
+    const u = new URL(candidate);
+    const host = u.hostname;
+    const allowedHosts = new Set([
+      "raynadamperfume.com",
+      "www.raynadamperfume.com",
+    ]);
+
+    const isLovablePreview = host.endsWith(".lovable.app") || host.endsWith(".lovableproject.com");
+    if (allowedHosts.has(host) || isLovablePreview) return u.origin;
+  } catch {
+    // ignore
+  }
+
+  return fallback;
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -90,8 +125,8 @@ const handler = async (req: Request): Promise<Response> => {
         type: "magiclink",
         email,
         options: {
-          // Always send back to the current app origin.
-          redirectTo: Deno.env.get("SITE_URL") || "https://raynadamperfume.com",
+          // IMPORTANT: send back to the current app origin (Preview stays in Preview).
+          redirectTo: getSafeRedirectTo(req),
         },
       });
 
