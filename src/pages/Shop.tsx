@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PageTransition from "@/components/PageTransition";
+import { CollectionPageSchema } from "@/components/seo/JsonLd";
 import { products, formatPrice } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -120,8 +121,13 @@ const Shop = () => {
           name="keywords"
           content="buy luxury perfume online, premium fragrance India, Rayn Adam shop, eau de parfum, attar, unisex perfume, gift set, designer fragrance"
         />
-        <link rel="canonical" href={`${window.location.origin}/shop`} />
+        <link rel="canonical" href="https://raynadamperfume.com/shop" />
+        <meta property="og:title" content="Shop Luxury Perfumes | Rayn Adam Collection" />
+        <meta property="og:description" content="Discover premium Eau de Parfum, Attars & exclusive gift sets. Free shipping across India on orders above ₹999." />
+        <meta property="og:url" content="https://raynadamperfume.com/shop" />
+        <meta property="og:type" content="website" />
       </Helmet>
+      <CollectionPageSchema />
 
       <PageTransition>
         <main className="min-h-screen bg-background relative z-10">

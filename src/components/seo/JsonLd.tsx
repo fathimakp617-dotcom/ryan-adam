@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { Product as ProductType } from "@/data/products";
+import { Product as ProductType, products } from "@/data/products";
 
 // Production domain
 const SITE_URL = "https://raynadamperfume.com";
@@ -58,21 +58,19 @@ interface ProductSchemaProps {
 }
 
 export const ProductSchema = ({ product, averageRating = 0, totalReviews = 0 }: ProductSchemaProps) => {
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : SITE_URL;
-  
   const schema = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
     description: product.description,
-    image: `${baseUrl}${product.image}`,
+    image: `${SITE_URL}${product.image}`,
     brand: {
       "@type": "Brand",
       name: "Rayn Adam",
     },
     offers: {
       "@type": "Offer",
-      url: `${baseUrl}/product/${product.id}`,
+      url: `${SITE_URL}/product/${product.id}`,
       priceCurrency: "INR",
       price: product.price,
       priceValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -85,7 +83,7 @@ export const ProductSchema = ({ product, averageRating = 0, totalReviews = 0 }: 
     ...(totalReviews > 0 && {
       aggregateRating: {
         "@type": "AggregateRating",
-        ratingValue: averageRating,
+        ratingValue: averageRating.toFixed(1),
         reviewCount: totalReviews,
         bestRating: 5,
         worstRating: 1,
@@ -113,8 +111,6 @@ interface BreadcrumbSchemaProps {
 }
 
 export const BreadcrumbSchema = ({ items }: BreadcrumbSchemaProps) => {
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : SITE_URL;
-  
   const schema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -122,7 +118,7 @@ export const BreadcrumbSchema = ({ items }: BreadcrumbSchemaProps) => {
       "@type": "ListItem",
       position: index + 1,
       name: item.name,
-      item: `${baseUrl}${item.url}`,
+      item: `${SITE_URL}${item.url}`,
     })),
   };
 
@@ -172,21 +168,111 @@ export const LocalBusinessSchema = () => {
 };
 
 export const WebsiteSchema = () => {
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : SITE_URL;
-  
   const schema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "Rayn Adam Luxury Perfumes",
-    url: baseUrl,
+    url: SITE_URL,
     potentialAction: {
       "@type": "SearchAction",
       target: {
         "@type": "EntryPoint",
-        urlTemplate: `${baseUrl}/shop?search={search_term_string}`,
+        urlTemplate: `${SITE_URL}/shop?search={search_term_string}`,
       },
       "query-input": "required name=search_term_string",
     },
+  };
+
+  return (
+    <Helmet>
+      <script type="application/ld+json">{JSON.stringify(schema)}</script>
+    </Helmet>
+  );
+};
+
+// FAQ Schema for perfume-related questions
+export const FAQSchema = () => {
+  const faqs = [
+    {
+      question: "How long do Rayn Adam perfumes last?",
+      answer: "Our Eau de Parfum fragrances typically last 8-12 hours, while our concentrated Attars can last up to 16 hours. Longevity varies based on skin type, climate, and application method."
+    },
+    {
+      question: "Are Rayn Adam perfumes unisex?",
+      answer: "Yes, most of our fragrances are designed to be unisex and can be worn by anyone. Our collection includes versatile scents that transcend traditional gender boundaries."
+    },
+    {
+      question: "Do you offer free shipping in India?",
+      answer: "Yes, we offer free shipping on all orders above ₹999 within India. Orders typically arrive within 3-7 business days depending on your location."
+    },
+    {
+      question: "What is the difference between Eau de Parfum and Attar?",
+      answer: "Eau de Parfum contains 15-20% fragrance oils in an alcohol base, offering moderate projection. Attar is a concentrated oil-based perfume with no alcohol, providing intimate, long-lasting scent closer to the skin."
+    },
+    {
+      question: "Can I return or exchange a perfume?",
+      answer: "We accept returns within 7 days of delivery for unused, sealed products. Please check our Return Policy for complete details on exchanges and refunds."
+    },
+    {
+      question: "How should I store my perfume?",
+      answer: "Store your perfume in a cool, dark place away from direct sunlight and heat. Avoid keeping it in bathrooms where humidity and temperature fluctuate. Proper storage ensures your fragrance maintains its quality for years."
+    }
+  ];
+
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map(faq => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.answer
+      }
+    }))
+  };
+
+  return (
+    <Helmet>
+      <script type="application/ld+json">{JSON.stringify(schema)}</script>
+    </Helmet>
+  );
+};
+
+// Collection/Shop Page Schema
+export const CollectionPageSchema = () => {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Luxury Perfume Collection | Rayn Adam",
+    description: "Browse Rayn Adam's exclusive luxury perfume collection. Premium Eau de Parfum, Attars & gift sets with free shipping in India.",
+    url: `${SITE_URL}/shop`,
+    isPartOf: {
+      "@type": "WebSite",
+      name: "Rayn Adam",
+      url: SITE_URL
+    },
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: products.length,
+      itemListElement: products.map((product, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        item: {
+          "@type": "Product",
+          name: product.name,
+          description: product.tagline,
+          image: `${SITE_URL}${product.image}`,
+          url: `${SITE_URL}/product/${product.id}`,
+          offers: {
+            "@type": "Offer",
+            priceCurrency: "INR",
+            price: product.price,
+            availability: "https://schema.org/InStock"
+          }
+        }
+      }))
+    }
   };
 
   return (

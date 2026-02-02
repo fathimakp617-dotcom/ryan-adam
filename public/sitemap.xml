@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <!-- Homepage -->
   <url>
     <loc>https://raynadamperfume.com/</loc>
+    <lastmod>2026-02-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -10,6 +12,7 @@
   <!-- Shop -->
   <url>
     <loc>https://raynadamperfume.com/shop</loc>
+    <lastmod>2026-02-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
@@ -17,62 +20,85 @@
   <!-- Products -->
   <url>
     <loc>https://raynadamperfume.com/product/combo</loc>
+    <lastmod>2026-02-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://raynadamperfume.com/assets/products/combo.jpg</image:loc>
+      <image:title>COMBO Perfume - Fresh &amp; Invigorating Fragrance</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://raynadamperfume.com/product/elite</loc>
+    <lastmod>2026-02-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://raynadamperfume.com/assets/products/elite.jpg</image:loc>
+      <image:title>ELITE Perfume - Smooth &amp; Seductive Fragrance</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://raynadamperfume.com/product/amber-crown</loc>
+    <lastmod>2026-02-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://raynadamperfume.com/assets/products/amber-crown.jpg</image:loc>
+      <image:title>AMBER CROWN Perfume - Romantic &amp; Enchanting Fragrance</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://raynadamperfume.com/product/legacy</loc>
+    <lastmod>2026-02-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://raynadamperfume.com/assets/products/legacy.jpg</image:loc>
+      <image:title>LEGACY Perfume - Warm &amp; Captivating Fragrance</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://raynadamperfume.com/product/amber-crown-collection</loc>
+    <lastmod>2026-02-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://raynadamperfume.com/assets/products/amber-crown-collection.png</image:loc>
+      <image:title>AMBER CROWN COLLECTION - Complete Luxury Perfume Set</image:title>
+    </image:image>
   </url>
   
   <!-- Contact -->
   <url>
     <loc>https://raynadamperfume.com/contact</loc>
+    <lastmod>2026-02-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
-  </url>
-  
-  <!-- Wishlist -->
-  <url>
-    <loc>https://raynadamperfume.com/wishlist</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
   </url>
   
   <!-- Legal Pages -->
   <url>
     <loc>https://raynadamperfume.com/terms</loc>
+    <lastmod>2026-02-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://raynadamperfume.com/privacy</loc>
+    <lastmod>2026-02-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://raynadamperfume.com/shipping-policy</loc>
+    <lastmod>2026-02-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://raynadamperfume.com/cancellation-refund</loc>
+    <lastmod>2026-02-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
