@@ -852,18 +852,6 @@ const Auth = () => {
             {/* Login Form */}
             {mode === "login" && (
               <>
-                <div className="mb-6 text-center">
-                  <p className="text-muted-foreground text-sm">
-                    Don't have an account?{" "}
-                    <button
-                      onClick={() => setMode("signup")}
-                      className="text-primary hover:text-primary/80 font-medium transition-colors"
-                    >
-                      Sign up
-                    </button>
-                  </p>
-                </div>
-
                 <form onSubmit={handleLogin} className="space-y-5">
                   <div className="space-y-1.5">
                     <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
@@ -943,6 +931,18 @@ const Auth = () => {
                   <div className="relative flex justify-center text-xs uppercase">
                     <span className="bg-card/80 px-3 text-muted-foreground tracking-wider">Or</span>
                   </div>
+                </div>
+
+                <div className="mb-4 text-center">
+                  <p className="text-muted-foreground text-sm">
+                    Don't have an account?{" "}
+                    <button
+                      onClick={() => setMode("signup")}
+                      className="text-primary hover:text-primary/80 font-medium transition-colors"
+                    >
+                      Sign up
+                    </button>
+                  </p>
                 </div>
 
                 <Button
