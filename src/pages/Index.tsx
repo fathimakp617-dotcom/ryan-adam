@@ -3,6 +3,7 @@ import { Helmet } from "react-helmet-async";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import PageTransition from "@/components/PageTransition";
+import { OrganizationSchema, LocalBusinessSchema, WebsiteSchema } from "@/components/seo/JsonLd";
 
 // Lazy load below-fold components
 const Collection = lazy(() => import("@/components/Collection"));
@@ -22,16 +23,22 @@ const Index = () => {
   return (
     <>
       <Helmet>
-        <title>Rayn Adam | Luxury Perfume Collection</title>
+        <title>Rayn Adam | Premium Luxury Perfumes in India | Buy Online</title>
         <meta
           name="description"
-          content="Discover the essence of sophistication with Rayn Adam's exclusive collection of luxury fragrances. Crafted from the finest natural ingredients."
+          content="Shop Rayn Adam's exclusive luxury perfumes online in India. Premium Eau de Parfum, Attars & fragrance collections. Free shipping on orders. Discover your signature scent today."
         />
         <meta
           name="keywords"
-          content="luxury perfume, eau de parfum, Rayn Adam, fragrance, premium scents"
+          content="luxury perfume India, buy perfume online, Rayn Adam, eau de parfum, premium fragrance, attar, designer perfume, long lasting perfume, unisex perfume, gift set perfume"
         />
+        <link rel="canonical" href="https://ryanadamperfume.lovable.app/" />
       </Helmet>
+      
+      {/* Structured Data */}
+      <OrganizationSchema />
+      <LocalBusinessSchema />
+      <WebsiteSchema />
 
       {/* Defer modals loading */}
       <Suspense fallback={null}>

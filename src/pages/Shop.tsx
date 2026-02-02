@@ -111,11 +111,16 @@ const Shop = () => {
   return (
     <>
       <Helmet>
-        <title>Shop | Rayn Adam Luxury Perfumes</title>
+        <title>Shop Luxury Perfumes Online | Rayn Adam Collection India</title>
         <meta
           name="description"
-          content="Browse our exclusive collection of luxury fragrances. Premium perfumes crafted from the finest natural ingredients."
+          content="Browse Rayn Adam's exclusive luxury perfume collection. Premium Eau de Parfum, Attars & gift sets. Free shipping in India. Find your signature scent today."
         />
+        <meta
+          name="keywords"
+          content="buy luxury perfume online, premium fragrance India, Rayn Adam shop, eau de parfum, attar, unisex perfume, gift set, designer fragrance"
+        />
+        <link rel="canonical" href={`${window.location.origin}/shop`} />
       </Helmet>
 
       <PageTransition>
