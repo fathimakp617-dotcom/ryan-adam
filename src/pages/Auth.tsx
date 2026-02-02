@@ -852,6 +852,18 @@ const Auth = () => {
             {/* Login Form */}
             {mode === "login" && (
               <>
+                <div className="mb-6 text-center">
+                  <p className="text-muted-foreground text-sm">
+                    Don't have an account?{" "}
+                    <button
+                      onClick={() => setMode("signup")}
+                      className="text-primary hover:text-primary/80 font-medium transition-colors"
+                    >
+                      Sign up
+                    </button>
+                  </p>
+                </div>
+
                 <form onSubmit={handleLogin} className="space-y-5">
                   <div className="space-y-1.5">
                     <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
@@ -933,39 +945,15 @@ const Auth = () => {
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-12 border-border/50 hover:border-primary/50 hover:bg-primary/5 rounded-xl font-medium transition-all"
-                    onClick={() => setMode("email-otp")}
-                  >
-                    <Mail className="w-4 h-4 mr-2" />
-                    Sign in with Email OTP
-                  </Button>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-12 border-border/50 hover:border-primary/50 hover:bg-primary/5 rounded-xl font-medium transition-all"
-                    onClick={() => setMode("phone-otp")}
-                  >
-                    <Smartphone className="w-4 h-4 mr-2" />
-                    Sign in with Phone OTP
-                  </Button>
-                </div>
-
-                <div className="mt-6 text-center">
-                  <p className="text-muted-foreground text-sm">
-                    Don't have an account?{" "}
-                    <button
-                      onClick={() => setMode("signup")}
-                      className="text-primary hover:text-primary/80 font-medium transition-colors"
-                    >
-                      Sign up
-                    </button>
-                  </p>
-                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-12 border-border/50 hover:border-primary/50 hover:bg-primary/5 rounded-xl font-medium transition-all"
+                  onClick={() => setMode("email-otp")}
+                >
+                  <Mail className="w-4 h-4 mr-2" />
+                  Sign in with Email OTP
+                </Button>
               </>
             )}
 
