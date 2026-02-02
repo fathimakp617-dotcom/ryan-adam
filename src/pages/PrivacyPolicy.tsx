@@ -13,7 +13,7 @@ const PrivacyPolicy = () => {
         <title>Privacy Policy | Rayn Adam Luxury Perfumes India</title>
         <meta name="description" content="Privacy Policy for Rayn Adam Luxury Perfumes India. Learn how we collect, use, and protect your personal data. GDPR compliant." />
         <meta name="keywords" content="Rayn Adam privacy, data protection, personal information, GDPR" />
-        <link rel="canonical" href="https://ryanadamperfume.lovable.app/privacy" />
+        <link rel="canonical" href="https://raynadamperfume.com/privacy" />
       </Helmet>
       
       <Navbar />

@@ -13,7 +13,7 @@ const Terms = () => {
         <title>Terms & Conditions | Rayn Adam Luxury Perfumes India</title>
         <meta name="description" content="Terms and conditions for Rayn Adam Luxury Perfumes. Shipping policy, COD terms, payment options, and return/refund policies for India." />
         <meta name="keywords" content="Rayn Adam terms, perfume shipping India, COD perfume, return policy, refund policy" />
-        <link rel="canonical" href="https://ryanadamperfume.lovable.app/terms" />
+        <link rel="canonical" href="https://raynadamperfume.com/terms" />
       </Helmet>
       
       <Navbar />

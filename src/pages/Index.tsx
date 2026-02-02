@@ -32,7 +32,7 @@ const Index = () => {
           name="keywords"
           content="luxury perfume India, buy perfume online, Rayn Adam, eau de parfum, premium fragrance, attar, designer perfume, long lasting perfume, unisex perfume, gift set perfume"
         />
-        <link rel="canonical" href="https://ryanadamperfume.lovable.app/" />
+        <link rel="canonical" href="https://raynadamperfume.com/" />
       </Helmet>
       
       {/* Structured Data */}
