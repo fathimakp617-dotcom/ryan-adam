@@ -1,9 +1,9 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { CartProvider } from "@/contexts/CartContext";
 import { WishlistProvider } from "@/contexts/WishlistContext";
@@ -15,7 +15,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 // Eagerly load critical pages
 import Index from "./pages/Index";
 
-// Lazy load non-critical pages
+// Lazy load non-critical pages with prefetch hints
 const Shop = lazy(() => import("./pages/Shop"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const Wishlist = lazy(() => import("./pages/Wishlist"));
@@ -28,6 +28,22 @@ const CancellationRefundPolicy = lazy(() => import("./pages/CancellationRefundPo
 const ShippingPolicy = lazy(() => import("./pages/ShippingPolicy"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Contact = lazy(() => import("./pages/Contact"));
+
+// Prefetch Shop page when user is on homepage
+const usePrefetchRoutes = () => {
+  const location = useLocation();
+  
+  useEffect(() => {
+    if (location.pathname === "/") {
+      // Prefetch Shop page after initial load
+      const timer = setTimeout(() => {
+        import("./pages/Shop");
+        import("./pages/ProductDetail");
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [location.pathname]);
+};
 
 // Admin pages - all lazy loaded for faster initial load
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
@@ -60,6 +76,12 @@ const PageLoader = () => (
   </div>
 );
 
+// Route prefetcher component
+const RoutePrefetcher = () => {
+  usePrefetchRoutes();
+  return null;
+};
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -85,6 +107,7 @@ const App = () => (
                 <BrowserRouter>
                   <ScrollToTop />
                   <CartDrawer />
+                  <RoutePrefetcher />
                   <Suspense fallback={<PageLoader />}>
                     <Routes>
                       <Route path="/" element={<Index />} />

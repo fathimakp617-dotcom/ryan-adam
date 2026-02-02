@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { cn } from "@/lib/utils";
 
 interface OptimizedImageProps {
@@ -7,9 +7,19 @@ interface OptimizedImageProps {
   className?: string;
   priority?: boolean;
   onLoad?: () => void;
+  sizes?: string;
+  fetchpriority?: "high" | "low" | "auto";
 }
 
-const OptimizedImage = ({ src, alt, className, priority = false, onLoad }: OptimizedImageProps) => {
+const OptimizedImage = memo(({ 
+  src, 
+  alt, 
+  className, 
+  priority = false, 
+  onLoad,
+  sizes,
+  fetchpriority = "auto"
+}: OptimizedImageProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(priority);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -27,7 +37,7 @@ const OptimizedImage = ({ src, alt, className, priority = false, onLoad }: Optim
           observer.disconnect();
         }
       },
-      { rootMargin: "200px" }
+      { rootMargin: "300px" } // Increased for earlier loading
     );
 
     if (imgRef.current) {
@@ -44,9 +54,9 @@ const OptimizedImage = ({ src, alt, className, priority = false, onLoad }: Optim
 
   return (
     <div ref={imgRef} className={cn("relative overflow-hidden", className)}>
-      {/* Placeholder */}
+      {/* Placeholder skeleton */}
       {!isLoaded && (
-        <div className="absolute inset-0 bg-muted animate-pulse" />
+        <div className="absolute inset-0 bg-muted/50 animate-pulse" />
       )}
       
       {/* Actual image */}
@@ -56,15 +66,20 @@ const OptimizedImage = ({ src, alt, className, priority = false, onLoad }: Optim
           alt={alt}
           loading={priority ? "eager" : "lazy"}
           decoding="async"
+          // @ts-ignore - fetchpriority is valid but not in React types yet
+          fetchpriority={priority ? "high" : fetchpriority}
+          sizes={sizes}
           onLoad={handleLoad}
           className={cn(
-            "w-full h-full object-cover transition-opacity duration-300",
+            "w-full h-full object-cover transition-opacity duration-200",
             isLoaded ? "opacity-100" : "opacity-0"
           )}
         />
       )}
     </div>
   );
-};
+});
+
+OptimizedImage.displayName = "OptimizedImage";
 
 export default OptimizedImage;
