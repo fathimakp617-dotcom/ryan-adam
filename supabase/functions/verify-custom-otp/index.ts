@@ -3,7 +3,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  // Keep this broad to avoid preflight failures across browsers/environments.
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 interface VerifyOtpRequest {
@@ -121,12 +122,22 @@ const handler = async (req: Request): Promise<Response> => {
         }
       }
 
+      const redirectTo = getSafeRedirectTo(req);
+      console.log(
+        "Auth action_link redirectTo chosen:",
+        redirectTo,
+        "origin:",
+        req.headers.get("origin"),
+        "referer:",
+        req.headers.get("referer")
+      );
+
       const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
         type: "magiclink",
         email,
         options: {
           // IMPORTANT: send back to the current app origin (Preview stays in Preview).
-          redirectTo: getSafeRedirectTo(req),
+          redirectTo,
         },
       });
 

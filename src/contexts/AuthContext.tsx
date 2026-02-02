@@ -11,6 +11,7 @@ const getAppOrigin = () => window.location.origin;
 // When using the custom OTP flow, verification redirects via an auth action_link.
 // We store profile seed data during signup and persist it right after the session is established.
 const PENDING_PROFILE_SEED_KEY = "pending_profile_seed_v1";
+const PENDING_PROFILE_SEED_DEBUG_KEY = "pending_profile_seed_debug_v1";
 
 type PendingProfileSeed = {
   first_name: string;
@@ -76,6 +77,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     pendingSeedProcessedRef.current = true;
     try {
+      // Diagnostics: helps trace why signup address sometimes doesn't persist.
+      localStorage.setItem(
+        PENDING_PROFILE_SEED_DEBUG_KEY,
+        JSON.stringify({ stage: "seed_found", at: new Date().toISOString(), user_id: session.user.id })
+      );
+
       const seed = JSON.parse(raw) as PendingProfileSeed;
       const { error } = await supabase
         .from("profiles")
@@ -92,14 +99,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error("Failed to persist pending signup profile seed:", error);
+        localStorage.setItem(
+          PENDING_PROFILE_SEED_DEBUG_KEY,
+          JSON.stringify({
+            stage: "upsert_error",
+            at: new Date().toISOString(),
+            user_id: session.user.id,
+            message: error.message,
+            code: (error as any)?.code,
+          })
+        );
         // Allow retry on next auth change
         pendingSeedProcessedRef.current = false;
         return;
       }
 
       localStorage.removeItem(PENDING_PROFILE_SEED_KEY);
+      localStorage.setItem(
+        PENDING_PROFILE_SEED_DEBUG_KEY,
+        JSON.stringify({ stage: "upsert_success", at: new Date().toISOString(), user_id: session.user.id })
+      );
     } catch (e) {
       console.error("Error processing pending signup profile seed:", e);
+      localStorage.setItem(
+        PENDING_PROFILE_SEED_DEBUG_KEY,
+        JSON.stringify({ stage: "exception", at: new Date().toISOString(), message: (e as any)?.message })
+      );
       pendingSeedProcessedRef.current = false;
     }
   };
