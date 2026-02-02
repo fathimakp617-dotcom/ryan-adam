@@ -1,0 +1,20 @@
+# Robots.txt for Rayn Adam Luxury Perfumes
+# https://ryanadamperfume.lovable.app
+
+User-agent: *
+Allow: /
+
+# Disallow admin and private areas
+Disallow: /admin/*
+Disallow: /shipping/*
+Disallow: /auth
+Disallow: /checkout
+
+# Allow search engines to crawl all public pages
+Allow: /shop
+Allow: /product/*
+Allow: /contact
+Allow: /about
+
+# Sitemap location
+Sitemap: https://ryanadamperfume.lovable.app/sitemap.xml

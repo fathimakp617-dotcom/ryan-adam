@@ -18,6 +18,7 @@ import { useProductStock, isProductSoldOut, getProductStock } from "@/hooks/useP
 import { fadeInUp, fadeInLeft, staggerContainer, staggerItem } from "@/lib/animations";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { ProductSchema, BreadcrumbSchema } from "@/components/seo/JsonLd";
 
 
 const ProductDetail = () => {
@@ -132,15 +133,16 @@ const ProductDetail = () => {
   return (
     <>
       <Helmet>
-        <title>{product.name} | Rayn Adam Luxury Perfumes</title>
-        <meta name="description" content={product.description} />
+        <title>{product.name} - Buy {product.concentration} Online | Rayn Adam Perfumes</title>
+        <meta name="description" content={`${product.name}: ${product.tagline}. ${product.description.slice(0, 120)}... Buy online with free shipping in India.`} />
+        <meta name="keywords" content={`${product.name}, ${product.concentration}, luxury perfume, buy online India, ${product.notes.top.join(', ')}, ${product.notes.base.join(', ')}`} />
         
         {/* Canonical URL - uses current domain dynamically */}
         <link rel="canonical" href={`${window.location.origin}/product/${product.id}`} />
         
         {/* Open Graph / Social Sharing - dynamic URL based on current domain */}
-        <meta property="og:title" content={`${product.name} | Rayn Adam Luxury Perfumes`} />
-        <meta property="og:description" content={product.description} />
+        <meta property="og:title" content={`${product.name} - ${product.tagline} | Rayn Adam`} />
+        <meta property="og:description" content={`${product.description.slice(0, 150)}... Shop now!`} />
         <meta property="og:type" content="product" />
         <meta property="og:url" content={`${window.location.origin}/product/${product.id}`} />
         <meta property="og:image" content={`${window.location.origin}${product.image}`} />
@@ -148,14 +150,22 @@ const ProductDetail = () => {
         
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={`${product.name} | Rayn Adam Luxury Perfumes`} />
-        <meta name="twitter:description" content={product.description} />
+        <meta name="twitter:title" content={`${product.name} - ${product.tagline} | Rayn Adam`} />
+        <meta name="twitter:description" content={`${product.description.slice(0, 150)}...`} />
         <meta name="twitter:image" content={`${window.location.origin}${product.image}`} />
         
         {/* Product structured data */}
         <meta property="product:price:amount" content={product.price.toString()} />
         <meta property="product:price:currency" content="INR" />
       </Helmet>
+      
+      {/* JSON-LD Structured Data */}
+      <ProductSchema product={product} averageRating={averageRating} totalReviews={totalReviews} />
+      <BreadcrumbSchema items={[
+        { name: "Home", url: "/" },
+        { name: "Shop", url: "/shop" },
+        { name: product.name, url: `/product/${product.id}` },
+      ]} />
 
       <PageTransition>
         <main className="min-h-screen bg-background relative z-10">
