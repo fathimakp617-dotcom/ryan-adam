@@ -3,7 +3,7 @@ import { Helmet } from "react-helmet-async";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import PageTransition from "@/components/PageTransition";
-import { OrganizationSchema, LocalBusinessSchema, WebsiteSchema } from "@/components/seo/JsonLd";
+import { OrganizationSchema, LocalBusinessSchema, WebsiteSchema, FAQSchema } from "@/components/seo/JsonLd";
 
 // Lazy load below-fold components
 const Collection = lazy(() => import("@/components/Collection"));
@@ -39,6 +39,7 @@ const Index = () => {
       <OrganizationSchema />
       <LocalBusinessSchema />
       <WebsiteSchema />
+      <FAQSchema />
 
       {/* Defer modals loading */}
       <Suspense fallback={null}>
