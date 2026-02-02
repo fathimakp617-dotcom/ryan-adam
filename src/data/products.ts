@@ -10,6 +10,10 @@ import amberCrownAttar from "@/assets/products/amber-crown-attar.jpg";
 import amberCrownEdp from "@/assets/products/amber-crown-edp.png";
 import amberCrownSolid from "@/assets/products/amber-crown-solid.png";
 import amberCrownCollection from "@/assets/products/amber-crown-collection.png";
+import eliteCollection from "@/assets/products/elite-collection.png";
+import eliteAttar from "@/assets/products/elite-attar.png";
+import eliteEdp from "@/assets/products/elite-edp.png";
+import eliteSolid from "@/assets/products/elite-solid.png";
 
 export interface Product {
   id: string;
@@ -162,6 +166,31 @@ export const products: Product[] = [
     sillage: "Intimate to Strong",
     season: ["Fall", "Winter", "Spring"],
     occasion: ["Daily Wear", "Special Occasions", "Gifting", "Travel"]
+  },
+  {
+    id: "elite-collection",
+    name: "ELITE COLLECTION",
+    tagline: "Complete Luxury Set",
+    description: "The ultimate Elite experience — a luxurious trio featuring the concentrated Attar (3ml), elegant Eau de Parfum spray (8ml), and portable Solid Perfume cream (8ml). Three formats, one signature scent.",
+    story: "Crafted for the true fragrance connoisseur, this collection captures the essence of 1920s Paris glamour in three versatile formats. Layer them for depth, or choose based on your mood — from intimate attar moments to bold EDP statements.",
+    price: 444,
+    originalPrice: 888,
+    discountPercent: 50,
+    category: "Unisex",
+    size: "Attar 3ml + EDP 8ml + Cream 8ml",
+    image: eliteCollection,
+    gallery: [eliteCollection, eliteAttar, eliteEdp, eliteSolid],
+    notes: {
+      top: ["Bergamot", "Black Currant", "Pink Pepper"],
+      heart: ["Jasmine Sambac", "Tuberose", "Iris"],
+      base: ["Patchouli", "Amber", "Vanilla"]
+    },
+    ingredients: ["Alcohol Denat", "Parfum", "Natural Jasmine Extract", "Patchouli Oil", "Beeswax", "Jojoba Oil"],
+    concentration: "Attar + EDP + Solid Cream",
+    longevity: "10-16 hours",
+    sillage: "Moderate to Strong",
+    season: ["Fall", "Winter", "Spring"],
+    occasion: ["Evening", "Cocktail Party", "Date Night", "Special Occasions"]
   }
 ];
 
