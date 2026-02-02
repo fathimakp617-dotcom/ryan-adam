@@ -797,165 +797,197 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Simplified background - removed heavy blur effects */}
+      {/* Elegant background with subtle gold accents */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-b from-primary/10 via-primary/5 to-transparent rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary/5 rounded-full blur-2xl" />
+        <div className="absolute top-1/3 right-0 w-64 h-64 bg-secondary/5 rounded-full blur-2xl" />
+        {/* Decorative lines */}
+        <div className="absolute top-20 left-10 w-px h-32 bg-gradient-to-b from-transparent via-primary/20 to-transparent hidden md:block" />
+        <div className="absolute top-40 right-10 w-px h-24 bg-gradient-to-b from-transparent via-primary/20 to-transparent hidden md:block" />
       </div>
       
       <Navbar />
 
       <main className="container mx-auto px-4 py-16 md:py-24 relative z-10">
-        <div className="max-w-md mx-auto">
+        <motion.div 
+          className="max-w-md mx-auto"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-6 md:mb-8 text-sm"
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-6 md:mb-8 text-sm group"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             Back to Home
           </Link>
 
-          <div className="bg-card/90 border border-border/50 rounded-2xl p-6 md:p-8 shadow-xl">
-            {/* Icon header for verification modes */}
-            {(mode === "email-otp-verify" || mode === "signup-verify" || mode === "forgot-verify") && (
-              <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-primary/20">
-                <Mail className="w-8 h-8 md:w-10 md:h-10 text-primary" />
-              </div>
-            )}
-
-            {/* Logo for non-verification modes (excluding phone-otp which handles its own header) */}
-            {mode !== "email-otp-verify" && mode !== "signup-verify" && mode !== "forgot-verify" && mode !== "phone-otp" && (
-              <div className="text-center mb-4">
-                <span className="text-primary font-heading text-lg tracking-[0.3em]">RAYN ADAM</span>
-              </div>
-            )}
+          <div className="relative">
+            {/* Glow effect behind card */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-secondary/10 to-primary/20 rounded-3xl blur-xl opacity-50" />
             
-            {mode !== "phone-otp" && (
-              <>
-                <h1 className="text-xl md:text-2xl font-heading text-foreground mb-2 text-center">
-                  {getTitle()}
-                </h1>
-                <p className="text-muted-foreground text-center mb-6 text-sm md:text-base">
-                  {getSubtitle()}
-                </p>
-              </>
-            )}
+            <div className="relative bg-card/95 backdrop-blur-sm border border-primary/20 rounded-2xl p-6 md:p-8 shadow-2xl">
+              {/* Decorative corner accents */}
+              <div className="absolute top-0 left-0 w-12 h-12 border-l-2 border-t-2 border-primary/30 rounded-tl-2xl" />
+              <div className="absolute top-0 right-0 w-12 h-12 border-r-2 border-t-2 border-primary/30 rounded-tr-2xl" />
+              <div className="absolute bottom-0 left-0 w-12 h-12 border-l-2 border-b-2 border-primary/30 rounded-bl-2xl" />
+              <div className="absolute bottom-0 right-0 w-12 h-12 border-r-2 border-b-2 border-primary/30 rounded-br-2xl" />
 
-            {/* Phone OTP Login */}
-            {mode === "phone-otp" && (
-              <PhoneOtpLogin 
-                onSuccess={handlePhoneOtpSuccess}
-                onBack={() => setMode("login")}
-              />
-            )}
+              {/* Icon header for verification modes */}
+              {(mode === "email-otp-verify" || mode === "signup-verify" || mode === "forgot-verify") && (
+                <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-primary/20">
+                  <Mail className="w-8 h-8 md:w-10 md:h-10 text-primary" />
+                </div>
+              )}
 
-            {/* Login Form */}
-            {mode === "login" && (
-              <>
-                <form onSubmit={handleLogin} className="space-y-5">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className="pl-11 h-12 bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/20 rounded-xl text-base"
-                        placeholder="you@example.com"
-                      />
-                    </div>
-                    {errors.email && (
-                      <p className="text-destructive text-xs mt-1">{errors.email}</p>
-                    )}
+              {/* Logo for non-verification modes */}
+              {mode !== "email-otp-verify" && mode !== "signup-verify" && mode !== "forgot-verify" && mode !== "phone-otp" && (
+                <div className="text-center mb-6">
+                  <div className="inline-block">
+                    <span className="text-2xl md:text-3xl font-heading tracking-[0.4em] bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
+                      RAYN ADAM
+                    </span>
+                    <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/50 to-transparent mt-2" />
                   </div>
+                </div>
+              )}
+              
+              {mode !== "phone-otp" && (
+                <>
+                  <h1 className="text-xl md:text-2xl font-heading text-foreground mb-2 text-center">
+                    {getTitle()}
+                  </h1>
+                  <p className="text-muted-foreground text-center mb-6 text-sm md:text-base">
+                    {getSubtitle()}
+                  </p>
+                </>
+              )}
 
-                  <div className="space-y-1.5">
-                    <Label htmlFor="password" className="text-sm font-medium">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        className="pl-11 pr-11 h-12 bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/20 rounded-xl text-base"
-                        placeholder="••••••••"
-                      />
+              {/* Phone OTP Login */}
+              {mode === "phone-otp" && (
+                <PhoneOtpLogin 
+                  onSuccess={handlePhoneOtpSuccess}
+                  onBack={() => setMode("login")}
+                />
+              )}
+
+              {/* Login Form */}
+              {mode === "login" && (
+                <>
+                  <form onSubmit={handleLogin} className="space-y-5">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="email" className="text-sm font-medium text-foreground/80">Email Address</Label>
+                      <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/50 to-secondary/50 rounded-xl opacity-0 group-focus-within:opacity-100 transition-opacity blur-sm" />
+                        <div className="relative">
+                          <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                          <Input
+                            id="email"
+                            name="email"
+                            type="email"
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            className="pl-11 h-12 bg-background/80 border-border/50 focus:border-primary/50 focus:ring-0 rounded-xl text-base transition-all"
+                            placeholder="you@example.com"
+                          />
+                        </div>
+                      </div>
+                      {errors.email && (
+                        <p className="text-destructive text-xs mt-1">{errors.email}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="password" className="text-sm font-medium text-foreground/80">Password</Label>
+                      <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/50 to-secondary/50 rounded-xl opacity-0 group-focus-within:opacity-100 transition-opacity blur-sm" />
+                        <div className="relative">
+                          <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                          <Input
+                            id="password"
+                            name="password"
+                            type={showPassword ? "text" : "password"}
+                            value={formData.password}
+                            onChange={handleInputChange}
+                            className="pl-11 pr-11 h-12 bg-background/80 border-border/50 focus:border-primary/50 focus:ring-0 rounded-xl text-base transition-all"
+                            placeholder="••••••••"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                          >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      {errors.password && (
+                        <p className="text-destructive text-xs mt-1">{errors.password}</p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-end">
                       <button
                         type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                        onClick={() => setMode("forgot")}
+                        className="text-sm text-primary/80 hover:text-primary transition-colors"
                       >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        Forgot password?
                       </button>
                     </div>
-                    {errors.password && (
-                      <p className="text-destructive text-xs mt-1">{errors.password}</p>
-                    )}
+
+                    <Button
+                      type="submit"
+                      className="w-full h-12 bg-gradient-to-r from-primary to-secondary text-primary-foreground hover:opacity-90 rounded-xl font-medium text-base shadow-lg shadow-primary/30 transition-all hover:shadow-xl hover:shadow-primary/40 hover:scale-[1.02] active:scale-[0.98]"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <span className="flex items-center gap-2">
+                          <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                          Signing in...
+                        </span>
+                      ) : (
+                        <span className="tracking-wide">Sign In</span>
+                      )}
+                    </Button>
+                  </form>
+
+                  {/* Elegant divider */}
+                  <div className="relative my-8">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+                    </div>
+                    <div className="relative flex justify-center">
+                      <span className="bg-card px-4 text-xs uppercase text-muted-foreground tracking-widest">Or continue with</span>
+                    </div>
                   </div>
 
-                  <div className="flex items-center justify-end">
-                    <button
-                      type="button"
-                      onClick={() => setMode("forgot")}
-                      className="text-sm text-primary hover:text-primary/80 transition-colors"
-                    >
-                      Forgot password?
-                    </button>
+                  {/* Sign up prompt */}
+                  <div className="mb-5 p-4 rounded-xl bg-gradient-to-r from-primary/5 via-secondary/5 to-primary/5 border border-primary/10">
+                    <p className="text-center text-sm">
+                      <span className="text-muted-foreground">New to RAYN ADAM?</span>{" "}
+                      <button
+                        onClick={() => setMode("signup")}
+                        className="text-primary hover:text-secondary font-semibold transition-colors"
+                      >
+                        Create an account →
+                      </button>
+                    </p>
                   </div>
 
                   <Button
-                    type="submit"
-                    className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-medium text-base shadow-lg shadow-primary/20 transition-all hover:shadow-xl hover:shadow-primary/30"
-                    disabled={isSubmitting}
+                    type="button"
+                    variant="outline"
+                    className="w-full h-12 border-primary/30 hover:border-primary/50 hover:bg-primary/5 rounded-xl font-medium transition-all group"
+                    onClick={() => setMode("email-otp")}
                   >
-                    {isSubmitting ? (
-                      <span className="flex items-center gap-2">
-                        <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                        Signing in...
-                      </span>
-                    ) : (
-                      <span>Sign In</span>
-                    )}
+                    <Mail className="w-4 h-4 mr-2 group-hover:text-primary transition-colors" />
+                    <span className="group-hover:text-primary transition-colors">Sign in with Email OTP</span>
                   </Button>
-                </form>
-
-                <div className="relative my-6">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-border/50"></div>
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card/80 px-3 text-muted-foreground tracking-wider">Or</span>
-                  </div>
-                </div>
-
-                <div className="mb-4 text-center">
-                  <p className="text-muted-foreground text-sm">
-                    Don't have an account?{" "}
-                    <button
-                      onClick={() => setMode("signup")}
-                      className="text-primary hover:text-primary/80 font-medium transition-colors"
-                    >
-                      Sign up
-                    </button>
-                  </p>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full h-12 border-border/50 hover:border-primary/50 hover:bg-primary/5 rounded-xl font-medium transition-all"
-                  onClick={() => setMode("email-otp")}
-                >
-                  <Mail className="w-4 h-4 mr-2" />
-                  Sign in with Email OTP
-                </Button>
-              </>
-            )}
+                </>
+              )}
 
             {/* Signup Form */}
             {mode === "signup" && (
@@ -1600,8 +1632,9 @@ const Auth = () => {
                 </form>
               </>
             )}
+            </div>
           </div>
-        </div>
+        </motion.div>
       </main>
 
       <Footer />
