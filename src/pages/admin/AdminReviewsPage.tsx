@@ -60,13 +60,16 @@ const AdminReviewsPage = () => {
       const sessionData = sessionStorage.getItem("rayn_admin_session");
       if (!sessionData) throw new Error("No admin session found");
 
-      const { data, error } = await supabase
-        .from("product_reviews")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const { token } = JSON.parse(sessionData);
+      
+      const response = await supabase.functions.invoke("get-admin-reviews", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-      if (error) throw error;
-      setReviews(data || []);
+      if (response.error) throw response.error;
+      if (response.data?.error) throw new Error(response.data.error);
+      
+      setReviews(response.data?.reviews || []);
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
@@ -74,14 +77,24 @@ const AdminReviewsPage = () => {
     }
   };
 
+  const getSessionToken = () => {
+    const sessionData = sessionStorage.getItem("rayn_admin_session");
+    if (!sessionData) return null;
+    return JSON.parse(sessionData).token;
+  };
+
   const updateReviewStatus = async (reviewId: string, isApproved: boolean) => {
     try {
-      const { error } = await supabase
-        .from("product_reviews")
-        .update({ is_approved: isApproved })
-        .eq("id", reviewId);
+      const token = getSessionToken();
+      if (!token) throw new Error("No admin session found");
 
-      if (error) throw error;
+      const response = await supabase.functions.invoke("manage-reviews", {
+        headers: { Authorization: `Bearer ${token}` },
+        body: { action: "update_status", reviewId, isApproved },
+      });
+
+      if (response.error) throw response.error;
+      if (response.data?.error) throw new Error(response.data.error);
 
       setReviews(reviews.map(r => r.id === reviewId ? { ...r, is_approved: isApproved } : r));
       toast({ title: "Updated", description: `Review ${isApproved ? "approved" : "hidden"}` });
@@ -94,12 +107,16 @@ const AdminReviewsPage = () => {
     if (!confirm("Are you sure you want to delete this review?")) return;
 
     try {
-      const { error } = await supabase
-        .from("product_reviews")
-        .delete()
-        .eq("id", reviewId);
+      const token = getSessionToken();
+      if (!token) throw new Error("No admin session found");
 
-      if (error) throw error;
+      const response = await supabase.functions.invoke("manage-reviews", {
+        headers: { Authorization: `Bearer ${token}` },
+        body: { action: "delete", reviewId },
+      });
+
+      if (response.error) throw response.error;
+      if (response.data?.error) throw new Error(response.data.error);
 
       setReviews(reviews.filter(r => r.id !== reviewId));
       toast({ title: "Deleted", description: "Review deleted successfully" });
