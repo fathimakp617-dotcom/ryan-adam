@@ -10,8 +10,10 @@ const CancellationRefundPolicy = () => {
   return (
     <div className="min-h-screen bg-background">
       <Helmet>
-        <title>Cancellation & Refund Policy | Rayn Adam</title>
-        <meta name="description" content="Cancellation and refund policy for Rayn Adam Luxury Perfumes. Learn about our cancellation terms, 7-day return window and refund process." />
+        <title>Cancellation & Refund Policy | Rayn Adam Perfumes India</title>
+        <meta name="description" content="Cancellation and refund policy for Rayn Adam Luxury Perfumes. 7-day return window, easy cancellation, and full refund process for India orders." />
+        <meta name="keywords" content="Rayn Adam refund, cancel order, return perfume, 7 day return, money back guarantee" />
+        <link rel="canonical" href="https://ryanadamperfume.lovable.app/cancellation-refund" />
       </Helmet>
       
       <Navbar />

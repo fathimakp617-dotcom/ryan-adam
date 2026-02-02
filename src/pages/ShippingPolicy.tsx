@@ -10,8 +10,10 @@ const ShippingPolicy = () => {
   return (
     <div className="min-h-screen bg-background">
       <Helmet>
-        <title>Shipping Policy | Rayn Adam</title>
-        <meta name="description" content="Shipping policy for Rayn Adam Luxury Perfumes. Learn about delivery times, shipping charges, and service areas." />
+        <title>Shipping Policy | Rayn Adam Luxury Perfumes India</title>
+        <meta name="description" content="Shipping policy for Rayn Adam Luxury Perfumes. Free shipping above ₹999 in India. 5-7 business days delivery. COD available." />
+        <meta name="keywords" content="Rayn Adam shipping, perfume delivery India, free shipping, COD perfume, delivery time" />
+        <link rel="canonical" href="https://ryanadamperfume.lovable.app/shipping-policy" />
       </Helmet>
       
       <Navbar />
