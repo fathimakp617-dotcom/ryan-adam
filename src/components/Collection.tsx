@@ -7,11 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useProductStock, isProductSoldOut } from "@/hooks/useProductStock";
 
 const Collection = forwardRef<HTMLDivElement>((_, ref) => {
-  // Show 4 products: combo, elite, amber-crown, elite-collection
-  const featuredProductIds = ["combo", "elite", "amber-crown", "elite-collection"];
-  const featuredProducts = featuredProductIds
-    .map(id => products.find(p => p.id === id))
-    .filter(Boolean);
+  const featuredProducts = products.slice(0, 3);
   const { data: stockMap } = useProductStock();
 
   return (
@@ -52,7 +48,7 @@ const Collection = forwardRef<HTMLDivElement>((_, ref) => {
           whileInView="visible"
           viewport={{ once: true, margin: "-50px" }}
           variants={staggerContainer}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-12"
         >
           {featuredProducts.map((product) => (
             <motion.div
