@@ -8,7 +8,6 @@ import { products } from "@/data/products";
 import eliteMain from "@/assets/products/elite.jpg";
 import amberCrownMain from "@/assets/products/amber-crown.jpg";
 import eliteCollection from "@/assets/products/elite-collection.png";
-import amberCrownCollection from "@/assets/products/amber-crown-collection.png";
 
 const slides = [
   {
@@ -28,12 +27,6 @@ const slides = [
     title: "ELITE COLLECTION",
     subtitle: "Complete Luxury Set",
     productId: "elite-collection",
-  },
-  {
-    image: amberCrownCollection,
-    title: "AMBER CROWN COLLECTION",
-    subtitle: "Complete Luxury Set",
-    productId: "amber-crown-collection",
   },
 ];
 
