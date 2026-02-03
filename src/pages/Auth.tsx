@@ -15,7 +15,6 @@ import Footer from "@/components/Footer";
 import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
 import CountryCodeSelect from "@/components/CountryCodeSelect";
 import PhoneOtpLogin from "@/components/PhoneOtpLogin";
-import { getVerifiedPhoneNumber, clearVerifiedPhoneNumber } from "@/hooks/useFirebasePhoneAuth";
 
 import { z } from "zod";
 
@@ -744,28 +743,22 @@ const Auth = () => {
   }
 
   const handlePhoneOtpSuccess = useCallback((isNewUser: boolean) => {
-    const verifiedPhone = getVerifiedPhoneNumber();
+    // WhatsApp OTP handles auth via action_link redirect
+    // This is called if verification succeeds without redirect
     if (isNewUser) {
-      // Pre-fill phone in signup form
-      if (verifiedPhone) {
-        const phoneDigits = verifiedPhone.replace(/^\+\d{1,3}/, '');
-        setFormData(prev => ({ ...prev, phone: phoneDigits }));
-      }
       toast({
         title: "Phone Verified!",
         description: "Please complete your registration.",
       });
       setMode("signup");
     } else {
-      // Existing user - redirect to email OTP login with message
       toast({
-        title: "Phone Verified!",
-        description: "Please sign in with your email to continue.",
+        title: "Welcome back!",
+        description: "You have successfully logged in.",
       });
-      setMode("email-otp");
+      navigate(redirectTo, { replace: true });
     }
-    clearVerifiedPhoneNumber();
-  }, [toast]);
+  }, [toast, navigate, redirectTo]);
 
   const getTitle = () => {
     switch (mode) {
@@ -977,15 +970,27 @@ const Auth = () => {
                     </p>
                   </div>
 
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-12 border-primary/30 hover:border-primary/50 hover:bg-primary/5 rounded-xl font-medium transition-all group"
-                    onClick={() => setMode("email-otp")}
-                  >
-                    <Mail className="w-4 h-4 mr-2 group-hover:text-primary transition-colors" />
-                    <span className="group-hover:text-primary transition-colors">Sign in with Email OTP</span>
-                  </Button>
+                  <div className="flex flex-col gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full h-12 border-primary/30 hover:border-primary/50 hover:bg-primary/5 rounded-xl font-medium transition-all group"
+                      onClick={() => setMode("email-otp")}
+                    >
+                      <Mail className="w-4 h-4 mr-2 group-hover:text-primary transition-colors" />
+                      <span className="group-hover:text-primary transition-colors">Sign in with Email OTP</span>
+                    </Button>
+                    
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full h-12 border-green-500/30 hover:border-green-500/50 hover:bg-green-500/5 rounded-xl font-medium transition-all group"
+                      onClick={() => setMode("phone-otp")}
+                    >
+                      <Smartphone className="w-4 h-4 mr-2 text-green-500 group-hover:text-green-600 transition-colors" />
+                      <span className="text-green-600 group-hover:text-green-700 transition-colors">Sign in with WhatsApp OTP</span>
+                    </Button>
+                  </div>
                 </>
               )}
 
