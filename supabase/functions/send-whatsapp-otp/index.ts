@@ -51,8 +51,8 @@ const sendWhatsAppMessage = async (
   console.log(`Sending WhatsApp OTP to: ${formattedPhone}`);
 
   try {
-    // Use hello_world template for testing (always works)
-    // TODO: Switch to otp_verification once language code is confirmed
+    // Use the approved otp_verification authentication template
+    // Template has a body parameter for OTP and a button parameter
     const response = await fetch(
       `https://graph.facebook.com/v18.0/${phoneNumberId}/messages`,
       {
@@ -67,10 +67,32 @@ const sendWhatsAppMessage = async (
           to: formattedPhone,
           type: "template",
           template: {
-            name: "hello_world",
+            name: "otp_verification",
             language: {
-              code: "en_US"
-            }
+              code: "en"
+            },
+            components: [
+              {
+                type: "body",
+                parameters: [
+                  {
+                    type: "text",
+                    text: otpCode
+                  }
+                ]
+              },
+              {
+                type: "button",
+                sub_type: "url",
+                index: "0",
+                parameters: [
+                  {
+                    type: "text",
+                    text: otpCode
+                  }
+                ]
+              }
+            ]
           }
         }),
       }
