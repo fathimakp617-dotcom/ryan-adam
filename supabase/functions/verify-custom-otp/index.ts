@@ -103,22 +103,61 @@ const handler = async (req: Request): Promise<Response> => {
     // For login/signup: return an action_link and let the browser follow it.
     // This is the most reliable way to create a session without fighting token formats/expiry.
     if (otp_type === "login" || otp_type === "signup") {
-      // Ensure user exists (create if missing)
-      const { data: list } = await supabaseAdmin.auth.admin.listUsers();
-      const existingUser = list?.users?.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+      // Check if this is a phone number (digits only) or email
+      const isPhoneNumber = /^\d+$/.test(email);
+      let userEmail: string | null = null;
+      let isNewUser = false;
 
-      if (!existingUser) {
-        const { error: createError } = await supabaseAdmin.auth.admin.createUser({
-          email,
-          email_confirm: true,
-        });
+      if (isPhoneNumber) {
+        // Phone-based login: look up user by phone in profiles
+        console.log("Phone-based login, looking up user by phone:", email);
+        
+        const { data: profile } = await supabaseAdmin
+          .from("profiles")
+          .select("user_id")
+          .eq("phone", `+${email}`)
+          .maybeSingle();
 
-        if (createError) {
-          console.error("Error creating user:", createError);
+        if (profile?.user_id) {
+          // Get user's email from auth
+          const { data: userData } = await supabaseAdmin.auth.admin.getUserById(profile.user_id);
+          userEmail = userData?.user?.email || null;
+          console.log("Found existing user with email:", userEmail);
+        }
+
+        if (!userEmail) {
+          // No existing user with this phone - they need to sign up
+          console.log("No user found with this phone number, redirect to signup");
           return new Response(
-            JSON.stringify({ error: "Failed to create account" }),
-            { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+            JSON.stringify({ 
+              valid: true, 
+              isNewUser: true,
+              message: "Phone verified. Please complete registration." 
+            }),
+            { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
           );
+        }
+      } else {
+        // Email-based login: use the email directly
+        userEmail = email;
+        
+        // Ensure user exists (create if missing)
+        const { data: list } = await supabaseAdmin.auth.admin.listUsers();
+        const existingUser = list?.users?.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+
+        if (!existingUser) {
+          const { error: createError } = await supabaseAdmin.auth.admin.createUser({
+            email,
+            email_confirm: true,
+          });
+
+          if (createError) {
+            console.error("Error creating user:", createError);
+            return new Response(
+              JSON.stringify({ error: "Failed to create account" }),
+              { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+            );
+          }
         }
       }
 
@@ -134,7 +173,7 @@ const handler = async (req: Request): Promise<Response> => {
 
       const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
         type: "magiclink",
-        email,
+        email: userEmail,
         options: {
           // IMPORTANT: send back to the current app origin (Preview stays in Preview).
           redirectTo,

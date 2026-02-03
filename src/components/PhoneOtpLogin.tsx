@@ -153,6 +153,16 @@ export const PhoneOtpLogin = ({ onSuccess, onBack }: PhoneOtpLoginProps) => {
         return;
       }
 
+      // Check if this is a new user (no account with this phone)
+      if (data.isNewUser) {
+        toast({
+          title: "Phone Verified!",
+          description: "Please complete your registration.",
+        });
+        onSuccess(true); // true = new user
+        return;
+      }
+
       // If we got an action_link, follow it to create session
       if (data.action_link) {
         toast({
