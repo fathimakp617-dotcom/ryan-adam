@@ -40,7 +40,8 @@ function getSafeRedirectTo(req: Request): string {
     ]);
 
     const isLovablePreview = host.endsWith(".lovable.app") || host.endsWith(".lovableproject.com");
-    if (allowedHosts.has(host) || isLovablePreview) return u.origin;
+    const isLocalhost = host === "localhost" || host.startsWith("localhost:");
+    if (allowedHosts.has(host) || isLovablePreview || isLocalhost) return u.origin;
   } catch {
     // ignore
   }
