@@ -69,8 +69,7 @@ const sendWhatsAppMessage = async (
           template: {
             name: "otp_verification",
             language: {
-              code: "en",
-              policy: "deterministic"
+              code: "en_GB"
             },
             components: [
               {
