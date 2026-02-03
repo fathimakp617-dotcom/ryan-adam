@@ -1,12 +1,12 @@
-import { useState, useEffect, useCallback, useId } from 'react';
-import { Phone, Clock, ArrowLeft, Smartphone } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Phone, Clock, ArrowLeft, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import CountryCodeSelect from '@/components/CountryCodeSelect';
-import { useFirebasePhoneAuth } from '@/hooks/useFirebasePhoneAuth';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 
 const phoneSchema = z.string()
@@ -27,13 +27,10 @@ export const PhoneOtpLogin = ({ onSuccess, onBack }: PhoneOtpLoginProps) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(0);
   const [otpExpiryTime, setOtpExpiryTime] = useState(0);
   
-  const uniqueId = useId();
-  const buttonId = `phone-otp-btn-${uniqueId.replace(/:/g, '')}`;
-  
-  const { isLoading, error: authError, sendOtp, verifyOtp, resetState } = useFirebasePhoneAuth();
   const { toast } = useToast();
 
   // Countdown timers
@@ -58,9 +55,21 @@ export const PhoneOtpLogin = ({ onSuccess, onBack }: PhoneOtpLoginProps) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Get full phone number with country code
+  // Get full phone number with country code (without + for storage)
   const getFullPhoneNumber = useCallback(() => {
     const code = countryCode.split('-')[0];
+    return `${code}${phoneNumber}`;
+  }, [countryCode, phoneNumber]);
+
+  // Get display phone number with +
+  const getDisplayPhoneNumber = useCallback(() => {
+    const code = countryCode.split('-')[0];
+    return `${code} ${phoneNumber}`;
+  }, [countryCode, phoneNumber]);
+
+  // Format phone for API (E.164 without +)
+  const getApiPhoneNumber = useCallback(() => {
+    const code = countryCode.split('-')[0].replace('+', '');
     return `${code}${phoneNumber}`;
   }, [countryCode, phoneNumber]);
 
@@ -75,19 +84,40 @@ export const PhoneOtpLogin = ({ onSuccess, onBack }: PhoneOtpLoginProps) => {
       return;
     }
 
-    const fullPhone = getFullPhoneNumber();
-    const success = await sendOtp(fullPhone, buttonId);
+    setIsLoading(true);
+    try {
+      const fullPhone = getFullPhoneNumber();
+      
+      const { data, error: fnError } = await supabase.functions.invoke('send-whatsapp-otp', {
+        body: { 
+          phone: fullPhone,
+          otp_type: 'login'
+        }
+      });
 
-    if (success) {
+      if (fnError) {
+        console.error('WhatsApp OTP error:', fnError);
+        setError('Failed to send OTP. Please try again.');
+        return;
+      }
+
+      if (data?.error) {
+        setError(data.details || data.error);
+        return;
+      }
+
       toast({
-        title: "OTP Sent!",
-        description: `Verification code sent to ${fullPhone}`,
+        title: "OTP Sent via WhatsApp!",
+        description: `Check WhatsApp on ${getDisplayPhoneNumber()}`,
       });
       setMode('verify-otp');
       setResendCountdown(60);
-      setOtpExpiryTime(5 * 60); // 5 minutes for SMS OTP
-    } else if (authError) {
-      setError(authError);
+      setOtpExpiryTime(10 * 60); // 10 minutes for WhatsApp OTP
+    } catch (err: any) {
+      console.error('Send OTP error:', err);
+      setError(err.message || 'Failed to send OTP');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -95,40 +125,89 @@ export const PhoneOtpLogin = ({ onSuccess, onBack }: PhoneOtpLoginProps) => {
     e.preventDefault();
     setError('');
 
-    if (otp.length !== 6) {
-      setError('Please enter the 6-digit code');
+    if (otp.length !== 4) {
+      setError('Please enter the 4-digit code');
       return;
     }
 
-    const result = await verifyOtp(otp);
+    setIsLoading(true);
+    try {
+      const apiPhone = getApiPhoneNumber();
+      
+      const { data, error: fnError } = await supabase.functions.invoke('verify-custom-otp', {
+        body: { 
+          email: apiPhone, // Phone number stored in email field
+          otp: otp,
+          otp_type: 'login'
+        }
+      });
 
-    if (result.success) {
+      if (fnError) {
+        console.error('Verify OTP error:', fnError);
+        setError('Verification failed. Please try again.');
+        return;
+      }
+
+      if (!data?.valid) {
+        setError(data?.error || 'Invalid or expired code');
+        return;
+      }
+
+      // If we got an action_link, follow it to create session
+      if (data.action_link) {
+        toast({
+          title: "Phone Verified!",
+          description: "Completing login...",
+        });
+        
+        // Follow the magic link to complete auth
+        window.location.href = data.action_link;
+        return;
+      }
+
       toast({
         title: "Phone Verified!",
-        description: result.isNewUser 
-          ? "Please complete your registration" 
-          : "Welcome back!",
+        description: "Welcome!",
       });
-      onSuccess(result.isNewUser ?? true);
-    } else if (authError) {
-      setError(authError);
+      onSuccess(false);
+    } catch (err: any) {
+      console.error('Verify error:', err);
+      setError(err.message || 'Verification failed');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleResendOtp = async () => {
-    const fullPhone = getFullPhoneNumber();
-    resetState();
     setOtp('');
+    setError('');
     
-    const success = await sendOtp(fullPhone, buttonId);
-    
-    if (success) {
+    setIsLoading(true);
+    try {
+      const fullPhone = getFullPhoneNumber();
+      
+      const { data, error: fnError } = await supabase.functions.invoke('send-whatsapp-otp', {
+        body: { 
+          phone: fullPhone,
+          otp_type: 'login'
+        }
+      });
+
+      if (fnError || data?.error) {
+        setError('Failed to resend OTP');
+        return;
+      }
+
       toast({
         title: "OTP Sent!",
-        description: "A new verification code has been sent to your phone.",
+        description: "A new verification code has been sent via WhatsApp.",
       });
       setResendCountdown(60);
-      setOtpExpiryTime(5 * 60);
+      setOtpExpiryTime(10 * 60);
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend OTP');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -136,7 +215,7 @@ export const PhoneOtpLogin = ({ onSuccess, onBack }: PhoneOtpLoginProps) => {
     if (mode === 'verify-otp') {
       setMode('enter-phone');
       setOtp('');
-      resetState();
+      setError('');
     } else {
       onBack();
     }
@@ -144,18 +223,18 @@ export const PhoneOtpLogin = ({ onSuccess, onBack }: PhoneOtpLoginProps) => {
 
   return (
     <div className="space-y-5">
-      {/* Phone icon header */}
-      <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-primary/20 to-primary/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-primary/20">
-        <Smartphone className="w-8 h-8 md:w-10 md:h-10 text-primary" />
+      {/* WhatsApp icon header */}
+      <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-green-500/20 to-green-500/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-500/20">
+        <MessageCircle className="w-8 h-8 md:w-10 md:h-10 text-green-500" />
       </div>
 
       <h2 className="text-xl md:text-2xl font-heading text-foreground text-center">
-        {mode === 'enter-phone' ? 'Phone OTP Login' : 'Verify Phone'}
+        {mode === 'enter-phone' ? 'WhatsApp OTP Login' : 'Verify Phone'}
       </h2>
       <p className="text-muted-foreground text-center text-sm md:text-base">
         {mode === 'enter-phone' 
-          ? 'Enter your phone number to receive an OTP' 
-          : `Enter the 6-digit code sent to ${getFullPhoneNumber()}`}
+          ? 'Enter your phone number to receive an OTP via WhatsApp' 
+          : `Enter the 4-digit code sent to ${getDisplayPhoneNumber()}`}
       </p>
 
       {mode === 'enter-phone' ? (
@@ -188,24 +267,26 @@ export const PhoneOtpLogin = ({ onSuccess, onBack }: PhoneOtpLoginProps) => {
             )}
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-muted-foreground bg-primary/5 border border-primary/10 p-3 rounded-xl">
-            <Smartphone className="w-4 h-4 text-primary flex-shrink-0" />
-            <span>You'll receive a 6-digit SMS code for verification</span>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground bg-green-500/5 border border-green-500/10 p-3 rounded-xl">
+            <MessageCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+            <span>You'll receive a 4-digit code on WhatsApp for verification</span>
           </div>
 
           <Button
-            id={buttonId}
             type="submit"
-            className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-medium text-base shadow-lg shadow-primary/20"
+            className="w-full h-12 bg-green-600 text-white hover:bg-green-700 rounded-xl font-medium text-base shadow-lg shadow-green-600/20"
             disabled={isLoading}
           >
             {isLoading ? (
               <span className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 Sending OTP...
               </span>
             ) : (
-              <span>Send OTP</span>
+              <span className="flex items-center gap-2">
+                <MessageCircle className="w-4 h-4" />
+                Send WhatsApp OTP
+              </span>
             )}
           </Button>
         </form>
@@ -216,7 +297,7 @@ export const PhoneOtpLogin = ({ onSuccess, onBack }: PhoneOtpLoginProps) => {
             <div className="flex justify-center overflow-x-auto pb-2">
               <div className="bg-background/50 border border-border/50 rounded-2xl p-4 md:p-6">
                 <InputOTP
-                  maxLength={6}
+                  maxLength={4}
                   value={otp}
                   onChange={(value) => {
                     setOtp(value);
@@ -224,11 +305,11 @@ export const PhoneOtpLogin = ({ onSuccess, onBack }: PhoneOtpLoginProps) => {
                   }}
                 >
                   <InputOTPGroup className="gap-2 md:gap-3">
-                    {[0, 1, 2, 3, 4, 5].map((index) => (
+                    {[0, 1, 2, 3].map((index) => (
                       <InputOTPSlot 
                         key={index}
                         index={index} 
-                        className="w-10 h-12 md:w-12 md:h-14 text-xl md:text-2xl font-bold border-border/50 bg-background rounded-lg" 
+                        className="w-12 h-14 md:w-14 md:h-16 text-2xl md:text-3xl font-bold border-border/50 bg-background rounded-lg" 
                       />
                     ))}
                   </InputOTPGroup>
@@ -255,12 +336,12 @@ export const PhoneOtpLogin = ({ onSuccess, onBack }: PhoneOtpLoginProps) => {
 
           <Button
             type="submit"
-            className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-medium text-base shadow-lg shadow-primary/20"
-            disabled={isLoading || otp.length !== 6}
+            className="w-full h-12 bg-green-600 text-white hover:bg-green-700 rounded-xl font-medium text-base shadow-lg shadow-green-600/20"
+            disabled={isLoading || otp.length !== 4}
           >
             {isLoading ? (
               <span className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 Verifying...
               </span>
             ) : (
@@ -271,7 +352,7 @@ export const PhoneOtpLogin = ({ onSuccess, onBack }: PhoneOtpLoginProps) => {
           <div className="text-center space-y-3">
             <p className="text-muted-foreground text-sm">
               {resendCountdown > 0 ? (
-                <span>Resend code in <span className="text-primary font-medium">{resendCountdown}s</span></span>
+                <span>Resend code in <span className="text-green-600 font-medium">{resendCountdown}s</span></span>
               ) : (
                 <>
                   Didn't receive the code?{" "}
@@ -279,7 +360,7 @@ export const PhoneOtpLogin = ({ onSuccess, onBack }: PhoneOtpLoginProps) => {
                     type="button"
                     onClick={handleResendOtp}
                     disabled={isLoading}
-                    className="text-primary hover:text-primary/80 font-medium disabled:opacity-50 transition-colors"
+                    className="text-green-600 hover:text-green-700 font-medium disabled:opacity-50 transition-colors"
                   >
                     Resend
                   </button>
