@@ -984,11 +984,12 @@ const Auth = () => {
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full h-12 border-green-500/30 hover:border-green-500/50 hover:bg-green-500/5 rounded-xl font-medium transition-all group"
-                      onClick={() => setMode("phone-otp")}
+                      className="w-full h-12 border-green-500/20 rounded-xl font-medium transition-all opacity-60 cursor-not-allowed"
+                      disabled
                     >
-                      <Smartphone className="w-4 h-4 mr-2 text-green-500 group-hover:text-green-600 transition-colors" />
-                      <span className="text-green-600 group-hover:text-green-700 transition-colors">Sign in with WhatsApp OTP</span>
+                      <Smartphone className="w-4 h-4 mr-2 text-green-500/60" />
+                      <span className="text-green-600/60">Sign in with WhatsApp OTP</span>
+                      <span className="ml-2 text-xs bg-green-500/10 text-green-600/80 px-2 py-0.5 rounded-full">Coming Soon</span>
                     </Button>
                   </div>
                 </>
