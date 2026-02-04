@@ -869,6 +869,19 @@ const Auth = () => {
               {/* Login Form */}
               {mode === "login" && (
                 <>
+                  {/* Sign up prompt - at top */}
+                  <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-primary/5 via-secondary/5 to-primary/5 border border-primary/10">
+                    <p className="text-center text-sm">
+                      <span className="text-muted-foreground">New to RAYN ADAM?</span>{" "}
+                      <button
+                        onClick={() => setMode("signup")}
+                        className="text-primary hover:text-secondary font-semibold transition-colors"
+                      >
+                        Create an account →
+                      </button>
+                    </p>
+                  </div>
+
                   <form onSubmit={handleLogin} className="space-y-5">
                     <div className="space-y-1.5">
                       <Label htmlFor="email" className="text-sm font-medium text-foreground/80">Email Address</Label>
@@ -955,19 +968,6 @@ const Auth = () => {
                     <div className="relative flex justify-center">
                       <span className="bg-card px-4 text-xs uppercase text-muted-foreground tracking-widest">Or continue with</span>
                     </div>
-                  </div>
-
-                  {/* Sign up prompt */}
-                  <div className="mb-5 p-4 rounded-xl bg-gradient-to-r from-primary/5 via-secondary/5 to-primary/5 border border-primary/10">
-                    <p className="text-center text-sm">
-                      <span className="text-muted-foreground">New to RAYN ADAM?</span>{" "}
-                      <button
-                        onClick={() => setMode("signup")}
-                        className="text-primary hover:text-secondary font-semibold transition-colors"
-                      >
-                        Create an account →
-                      </button>
-                    </p>
                   </div>
 
                   <div className="flex flex-col gap-3">
