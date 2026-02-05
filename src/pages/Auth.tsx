@@ -875,7 +875,7 @@ const Auth = () => {
                       <span className="text-muted-foreground">New to RAYN ADAM?</span>{" "}
                       <button
                         onClick={() => setMode("signup")}
-                        className="text-primary hover:text-secondary font-semibold transition-colors"
+                        className="text-primary hover:text-secondary font-heading font-bold tracking-wide transition-colors"
                       >
                         Create an account →
                       </button>
