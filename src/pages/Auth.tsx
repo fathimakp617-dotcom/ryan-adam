@@ -526,9 +526,12 @@ const Auth = () => {
         console.error("Error persisting signup address:", persistErr);
       }
 
+      // Store welcome coupon flag for new signups
+      localStorage.setItem("rayn_welcome_coupon", "WELCOME10");
+
       toast({
         title: "Account Created!",
-        description: "Your email has been verified. Welcome to RAYN ADAM!",
+        description: "Your email has been verified. Use code WELCOME10 for 10% off!",
       });
       navigate(redirectTo, { replace: true });
     } finally {

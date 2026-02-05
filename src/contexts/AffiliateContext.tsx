@@ -58,6 +58,22 @@ export const AffiliateProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  // Auto-apply welcome coupon for new signups
+  useEffect(() => {
+    const autoApplyWelcomeCoupon = async () => {
+      const welcomeCoupon = localStorage.getItem("rayn_welcome_coupon");
+      if (welcomeCoupon && user && !appliedCoupon) {
+        const result = await applyCoupon(welcomeCoupon);
+        if (result.success) {
+          // Remove the flag after successful application
+          localStorage.removeItem("rayn_welcome_coupon");
+        }
+      }
+    };
+    
+    autoApplyWelcomeCoupon();
+  }, [user]);
+
 
   const fetchAffiliateData = async (code: string) => {
     setIsLoading(true);
