@@ -105,6 +105,10 @@ const Auth = () => {
     const urlMode = searchParams.get("mode");
     if (urlMode === "reset") {
       setMode("reset");
+    } else if (urlMode === "signup") {
+      setMode("signup");
+    } else if (urlMode === "login") {
+      setMode("login");
     }
   }, [searchParams]);
 
