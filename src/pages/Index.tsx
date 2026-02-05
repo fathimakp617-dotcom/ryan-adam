@@ -12,6 +12,7 @@ const Contact = lazy(() => import("@/components/Contact"));
 const Footer = lazy(() => import("@/components/Footer"));
 const OrderSuccessModal = lazy(() => import("@/components/OrderSuccessModal"));
 const CookieConsent = lazy(() => import("@/components/CookieConsent"));
+const SignupIncentivePopup = lazy(() => import("@/components/SignupIncentivePopup"));
 
 const SectionLoader = () => (
   <div className="py-12 flex items-center justify-center">
@@ -45,6 +46,7 @@ const Index = () => {
       <Suspense fallback={null}>
         <OrderSuccessModal />
         <CookieConsent />
+        <SignupIncentivePopup />
       </Suspense>
 
       <PageTransition>
