@@ -874,9 +874,9 @@ const Auth = () => {
                     onClick={() => setMode("signup")}
                     className="w-full mb-6 p-4 rounded-xl bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/15 hover:to-secondary/15 transition-all duration-300 group"
                   >
-                    <p className="text-center text-sm">
-                      <span className="text-muted-foreground">New to RAYN ADAM?</span>{" "}
-                      <span className="text-primary group-hover:text-secondary font-heading font-bold tracking-wide transition-colors">
+                    <p className="text-center">
+                      <span className="text-muted-foreground font-medium text-sm">New to RAYN ADAM?</span>{" "}
+                      <span className="text-primary group-hover:text-secondary font-heading text-base font-bold tracking-wide transition-colors">
                         Create an account →
                       </span>
                     </p>
