@@ -108,13 +108,19 @@ const SignupIncentivePopup = () => {
                 {/* Offers */}
                 <div className="space-y-4 mb-6">
                   {/* Guaranteed offer */}
-                  <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20">
-                    <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                      <Percent className="w-6 h-6 text-primary" />
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="flex-shrink-0 w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                        <Percent className="w-6 h-6 text-primary" />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-semibold text-foreground">Flat 10% OFF</p>
+                        <p className="text-sm text-muted-foreground">On your first order</p>
+                      </div>
                     </div>
-                    <div className="text-left">
-                      <p className="font-semibold text-foreground">Flat 10% OFF</p>
-                      <p className="text-sm text-muted-foreground">On your first order</p>
+                    <div className="flex items-center justify-center gap-2 py-2 px-4 bg-primary/10 rounded-lg border border-dashed border-primary/40">
+                      <span className="text-xs text-muted-foreground">Use code:</span>
+                      <span className="font-mono font-bold text-primary text-lg tracking-wider">WELCOME10</span>
                     </div>
                   </div>
 
