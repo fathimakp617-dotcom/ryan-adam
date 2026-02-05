@@ -870,17 +870,17 @@ const Auth = () => {
               {mode === "login" && (
                 <>
                   {/* Sign up prompt - at top */}
-                  <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-primary/5 via-secondary/5 to-primary/5 border border-primary/10">
+                  <button
+                    onClick={() => setMode("signup")}
+                    className="w-full mb-6 p-4 rounded-xl bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/15 hover:to-secondary/15 transition-all duration-300 group"
+                  >
                     <p className="text-center text-sm">
                       <span className="text-muted-foreground">New to RAYN ADAM?</span>{" "}
-                      <button
-                        onClick={() => setMode("signup")}
-                        className="text-primary hover:text-secondary font-heading font-bold tracking-wide transition-colors"
-                      >
+                      <span className="text-primary group-hover:text-secondary font-heading font-bold tracking-wide transition-colors">
                         Create an account →
-                      </button>
+                      </span>
                     </p>
-                  </div>
+                  </button>
 
                   <form onSubmit={handleLogin} className="space-y-5">
                     <div className="space-y-1.5">
