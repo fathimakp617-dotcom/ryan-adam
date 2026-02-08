@@ -306,49 +306,47 @@ const AdminManualOrder = () => {
     setShipping(0);
   };
 
-  // Quick fill parser
+  // Quick fill parser — runs automatically on change
   const [quickFillText, setQuickFillText] = useState("");
-  
-  const parseQuickFill = () => {
-    if (!quickFillText.trim()) {
-      toast({ title: "Empty", description: "Paste customer details first", variant: "destructive" });
-      return;
-    }
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const text = quickFillText.trim();
+  const indianStates = [
+    "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+    "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
+    "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
+    "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
+    "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
+    "Delhi", "New Delhi", "Jammu and Kashmir", "Ladakh", "Chandigarh",
+    "Andaman and Nicobar Islands", "Dadra and Nagar Haveli", "Daman and Diu",
+    "Lakshadweep", "Puducherry"
+  ];
+
+  const parseAndFill = useCallback((text: string) => {
+    if (!text.trim()) return;
+
     const lines = text.split(/\n/).map(l => l.trim()).filter(Boolean);
-
-    // Extract phone number (Indian format: 10 digits, optionally with +91 or 0 prefix)
     const phoneRegex = /(?:\+?91[\s-]?)?(?:0)?([6-9]\d{4}[\s-]?\d{5}|\d{10})/;
+    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+    const pinRegex = /\b[1-9]\d{5}\b/;
+
+    // Phone
     const phoneMatch = text.match(phoneRegex);
     if (phoneMatch) {
       const rawPhone = phoneMatch[0].replace(/[\s-]/g, "");
       setCustomerPhone(rawPhone.startsWith("+91") ? rawPhone : rawPhone.startsWith("91") && rawPhone.length > 10 ? `+${rawPhone}` : `+91${rawPhone.replace(/^0/, "")}`);
     }
 
-    // Extract email
-    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+    // Email
     const emailMatch = text.match(emailRegex);
     if (emailMatch) setCustomerEmail(emailMatch[0]);
 
-    // Extract PIN code (6 digit Indian PIN)
-    const pinRegex = /\b[1-9]\d{5}\b/;
+    // PIN code + auto lookup
     const pinMatch = text.match(pinRegex);
-    if (pinMatch) setZipCode(pinMatch[0]);
+    if (pinMatch) {
+      handlePinCodeChange(pinMatch[0]);
+    }
 
-    // Known Indian states for matching
-    const indianStates = [
-      "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
-      "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
-      "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
-      "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
-      "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
-      "Delhi", "New Delhi", "Jammu and Kashmir", "Ladakh", "Chandigarh",
-      "Andaman and Nicobar Islands", "Dadra and Nagar Haveli", "Daman and Diu",
-      "Lakshadweep", "Puducherry"
-    ];
-
-    // Try to find state
+    // State
     const lowerText = text.toLowerCase();
     for (const s of indianStates) {
       if (lowerText.includes(s.toLowerCase())) {
@@ -357,35 +355,36 @@ const AdminManualOrder = () => {
       }
     }
 
-    // Heuristic: First line is likely the name (if it doesn't contain digits or @)
+    // Name — first line without digits/email
     const nameLine = lines.find(l => !phoneRegex.test(l) && !emailRegex.test(l) && !/\d{5,}/.test(l) && l.length < 60);
     if (nameLine) setCustomerName(nameLine);
 
-    // Try to extract city — look for common patterns or the line before state/pin
-    // Remove name, phone, email, pin from lines and use remaining for address
+    // Address — remaining lines
     const usedValues = [phoneMatch?.[0], emailMatch?.[0], pinMatch?.[0], nameLine].filter(Boolean);
     const addressLines = lines.filter(l => {
       const lower = l.toLowerCase();
       return !usedValues.some(v => v && lower.includes(v!.toLowerCase()));
     });
 
-    if (addressLines.length > 0) {
-      // If multiple lines, last one might be city/state, rest is address
-      if (addressLines.length >= 2) {
-        setAddress(addressLines.slice(0, -1).join(", "));
-        // Last address line might have city
-        const lastLine = addressLines[addressLines.length - 1];
-        const cityCandidate = lastLine.replace(pinRegex, "").replace(/,\s*$/, "").trim();
-        if (cityCandidate && !indianStates.some(s => s.toLowerCase() === cityCandidate.toLowerCase())) {
-          setCity(cityCandidate);
-        }
-      } else {
-        setAddress(addressLines[0]);
+    if (addressLines.length >= 2) {
+      setAddress(addressLines.slice(0, -1).join(", "));
+      const lastLine = addressLines[addressLines.length - 1];
+      const cityCandidate = lastLine.replace(pinRegex, "").replace(/,\s*$/, "").trim();
+      if (cityCandidate && !indianStates.some(s => s.toLowerCase() === cityCandidate.toLowerCase())) {
+        setCity(cityCandidate);
       }
+    } else if (addressLines.length === 1) {
+      setAddress(addressLines[0]);
     }
+  }, [handlePinCodeChange]);
 
-    toast({ title: "Auto-filled!", description: "Review the parsed details below" });
-  };
+  const handleQuickFillChange = useCallback((value: string) => {
+    setQuickFillText(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      parseAndFill(value);
+    }, 500);
+  }, [parseAndFill]);
 
   return (
     <div className="space-y-6">
@@ -406,23 +405,20 @@ const AdminManualOrder = () => {
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
-            Quick Fill — Paste Customer Details
+            Quick Fill — Paste or Type Customer Details
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <Textarea
             value={quickFillText}
-            onChange={(e) => setQuickFillText(e.target.value)}
-            placeholder={"Paste WhatsApp message here, e.g.:\nRahul Sharma\n+91 98765 43210\nrahul@email.com\n42, MG Road, Sector 5\nMumbai, Maharashtra 400001"}
+            onChange={(e) => handleQuickFillChange(e.target.value)}
+            placeholder={"Paste or type details here — fields auto-fill as you go:\nRahul Sharma\n+91 98765 43210\nrahul@email.com\n42, MG Road, Sector 5\nMumbai, Maharashtra 400001"}
             rows={4}
             className="bg-background text-sm"
           />
-          <div className="flex gap-2">
-            <Button size="sm" onClick={parseQuickFill} className="gap-1.5">
-              <Sparkles className="h-3.5 w-3.5" />
-              Auto Fill Details
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => setQuickFillText("")}>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">Fields fill automatically as you type or paste</p>
+            <Button size="sm" variant="ghost" onClick={() => { setQuickFillText(""); }} className="h-7 text-xs">
               Clear
             </Button>
           </div>
