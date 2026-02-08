@@ -78,6 +78,22 @@ export const AffiliateProvider = ({ children }: { children: ReactNode }) => {
   const fetchAffiliateData = async (code: string) => {
     setIsLoading(true);
     try {
+      // Block self-referral: check if logged-in user owns this affiliate code
+      if (user) {
+        const { data: ownAffiliate } = await supabase
+          .from('affiliates')
+          .select('code')
+          .eq('user_id', user.id)
+          .eq('code', code.toUpperCase())
+          .maybeSingle();
+
+        if (ownAffiliate) {
+          console.log("Self-referral blocked for affiliate code:", code);
+          setIsLoading(false);
+          return;
+        }
+      }
+
       // Use secure RPC function instead of direct table access
       const { data, error } = await supabase
         .rpc('validate_affiliate_code', { affiliate_code: code.toUpperCase() });
@@ -118,6 +134,21 @@ export const AffiliateProvider = ({ children }: { children: ReactNode }) => {
         .rpc('validate_affiliate_code', { affiliate_code: code.toUpperCase() });
 
       if (affiliateData && affiliateData.length > 0 && !affiliateError) {
+        // Block self-referral: user cannot use their own affiliate code
+        if (user) {
+          const { data: ownAffiliate } = await supabase
+            .from('affiliates')
+            .select('code')
+            .eq('user_id', user.id)
+            .eq('code', code.toUpperCase())
+            .maybeSingle();
+
+          if (ownAffiliate) {
+            setIsLoading(false);
+            return { success: false, message: "You cannot use your own affiliate code" };
+          }
+        }
+
         const affiliate = affiliateData[0];
         setAppliedCoupon({
           code: affiliate.code,

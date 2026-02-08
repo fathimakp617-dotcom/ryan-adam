@@ -411,19 +411,28 @@ serve(async (req) => {
         .single();
 
       if (!affiliateError && affiliate) {
-        affiliateDiscount = Math.round(priceAfterBulk * ((affiliate.coupon_discount_percent || 10) / 100));
-        validAffiliateCode = affiliateCode;
-        console.log("Affiliate discount applied:", affiliateDiscount);
+        // Block self-referral: user cannot use their own affiliate code
+        const isSelfReferral =
+          (orderRequest.user_id && affiliate.user_id && orderRequest.user_id === affiliate.user_id) ||
+          (affiliate.email && affiliate.email.toLowerCase() === customerEmail.toLowerCase());
 
-        // Update affiliate stats
-        const commission = (subtotal * (affiliate.commission_percent || 10)) / 100;
-        await supabase
-          .from('affiliates')
-          .update({
-            total_referrals: (affiliate.total_referrals || 0) + 1,
-            total_earnings: (affiliate.total_earnings || 0) + commission,
-          })
-          .eq('id', affiliate.id);
+        if (isSelfReferral) {
+          console.log("Self-referral blocked for affiliate code:", affiliateCode, "user:", customerEmail);
+        } else {
+          affiliateDiscount = Math.round(priceAfterBulk * ((affiliate.coupon_discount_percent || 10) / 100));
+          validAffiliateCode = affiliateCode;
+          console.log("Affiliate discount applied:", affiliateDiscount);
+
+          // Update affiliate stats
+          const commission = (subtotal * (affiliate.commission_percent || 10)) / 100;
+          await supabase
+            .from('affiliates')
+            .update({
+              total_referrals: (affiliate.total_referrals || 0) + 1,
+              total_earnings: (affiliate.total_earnings || 0) + commission,
+            })
+            .eq('id', affiliate.id);
+        }
       }
     } else if (orderRequest.affiliate_code && bulkDiscountPercent > 0) {
       console.log("Affiliate code ignored - bulk discount active");
