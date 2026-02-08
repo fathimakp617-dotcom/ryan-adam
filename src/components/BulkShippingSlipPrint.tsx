@@ -32,7 +32,7 @@ const LABEL_STYLES = `
   table { border-collapse: collapse; width: 100%; }
   td, th { vertical-align: top; }
   @media print {
-    @page { size: 100mm 150mm; margin: 0; }
+    @page { size: 10cm 15cm; margin: 0; }
     body { padding: 0; }
     .slip-container { padding: 0; }
   }

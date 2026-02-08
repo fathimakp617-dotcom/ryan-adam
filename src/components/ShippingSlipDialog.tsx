@@ -67,7 +67,7 @@ export default function ShippingSlipDialog({ order, open, onOpenChange }: Shippi
         <style>
           ${LABEL_STYLES}
           @media print {
-            @page { size: 100mm 150mm; margin: 0; }
+            @page { size: 10cm 15cm; margin: 0; }
             body { padding: 0; }
           }
         </style>
