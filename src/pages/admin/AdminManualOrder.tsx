@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +29,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { downloadInvoicePDF, generateShippingLabelPDF } from "@/lib/generateInvoicePDF";
 import { products as catalogProducts, formatPrice } from "@/data/products";
 import { cn } from "@/lib/utils";
+import { usePinCodeLookup } from "@/hooks/usePinCodeLookup";
 
 interface ManualItem {
   id: string;
@@ -129,6 +130,24 @@ const AdminManualOrder = () => {
   const [state, setState] = useState("");
   const [zipCode, setZipCode] = useState("");
   const [country, setCountry] = useState("India");
+  const [postOffice, setPostOffice] = useState("");
+
+  // PIN code auto-lookup
+  const { isLoading: isPinLoading, lookupPinCode } = usePinCodeLookup();
+
+  const handlePinCodeChange = useCallback(async (value: string) => {
+    setZipCode(value);
+    setPostOffice("");
+    if (value.replace(/\s/g, "").length === 6) {
+      const result = await lookupPinCode(value);
+      if (result) {
+        setCity(result.city);
+        setState(result.state);
+        setCountry(result.country);
+        setPostOffice(result.postOffice);
+      }
+    }
+  }, [lookupPinCode]);
 
   // Payment
   const [paymentMethod, setPaymentMethod] = useState<string>("cod");
@@ -279,6 +298,7 @@ const AdminManualOrder = () => {
     setState("");
     setZipCode("");
     setCountry("India");
+    setPostOffice("");
     setPaymentMethod("cod");
     setPaymentStatus("pending");
     setItems([{ id: crypto.randomUUID(), name: "", price: 0, quantity: 1 }]);
@@ -551,12 +571,25 @@ const AdminManualOrder = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="zipCode">PIN Code *</Label>
-                  <Input
-                    id="zipCode"
-                    value={zipCode}
-                    onChange={(e) => setZipCode(e.target.value)}
-                    className="mt-1"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="zipCode"
+                      value={zipCode}
+                      onChange={(e) => handlePinCodeChange(e.target.value)}
+                      placeholder="6-digit PIN"
+                      maxLength={6}
+                      className={cn("mt-1", isPinLoading && "animate-pulse")}
+                    />
+                    {isPinLoading && (
+                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 mt-0.5 h-4 w-4 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
+                  {postOffice && (
+                    <p className="text-xs text-primary mt-1 flex items-center gap-1">
+                      <Check className="h-3 w-3" />
+                      {postOffice}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="country">Country</Label>
