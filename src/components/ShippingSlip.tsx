@@ -12,148 +12,130 @@ const ShippingSlip = forwardRef<HTMLDivElement, ShippingSlipProps>(({ order }, r
   return (
     <div
       ref={ref}
-      className="bg-white text-black p-5 max-w-[800px] mx-auto"
-      style={{ fontFamily: "Arial, Helvetica, sans-serif", fontSize: "15px", fontWeight: "bold" }}
+      className="bg-white text-black mx-auto"
+      style={{
+        fontFamily: "Arial, Helvetica, sans-serif",
+        fontSize: "9px",
+        fontWeight: "bold",
+        width: "100mm",
+        minHeight: "150mm",
+        padding: "4mm",
+        boxSizing: "border-box",
+      }}
     >
-      <div className="border-2 border-black p-5">
-        {/* Header with Company Name */}
-        <div className="border-b-2 border-black pb-2.5 mb-4">
-          <h1 
-            style={{ 
-              fontSize: "28px", 
-              fontWeight: "bold", 
-              letterSpacing: "2px",
-              textAlign: "left",
-              margin: 0,
-              fontFamily: "Georgia, serif"
-            }}
-          >
+      <div style={{ border: "1.5px solid black", padding: "3mm", height: "100%" }}>
+        {/* Header */}
+        <div style={{ borderBottom: "1.5px solid black", paddingBottom: "2mm", marginBottom: "2mm" }}>
+          <h1 style={{ fontSize: "16px", fontWeight: "bold", letterSpacing: "1.5px", margin: 0, fontFamily: "Georgia, serif" }}>
             RAYN ADAM
           </h1>
-          <p style={{ fontSize: "11px", letterSpacing: "3px", marginTop: "2px" }}>
-            LUXURY PERFUME
-          </p>
+          <p style={{ fontSize: "7px", letterSpacing: "2px", marginTop: "1px" }}>LUXURY PERFUME</p>
         </div>
 
         {/* Order Info */}
-        <table className="w-full border-collapse border-2 border-black">
+        <table style={{ width: "100%", borderCollapse: "collapse", border: "1.5px solid black" }}>
           <tbody>
             <tr>
-              <td className="p-2.5 align-top font-bold w-[70%]">
-                ORDER: {order.order_number}
-                <br />
-                DATE: {new Date(order.created_at).toISOString().split("T")[0]}
-                <br />
-                <div
-                  className="text-xl font-bold uppercase border-[3px] border-black p-2.5 inline-block mt-2.5"
-                >
-                  {isPrepaid ? (
-                    <>PREPAID : INR {totalAmount}</>
-                  ) : (
-                    <>CASH ON DELIVERY : INR {totalAmount}</>
-                  )}
+              <td style={{ padding: "2mm", verticalAlign: "top", fontWeight: "bold", width: "70%", border: "1.5px solid black", fontSize: "8px" }}>
+                ORDER: {order.order_number}<br />
+                DATE: {new Date(order.created_at).toISOString().split("T")[0]}<br />
+                <div style={{
+                  fontSize: "11px",
+                  fontWeight: "bold",
+                  textTransform: "uppercase",
+                  border: "2px solid black",
+                  padding: "2mm",
+                  display: "inline-block",
+                  marginTop: "2mm",
+                }}>
+                  {isPrepaid ? <>PREPAID : ₹{totalAmount}</> : <>COD : ₹{totalAmount}</>}
                 </div>
               </td>
-              <td className="p-2.5 align-top font-bold w-[30%] text-right">
+              <td style={{ padding: "2mm", verticalAlign: "top", fontWeight: "bold", width: "30%", textAlign: "right", border: "1.5px solid black", fontSize: "8px" }}>
                 Items: {order.items.reduce((sum, item) => sum + item.quantity, 0)}
               </td>
             </tr>
           </tbody>
         </table>
 
-        <br />
-
         {/* Address Table */}
-        <table className="w-full border-collapse">
+        <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "2mm" }}>
           <tbody>
             <tr>
-              <td className="p-2.5 align-top font-bold w-1/2 border-2 border-black">
-                <div className="text-base uppercase border-b-2 border-black pb-1.5 mb-1.5">
+              <td style={{ padding: "2mm", verticalAlign: "top", fontWeight: "bold", width: "50%", border: "1.5px solid black", fontSize: "8px" }}>
+                <div style={{ fontSize: "9px", textTransform: "uppercase", borderBottom: "1.5px solid black", paddingBottom: "1mm", marginBottom: "1mm" }}>
                   SHIP TO
                 </div>
-                {order.customer_name}
-                <br />
-                {order.shipping_address.address}
-                <br />
-                {order.shipping_address.city}, {order.shipping_address.state} - {order.shipping_address.zipCode}
-                <br />
-                {order.shipping_address.country}
-                <br />
-                PHONE: {order.customer_phone || "N/A"}
+                {order.customer_name}<br />
+                {order.shipping_address.address}<br />
+                {order.shipping_address.city}, {order.shipping_address.state} - {order.shipping_address.zipCode}<br />
+                {order.shipping_address.country}<br />
+                PH: {order.customer_phone || "N/A"}
               </td>
-              <td className="p-2.5 align-top font-bold w-1/2 border-2 border-black">
-                <div className="text-base uppercase border-b-2 border-black pb-1.5 mb-1.5">
+              <td style={{ padding: "2mm", verticalAlign: "top", fontWeight: "bold", width: "50%", border: "1.5px solid black", fontSize: "8px" }}>
+                <div style={{ fontSize: "9px", textTransform: "uppercase", borderBottom: "1.5px solid black", paddingBottom: "1mm", marginBottom: "1mm" }}>
                   SELLER
                 </div>
-                RAYN ADAM PRIVATE LIMITED
-                <br />
-                Ward No. 21, Door No. 553/1
-                <br />
-                Kavumpadi, Pallikkal, Tirurangadi
-                <br />
-                Malappuram, Kerala – 673634
-                <br />
-                PHONE: +91 99466 47442
+                RAYN ADAM PVT LTD<br />
+                Ward 21, Door 553/1<br />
+                Kavumpadi, Pallikkal<br />
+                Tirurangadi, Malappuram<br />
+                Kerala – 673634<br />
+                PH: +91 99466 47442
               </td>
             </tr>
           </tbody>
         </table>
 
-        <br />
-
         {/* Product Details */}
-        <table className="w-full border-collapse">
+        <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "2mm" }}>
           <thead>
             <tr>
-              <th className="p-2.5 font-bold w-[80%] border-2 border-black text-left">PRODUCT</th>
-              <th className="p-2.5 font-bold w-[20%] border-2 border-black text-right">QTY</th>
+              <th style={{ padding: "1.5mm 2mm", fontWeight: "bold", width: "80%", border: "1.5px solid black", textAlign: "left", fontSize: "8px" }}>PRODUCT</th>
+              <th style={{ padding: "1.5mm 2mm", fontWeight: "bold", width: "20%", border: "1.5px solid black", textAlign: "right", fontSize: "8px" }}>QTY</th>
             </tr>
           </thead>
           <tbody>
             {order.items.map((item, index) => (
               <tr key={index}>
-                <td className="p-2.5 font-bold border-2 border-black">{item.name}</td>
-                <td className="p-2.5 font-bold border-2 border-black text-right">{item.quantity}</td>
+                <td style={{ padding: "1.5mm 2mm", fontWeight: "bold", border: "1.5px solid black", fontSize: "8px" }}>{item.name}</td>
+                <td style={{ padding: "1.5mm 2mm", fontWeight: "bold", border: "1.5px solid black", textAlign: "right", fontSize: "8px" }}>{item.quantity}</td>
               </tr>
             ))}
           </tbody>
         </table>
 
-        <br />
-
-        {/* Total Amount */}
-        <table className="w-full border-collapse border-2 border-black">
+        {/* Total */}
+        <table style={{ width: "100%", borderCollapse: "collapse", border: "1.5px solid black", marginTop: "2mm" }}>
           <tbody>
             <tr>
-              <td className="p-2.5 font-bold text-right text-[15px]">
-                TOTAL : INR {totalAmount}
+              <td style={{ padding: "1.5mm 2mm", fontWeight: "bold", textAlign: "right", fontSize: "9px" }}>
+                TOTAL : ₹{totalAmount}
               </td>
             </tr>
           </tbody>
         </table>
 
-        <br />
-
         {/* Return Address */}
-        <table className="w-full border-collapse border-2 border-black">
+        <table style={{ width: "100%", borderCollapse: "collapse", border: "1.5px solid black", marginTop: "2mm" }}>
           <tbody>
             <tr>
-              <td className="p-2.5 font-bold">
-                <div className="text-base uppercase border-b-2 border-black pb-1.5 mb-1.5">
+              <td style={{ padding: "2mm", fontWeight: "bold", fontSize: "7px" }}>
+                <div style={{ fontSize: "8px", textTransform: "uppercase", borderBottom: "1.5px solid black", paddingBottom: "1mm", marginBottom: "1mm" }}>
                   RETURN ADDRESS
                 </div>
-                <p className="text-center">
-                  RAYN ADAM PRIVATE LIMITED, Ward No. 21, Door No. 553/1, Kavumpadi, Pallikkal, Tirurangadi, Malappuram, Kerala – 673634, PHONE: +91 99466 47442
+                <p style={{ textAlign: "center", margin: 0, lineHeight: "1.3" }}>
+                  RAYN ADAM PVT LTD, Ward 21, Door 553/1, Kavumpadi, Pallikkal, Tirurangadi, Malappuram, Kerala – 673634, PH: +91 99466 47442
                 </p>
               </td>
             </tr>
           </tbody>
         </table>
 
-        <br />
-
         {/* Footer */}
-        <div className="text-center font-bold">THANK YOU FOR SHOPPING</div>
+        <div style={{ textAlign: "center", fontWeight: "bold", marginTop: "2mm", fontSize: "8px" }}>
+          THANK YOU FOR SHOPPING
+        </div>
       </div>
     </div>
   );

@@ -18,199 +18,98 @@ interface ShippingSlipDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const LABEL_STYLES = `
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 9px;
+    font-weight: bold;
+    background: white;
+    color: black;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  table { border-collapse: collapse; width: 100%; }
+  td, th { vertical-align: top; }
+`;
+
 export default function ShippingSlipDialog({ order, open, onOpenChange }: ShippingSlipDialogProps) {
   const slipRef = useRef<HTMLDivElement>(null);
 
   const handlePreview = () => {
     if (!slipRef.current || !order) return;
-    
     const previewWindow = window.open("", "_blank");
     if (!previewWindow) return;
 
-    const content = slipRef.current.innerHTML;
-    
     previewWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Preview - Shipping Slip ${order.order_number}</title>
-          <style>
-            * {
-              margin: 0;
-              padding: 0;
-              box-sizing: border-box;
-            }
-            body {
-              font-family: Arial, Helvetica, sans-serif;
-              font-size: 15px;
-              font-weight: bold;
-              padding: 40px;
-              background: #f5f5f5;
-              color: black;
-              display: flex;
-              justify-content: center;
-              min-height: 100vh;
-            }
-            .preview-container {
-              background: white;
-              padding: 20px;
-              box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-              max-width: 800px;
-              width: 100%;
-              height: fit-content;
-            }
-            table {
-              border-collapse: collapse;
-              width: 100%;
-            }
-            td, th {
-              border: 2px solid black;
-              padding: 10px;
-              vertical-align: top;
-            }
-            .border-2 { border: 2px solid black; }
-            .border-b-2 { border-bottom: 2px solid black; }
-            .p-5 { padding: 20px; }
-            .p-2\\.5 { padding: 10px; }
-            .pb-2\\.5 { padding-bottom: 10px; }
-            .pb-1\\.5 { padding-bottom: 6px; }
-            .mb-4 { margin-bottom: 16px; }
-            .mb-1\\.5 { margin-bottom: 6px; }
-            .mt-2\\.5 { margin-top: 10px; }
-            .w-full { width: 100%; }
-            .w-1\\/2 { width: 50%; }
-            .text-center { text-align: center; }
-            .text-right { text-align: right; }
-            .text-left { text-align: left; }
-            .text-xl { font-size: 20px; }
-            .text-base { font-size: 16px; }
-            .font-bold { font-weight: bold; }
-            .uppercase { text-transform: uppercase; }
-            .inline-block { display: inline-block; }
-            .align-top { vertical-align: top; }
-          </style>
-        </head>
-        <body>
-          <div class="preview-container">
-            ${content}
-          </div>
-        </body>
-      </html>
+      <!DOCTYPE html><html><head>
+        <title>Preview - ${order.order_number}</title>
+        <style>
+          ${LABEL_STYLES}
+          body { padding: 20px; background: #f5f5f5; display: flex; justify-content: center; min-height: 100vh; }
+          .preview-container { background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.15); width: fit-content; }
+        </style>
+      </head><body>
+        <div class="preview-container">${slipRef.current.innerHTML}</div>
+      </body></html>
     `);
     previewWindow.document.close();
   };
 
   const handlePrint = () => {
     if (!slipRef.current) return;
-    
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
 
-    const content = slipRef.current.innerHTML;
-    
     printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Shipping Slip - ${order?.order_number}</title>
-          <style>
-            * {
-              margin: 0;
-              padding: 0;
-              box-sizing: border-box;
-            }
-            body {
-              font-family: Arial, Helvetica, sans-serif;
-              font-size: 15px;
-              font-weight: bold;
-              padding: 20px;
-              background: white;
-              color: black;
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-            }
-            table {
-              border-collapse: collapse;
-              width: 100%;
-            }
-            td, th {
-              border: 2px solid black;
-              padding: 10px;
-              vertical-align: top;
-            }
-            .border-2 { border: 2px solid black; }
-            .border-b-2 { border-bottom: 2px solid black; }
-            .p-5 { padding: 20px; }
-            .p-2\\.5 { padding: 10px; }
-            .pb-2\\.5 { padding-bottom: 10px; }
-            .pb-1\\.5 { padding-bottom: 6px; }
-            .mb-4 { margin-bottom: 16px; }
-            .mb-1\\.5 { margin-bottom: 6px; }
-            .mt-2\\.5 { margin-top: 10px; }
-            .w-full { width: 100%; }
-            .w-1\\/2 { width: 50%; }
-            .text-center { text-align: center; }
-            .text-right { text-align: right; }
-            .text-left { text-align: left; }
-            .text-xl { font-size: 20px; }
-            .text-base { font-size: 16px; }
-            .font-bold { font-weight: bold; }
-            .uppercase { text-transform: uppercase; }
-            .inline-block { display: inline-block; }
-            .align-top { vertical-align: top; }
-            @media print {
-              @page {
-                size: A4;
-                margin: 10mm;
-              }
-              body {
-                padding: 0;
-              }
-            }
-          </style>
-        </head>
-        <body>
-          ${content}
-          <script>
-            window.onload = function() {
-              setTimeout(function() {
-                window.print();
-                window.onafterprint = function() {
-                  window.close();
-                };
-              }, 100);
-            };
-          </script>
-        </body>
-      </html>
+      <!DOCTYPE html><html><head>
+        <title>Shipping Slip - ${order?.order_number}</title>
+        <style>
+          ${LABEL_STYLES}
+          @media print {
+            @page { size: 100mm 150mm; margin: 0; }
+            body { padding: 0; }
+          }
+        </style>
+      </head><body>
+        ${slipRef.current.innerHTML}
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+              window.onafterprint = function() { window.close(); };
+            }, 100);
+          };
+        </script>
+      </body></html>
     `);
     printWindow.document.close();
   };
 
   const handleDownloadPDF = async () => {
     if (!slipRef.current || !order) return;
-
     try {
       const canvas = await html2canvas(slipRef.current, {
-        scale: 2,
+        scale: 3,
         useCORS: true,
         logging: false,
         backgroundColor: "#ffffff",
       });
 
       const imgData = canvas.toDataURL("image/png");
+      // 100mm x 150mm label
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
-        format: "a4",
+        format: [100, 150],
       });
 
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pdfWidth - 20;
+      const pdfWidth = 100;
+      const pdfHeight = 150;
+      const imgWidth = pdfWidth;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      pdf.addImage(imgData, "PNG", 10, 10, imgWidth, Math.min(imgHeight, pdfHeight - 20));
+      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, Math.min(imgHeight, pdfHeight));
       pdf.save(`shipping-slip-${order.order_number}.pdf`);
     } catch (error) {
       console.error("Error generating PDF:", error);
@@ -221,27 +120,27 @@ export default function ShippingSlipDialog({ order, open, onOpenChange }: Shippi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span>Shipping Slip - {order.order_number}</span>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={handlePreview}>
-                <Eye className="h-4 w-4 mr-2" />
+                <Eye className="h-4 w-4 mr-1" />
                 Preview
               </Button>
               <Button variant="outline" size="sm" onClick={handlePrint}>
-                <Printer className="h-4 w-4 mr-2" />
+                <Printer className="h-4 w-4 mr-1" />
                 Print
               </Button>
               <Button variant="default" size="sm" onClick={handleDownloadPDF}>
-                <Download className="h-4 w-4 mr-2" />
-                Download PDF
+                <Download className="h-4 w-4 mr-1" />
+                PDF
               </Button>
             </div>
           </DialogTitle>
         </DialogHeader>
-        <div className="border rounded-lg overflow-hidden mt-4">
+        <div className="border rounded-lg overflow-hidden mt-4 flex justify-center">
           <ShippingSlip ref={slipRef} order={order} />
         </div>
       </DialogContent>
