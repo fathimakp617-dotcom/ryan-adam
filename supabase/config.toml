@@ -122,3 +122,6 @@ verify_jwt = false
 
 [functions.manage-withdrawals]
 verify_jwt = false
+
+[functions.create-manual-order]
+verify_jwt = false

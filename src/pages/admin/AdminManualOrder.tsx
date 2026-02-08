@@ -24,12 +24,13 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, FileText, Package, Download, Loader2, ChevronDown, Check, Clipboard, Sparkles } from "lucide-react";
+import { Plus, Trash2, FileText, Package, Download, Loader2, ChevronDown, Check, Sparkles, Save } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { downloadInvoicePDF, generateShippingLabelPDF } from "@/lib/generateInvoicePDF";
 import { products as catalogProducts, formatPrice } from "@/data/products";
 import { cn } from "@/lib/utils";
 import { usePinCodeLookup } from "@/hooks/usePinCodeLookup";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ManualItem {
   id: string;
@@ -114,6 +115,8 @@ const ProductCombobox = ({
 const AdminManualOrder = () => {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState<"invoice" | "label" | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedOrderId, setSavedOrderId] = useState<string | null>(null);
 
   // Order details
   const [orderNumber, setOrderNumber] = useState(generateManualOrderNumber());
@@ -152,6 +155,7 @@ const AdminManualOrder = () => {
   // Payment
   const [paymentMethod, setPaymentMethod] = useState<string>("cod");
   const [paymentStatus, setPaymentStatus] = useState<string>("pending");
+  const [orderStatus, setOrderStatus] = useState<string>("pending");
 
   // Items
   const [items, setItems] = useState<ManualItem[]>([
@@ -301,9 +305,51 @@ const AdminManualOrder = () => {
     setPostOffice("");
     setPaymentMethod("cod");
     setPaymentStatus("pending");
+    setOrderStatus("pending");
     setItems([{ id: crypto.randomUUID(), name: "", price: 0, quantity: 1 }]);
     setDiscount(0);
     setShipping(0);
+    setSavedOrderId(null);
+  };
+
+  const handleSaveOrder = async () => {
+    if (!validate()) return;
+    setIsSaving(true);
+    try {
+      const sessionToken = localStorage.getItem("admin_session_token");
+      if (!sessionToken) {
+        toast({ title: "Error", description: "Admin session expired. Please re-login.", variant: "destructive" });
+        return;
+      }
+
+      const orderData = getOrderData();
+      const { data, error } = await supabase.functions.invoke("create-manual-order", {
+        headers: { Authorization: `Bearer ${sessionToken}` },
+        body: {
+          ...orderData,
+          order_status: orderStatus,
+          discount,
+          shipping,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) {
+        toast({ title: "Error", description: data.error, variant: "destructive" });
+        return;
+      }
+
+      setSavedOrderId(data.order?.id || null);
+      toast({
+        title: "Order Saved! ✅",
+        description: `Order ${orderData.order_number} has been saved to the database`,
+      });
+    } catch (error: any) {
+      console.error("Save order error:", error);
+      toast({ title: "Error", description: error.message || "Failed to save order", variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Quick fill parser
@@ -550,6 +596,20 @@ const AdminManualOrder = () => {
                   </Select>
                 </div>
               </div>
+              <div>
+                <Label>Order Status</Label>
+                <Select value={orderStatus} onValueChange={setOrderStatus}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="confirmed">Confirmed</SelectItem>
+                    <SelectItem value="shipped">Shipped</SelectItem>
+                    <SelectItem value="delivered">Delivered</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardContent>
           </Card>
 
@@ -771,41 +831,63 @@ const AdminManualOrder = () => {
             </CardContent>
           </Card>
 
-          {/* Download Actions */}
-          <Card>
+          {/* Save & Download Actions */}
+          <Card className={savedOrderId ? "border-green-500/50 bg-green-500/5" : ""}>
             <CardHeader className="pb-4">
-              <CardTitle className="text-base">Generate Documents</CardTitle>
+              <CardTitle className="text-base">
+                {savedOrderId ? "✅ Order Saved" : "Save & Generate"}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <Button
                 className="w-full"
-                onClick={handleDownloadBoth}
-                disabled={!!isGenerating}
+                variant={savedOrderId ? "outline" : "default"}
+                onClick={handleSaveOrder}
+                disabled={isSaving || !!isGenerating}
               >
-                {isGenerating ? (
+                {isSaving ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <Download className="mr-2 h-4 w-4" />
+                  <Save className="mr-2 h-4 w-4" />
                 )}
-                Download Invoice + Shipping Label
+                {savedOrderId ? "Saved to Database" : "Save Order to Database"}
               </Button>
-              <div className="grid grid-cols-2 gap-3">
+
+              <div className="border-t border-border pt-3 space-y-3">
+                <p className="text-xs text-muted-foreground">Generate Documents</p>
                 <Button
+                  className="w-full"
                   variant="outline"
-                  onClick={handleDownloadInvoice}
+                  onClick={handleDownloadBoth}
                   disabled={!!isGenerating}
                 >
-                  <FileText className="mr-2 h-4 w-4" />
-                  Invoice Only
+                  {isGenerating ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="mr-2 h-4 w-4" />
+                  )}
+                  Download Invoice + Shipping Label
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleDownloadLabel}
-                  disabled={!!isGenerating}
-                >
-                  <Package className="mr-2 h-4 w-4" />
-                  Label Only
-                </Button>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownloadInvoice}
+                    disabled={!!isGenerating}
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    Invoice
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownloadLabel}
+                    disabled={!!isGenerating}
+                  >
+                    <Package className="mr-2 h-4 w-4" />
+                    Label
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
