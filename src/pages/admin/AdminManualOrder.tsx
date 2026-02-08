@@ -10,9 +10,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, FileText, Package, Download, Loader2 } from "lucide-react";
+import { Plus, Trash2, FileText, Package, Download, Loader2, ChevronDown, Check } from "lucide-react";
 import { downloadInvoicePDF, generateShippingLabelPDF } from "@/lib/generateInvoicePDF";
+import { products as catalogProducts, formatPrice } from "@/data/products";
+import { cn } from "@/lib/utils";
 
 interface ManualItem {
   id: string;
@@ -28,6 +43,70 @@ const generateManualOrderNumber = () => {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return result;
+};
+
+// Product combobox for selecting from catalog
+const ProductCombobox = ({
+  value,
+  onSelect,
+  onChange,
+}: {
+  value: string;
+  onSelect: (product: { name: string; price: number }) => void;
+  onChange: (name: string) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between mt-1 font-normal h-10"
+        >
+          <span className={cn("truncate", !value && "text-muted-foreground")}>
+            {value || "Select product..."}
+          </span>
+          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[280px] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Search products..." />
+          <CommandList>
+            <CommandEmpty>No product found.</CommandEmpty>
+            <CommandGroup heading="Catalog Products">
+              {catalogProducts.map((product) => (
+                <CommandItem
+                  key={product.id}
+                  value={product.name}
+                  onSelect={() => {
+                    onSelect({ name: product.name, price: product.price });
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === product.name ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">{product.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {product.size} • {formatPrice(product.price)}
+                    </span>
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
 };
 
 const AdminManualOrder = () => {
@@ -400,11 +479,16 @@ const AdminManualOrder = () => {
                 <div key={item.id} className="flex gap-2 items-end">
                   <div className="flex-1">
                     {index === 0 && <Label className="text-xs text-muted-foreground">Product Name</Label>}
-                    <Input
+                    <ProductCombobox
                       value={item.name}
-                      onChange={(e) => updateItem(item.id, "name", e.target.value)}
-                      placeholder="Product name"
-                      className="mt-1"
+                      onSelect={(product) => {
+                        setItems(items.map((i) =>
+                          i.id === item.id
+                            ? { ...i, name: product.name, price: product.price }
+                            : i
+                        ));
+                      }}
+                      onChange={(name) => updateItem(item.id, "name", name)}
                     />
                   </div>
                   <div className="w-24">
