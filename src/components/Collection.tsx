@@ -1,12 +1,15 @@
 import { forwardRef, memo } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { products, formatPrice } from "@/data/products";
+import { formatPrice } from "@/data/products";
+import { useDbProducts } from "@/hooks/useDbProducts";
 import { fadeInUp, staggerContainer, staggerItem, lineReveal } from "@/lib/animations";
 import { Badge } from "@/components/ui/badge";
 import { useProductStock, isProductSoldOut } from "@/hooks/useProductStock";
+import { Loader2 } from "lucide-react";
 
 const Collection = forwardRef<HTMLDivElement>((_, ref) => {
+  const { data: products = [], isLoading } = useDbProducts();
   const featuredProducts = products.slice(0, 3);
   const { data: stockMap } = useProductStock();
 
@@ -42,7 +45,15 @@ const Collection = forwardRef<HTMLDivElement>((_, ref) => {
           />
         </motion.div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        )}
+
         {/* Products Grid */}
+        {!isLoading && (
         <motion.div 
           initial="hidden"
           whileInView="visible"
@@ -106,6 +117,7 @@ const Collection = forwardRef<HTMLDivElement>((_, ref) => {
             </motion.div>
           ))}
         </motion.div>
+        )}
 
         {/* Action Buttons */}
         <motion.div
