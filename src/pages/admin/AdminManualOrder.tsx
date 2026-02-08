@@ -225,7 +225,13 @@ const AdminManualOrder = () => {
   const saveOrderToDb = async (): Promise<boolean> => {
     if (savedOrderId) return true; // Already saved
     try {
-      const sessionToken = localStorage.getItem("admin_session_token");
+      const stored = sessionStorage.getItem("rayn_admin_session");
+      if (!stored) {
+        toast({ title: "Error", description: "Admin session expired. Please re-login.", variant: "destructive" });
+        return false;
+      }
+      const session = JSON.parse(stored);
+      const sessionToken = session.token;
       if (!sessionToken) {
         toast({ title: "Error", description: "Admin session expired. Please re-login.", variant: "destructive" });
         return false;
