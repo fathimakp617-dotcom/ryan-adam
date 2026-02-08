@@ -289,7 +289,6 @@ const AdminLayout = () => {
     { title: "Coupons", url: "/admin/coupons", icon: Ticket },
     { title: "Activity Logs", url: "/admin/activity-logs", icon: Activity },
     { title: "Staff", url: "/admin/staff", icon: UserCog },
-    { title: "My Account", url: "/admin/account", icon: User },
     { title: "Manual Order", url: "/admin/manual-order", icon: FilePlus },
   ];
 
@@ -338,16 +337,29 @@ const AdminLayout = () => {
               </SidebarGroupContent>
             </SidebarGroup>
 
-            {/* Bottom Actions */}
-            <div className="mt-auto px-4 py-4 border-t border-border">
-              <div className="text-sm text-muted-foreground mb-3 truncate">
-                {adminSession.email}
-              </div>
+            {/* Bottom Actions - Admin Profile & Logout */}
+            <div className="mt-auto px-3 py-4 border-t border-border space-y-2">
+              <Link
+                to="/admin/account"
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                  isActive("/admin/account")
+                    ? "bg-primary/10 text-primary"
+                    : "hover:bg-muted"
+                }`}
+              >
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <User className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">My Account</p>
+                  <p className="text-xs text-muted-foreground truncate">{adminSession.email}</p>
+                </div>
+              </Link>
               <Button 
-                variant="outline" 
+                variant="ghost" 
                 size="sm" 
                 onClick={handleLogout}
-                className="w-full justify-start"
+                className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
               >
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign Out
