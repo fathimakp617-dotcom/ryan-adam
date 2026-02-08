@@ -306,9 +306,8 @@ const AdminManualOrder = () => {
     setShipping(0);
   };
 
-  // Quick fill parser — runs automatically on change
+  // Quick fill parser
   const [quickFillText, setQuickFillText] = useState("");
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const indianStates = [
     "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
@@ -321,70 +320,135 @@ const AdminManualOrder = () => {
     "Lakshadweep", "Puducherry"
   ];
 
-  const parseAndFill = useCallback((text: string) => {
-    if (!text.trim()) return;
+  const parseQuickFill = () => {
+    const raw = quickFillText.trim();
+    if (!raw) {
+      toast({ title: "Empty", description: "Paste customer details first", variant: "destructive" });
+      return;
+    }
 
-    const lines = text.split(/\n/).map(l => l.trim()).filter(Boolean);
+    // Normalize: strip common labels like "Name:", "Phone:", "Address:", etc.
+    const cleaned = raw
+      .replace(/^(name|customer|full\s?name|contact|person)\s*[:=\->\|]\s*/gmi, "")
+      .replace(/^(phone|mobile|mob|cell|tel|number|ph)\s*[:=\->\|]\s*/gmi, "PHONE_TAG:")
+      .replace(/^(email|e-mail|mail)\s*[:=\->\|]\s*/gmi, "EMAIL_TAG:")
+      .replace(/^(address|addr|shipping\s?address|delivery\s?address|street)\s*[:=\->\|]\s*/gmi, "ADDR_TAG:")
+      .replace(/^(city|town|district)\s*[:=\->\|]\s*/gmi, "CITY_TAG:")
+      .replace(/^(state|province)\s*[:=\->\|]\s*/gmi, "STATE_TAG:")
+      .replace(/^(pin\s?code|pincode|zip\s?code|zip|postal\s?code|postal)\s*[:=\->\|]\s*/gmi, "PIN_TAG:")
+      .replace(/^(country)\s*[:=\->\|]\s*/gmi, "COUNTRY_TAG:");
+
+    const segments = cleaned.split(/\n/).map(l => l.trim()).filter(Boolean);
+
     const phoneRegex = /(?:\+?91[\s-]?)?(?:0)?([6-9]\d{4}[\s-]?\d{5}|\d{10})/;
     const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
     const pinRegex = /\b[1-9]\d{5}\b/;
 
-    // Phone
-    const phoneMatch = text.match(phoneRegex);
-    if (phoneMatch) {
-      const rawPhone = phoneMatch[0].replace(/[\s-]/g, "");
-      setCustomerPhone(rawPhone.startsWith("+91") ? rawPhone : rawPhone.startsWith("91") && rawPhone.length > 10 ? `+${rawPhone}` : `+91${rawPhone.replace(/^0/, "")}`);
-    }
+    let foundName = "";
+    let foundPhone = "";
+    let foundEmail = "";
+    let foundPin = "";
+    let foundState = "";
+    let foundCity = "";
+    let foundAddress: string[] = [];
 
-    // Email
-    const emailMatch = text.match(emailRegex);
-    if (emailMatch) setCustomerEmail(emailMatch[0]);
+    for (const seg of segments) {
+      // Tagged lines
+      if (seg.startsWith("PHONE_TAG:")) {
+        const ph = seg.replace("PHONE_TAG:", "").trim();
+        const m = ph.match(phoneRegex);
+        foundPhone = m ? m[0] : ph;
+        continue;
+      }
+      if (seg.startsWith("EMAIL_TAG:")) {
+        foundEmail = seg.replace("EMAIL_TAG:", "").trim();
+        continue;
+      }
+      if (seg.startsWith("ADDR_TAG:")) {
+        foundAddress.push(seg.replace("ADDR_TAG:", "").trim());
+        continue;
+      }
+      if (seg.startsWith("CITY_TAG:")) {
+        foundCity = seg.replace("CITY_TAG:", "").trim();
+        continue;
+      }
+      if (seg.startsWith("STATE_TAG:")) {
+        foundState = seg.replace("STATE_TAG:", "").trim();
+        continue;
+      }
+      if (seg.startsWith("PIN_TAG:")) {
+        const p = seg.replace("PIN_TAG:", "").trim();
+        const m = p.match(pinRegex);
+        foundPin = m ? m[0] : p;
+        continue;
+      }
+      if (seg.startsWith("COUNTRY_TAG:")) {
+        setCountry(seg.replace("COUNTRY_TAG:", "").trim());
+        continue;
+      }
 
-    // PIN code + auto lookup
-    const pinMatch = text.match(pinRegex);
-    if (pinMatch) {
-      handlePinCodeChange(pinMatch[0]);
-    }
-
-    // State
-    const lowerText = text.toLowerCase();
-    for (const s of indianStates) {
-      if (lowerText.includes(s.toLowerCase())) {
-        setState(s);
-        break;
+      // Auto-detect untagged lines
+      if (!foundPhone && phoneRegex.test(seg) && !emailRegex.test(seg)) {
+        const m = seg.match(phoneRegex);
+        if (m) { foundPhone = m[0]; continue; }
+      }
+      if (!foundEmail && emailRegex.test(seg)) {
+        const m = seg.match(emailRegex);
+        if (m) { foundEmail = m[0]; continue; }
+      }
+      if (!foundPin && pinRegex.test(seg)) {
+        const m = seg.match(pinRegex);
+        if (m) foundPin = m[0];
+      }
+      if (!foundState) {
+        const lower = seg.toLowerCase();
+        for (const s of indianStates) {
+          if (lower.includes(s.toLowerCase())) {
+            foundState = s;
+            break;
+          }
+        }
+      }
+      // Name — first text-only line
+      if (!foundName && !phoneRegex.test(seg) && !emailRegex.test(seg) && !/\d{5,}/.test(seg) && seg.length < 60) {
+        foundName = seg;
+        continue;
+      }
+      if (seg !== foundName) {
+        foundAddress.push(seg);
       }
     }
 
-    // Name — first line without digits/email
-    const nameLine = lines.find(l => !phoneRegex.test(l) && !emailRegex.test(l) && !/\d{5,}/.test(l) && l.length < 60);
-    if (nameLine) setCustomerName(nameLine);
-
-    // Address — remaining lines
-    const usedValues = [phoneMatch?.[0], emailMatch?.[0], pinMatch?.[0], nameLine].filter(Boolean);
-    const addressLines = lines.filter(l => {
-      const lower = l.toLowerCase();
-      return !usedValues.some(v => v && lower.includes(v!.toLowerCase()));
-    });
-
-    if (addressLines.length >= 2) {
-      setAddress(addressLines.slice(0, -1).join(", "));
-      const lastLine = addressLines[addressLines.length - 1];
-      const cityCandidate = lastLine.replace(pinRegex, "").replace(/,\s*$/, "").trim();
-      if (cityCandidate && !indianStates.some(s => s.toLowerCase() === cityCandidate.toLowerCase())) {
-        setCity(cityCandidate);
-      }
-    } else if (addressLines.length === 1) {
-      setAddress(addressLines[0]);
+    // Apply parsed values
+    if (foundName) setCustomerName(foundName);
+    if (foundPhone) {
+      const rp = foundPhone.replace(/[\s-]/g, "");
+      setCustomerPhone(rp.startsWith("+91") ? rp : rp.startsWith("91") && rp.length > 10 ? `+${rp}` : `+91${rp.replace(/^0/, "")}`);
     }
-  }, [handlePinCodeChange]);
+    if (foundEmail) setCustomerEmail(foundEmail);
+    if (foundPin) handlePinCodeChange(foundPin);
+    if (foundState) setState(foundState);
 
-  const handleQuickFillChange = useCallback((value: string) => {
-    setQuickFillText(value);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      parseAndFill(value);
-    }, 500);
-  }, [parseAndFill]);
+    if (foundAddress.length > 0) {
+      if (!foundCity && foundAddress.length >= 2) {
+        const lastLine = foundAddress[foundAddress.length - 1];
+        const cityCandidate = lastLine
+          .replace(pinRegex, "")
+          .replace(/,\s*$/, "")
+          .trim()
+          .split(",")
+          .map(s => s.trim())
+          .filter(s => !indianStates.some(st => st.toLowerCase() === s.toLowerCase()) && s.length > 0);
+        if (cityCandidate.length > 0) foundCity = cityCandidate[0];
+        setAddress(foundAddress.slice(0, -1).join(", "));
+      } else {
+        setAddress(foundAddress.join(", "));
+      }
+    }
+    if (foundCity) setCity(foundCity);
+
+    toast({ title: "Auto-filled!", description: "Review the parsed details below" });
+  };
 
   return (
     <div className="space-y-6">
@@ -405,20 +469,23 @@ const AdminManualOrder = () => {
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
-            Quick Fill — Paste or Type Customer Details
+            Quick Fill — Paste Customer Details
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <Textarea
             value={quickFillText}
-            onChange={(e) => handleQuickFillChange(e.target.value)}
-            placeholder={"Paste or type details here — fields auto-fill as you go:\nRahul Sharma\n+91 98765 43210\nrahul@email.com\n42, MG Road, Sector 5\nMumbai, Maharashtra 400001"}
-            rows={4}
+            onChange={(e) => setQuickFillText(e.target.value)}
+            placeholder={"Paste any format — labeled or plain:\n\nRahul Sharma\n+91 98765 43210\n42, MG Road, Sector 5\nMumbai, Maharashtra 400001\n\nOR: Name: Rahul | Phone: 9876543210 | Address: 42 MG Road | City: Mumbai | PIN: 400001"}
+            rows={5}
             className="bg-background text-sm"
           />
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">Fields fill automatically as you type or paste</p>
-            <Button size="sm" variant="ghost" onClick={() => { setQuickFillText(""); }} className="h-7 text-xs">
+          <div className="flex gap-2">
+            <Button size="sm" onClick={parseQuickFill} className="gap-1.5">
+              <Sparkles className="h-3.5 w-3.5" />
+              Auto Fill Details
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setQuickFillText("")}>
               Clear
             </Button>
           </div>
