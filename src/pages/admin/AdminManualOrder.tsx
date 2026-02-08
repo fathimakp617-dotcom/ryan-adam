@@ -24,7 +24,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, FileText, Package, Download, Loader2, ChevronDown, Check, Sparkles, Save } from "lucide-react";
+import { Plus, Trash2, FileText, Package, Download, Loader2, ChevronDown, Check, Sparkles } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { downloadInvoicePDF, generateShippingLabelPDF } from "@/lib/generateInvoicePDF";
 import { products as catalogProducts, formatPrice } from "@/data/products";
@@ -336,15 +336,6 @@ const AdminManualOrder = () => {
     }
   };
 
-  const handleSaveOnly = async () => {
-    if (!validate()) return;
-    setIsSaving(true);
-    const saved = await saveOrderToDb();
-    if (saved) {
-      toast({ title: "Order Saved! ✅", description: `Order ${orderNumber} saved to database` });
-    }
-    setIsSaving(false);
-  };
 
   const handleReset = () => {
     setOrderNumber(generateManualOrderNumber());
@@ -847,63 +838,49 @@ const AdminManualOrder = () => {
             </CardContent>
           </Card>
 
-          {/* Save & Download Actions */}
+          {/* Download Actions */}
           <Card className={savedOrderId ? "border-green-500/50 bg-green-500/5" : ""}>
             <CardHeader className="pb-4">
               <CardTitle className="text-base">
-                {savedOrderId ? "✅ Order Saved" : "Save & Generate"}
+                {savedOrderId ? "✅ Order Saved & Generated" : "Generate Documents"}
               </CardTitle>
+              {!savedOrderId && (
+                <p className="text-xs text-muted-foreground">Orders are automatically saved to database</p>
+              )}
             </CardHeader>
             <CardContent className="space-y-3">
               <Button
                 className="w-full"
-                variant={savedOrderId ? "outline" : "default"}
-                onClick={handleSaveOnly}
-                disabled={isSaving || !!isGenerating}
+                variant="outline"
+                onClick={handleDownloadBoth}
+                disabled={!!isGenerating}
               >
-                {isSaving ? (
+                {isGenerating ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <Save className="mr-2 h-4 w-4" />
+                  <Download className="mr-2 h-4 w-4" />
                 )}
-                {savedOrderId ? "Saved to Database" : "Save Order to Database"}
+                Download Invoice + Shipping Label
               </Button>
-
-              <div className="border-t border-border pt-3 space-y-3">
-                <p className="text-xs text-muted-foreground">Generate Documents</p>
+              <div className="grid grid-cols-2 gap-3">
                 <Button
-                  className="w-full"
                   variant="outline"
-                  onClick={handleDownloadBoth}
+                  size="sm"
+                  onClick={handleDownloadInvoice}
                   disabled={!!isGenerating}
                 >
-                  {isGenerating ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Download className="mr-2 h-4 w-4" />
-                  )}
-                  Download Invoice + Shipping Label
+                  <FileText className="mr-2 h-4 w-4" />
+                  Invoice
                 </Button>
-                <div className="grid grid-cols-2 gap-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDownloadInvoice}
-                    disabled={!!isGenerating}
-                  >
-                    <FileText className="mr-2 h-4 w-4" />
-                    Invoice
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDownloadLabel}
-                    disabled={!!isGenerating}
-                  >
-                    <Package className="mr-2 h-4 w-4" />
-                    Label
-                  </Button>
-                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadLabel}
+                  disabled={!!isGenerating}
+                >
+                  <Package className="mr-2 h-4 w-4" />
+                  Label
+                </Button>
               </div>
             </CardContent>
           </Card>
