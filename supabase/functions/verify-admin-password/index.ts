@@ -123,7 +123,7 @@ serve(async (req) => {
     if (dbStaff) {
       // Staff member found in database
       if (!dbStaff.is_active) {
-        console.log(`Login denied for: ${normalizedEmail} - account deactivated`);
+        console.log("Login denied: account deactivated");
         return new Response(
           JSON.stringify({ error: "Account is deactivated" }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -137,7 +137,7 @@ serve(async (req) => {
         // Fallback to ADMIN_PASSWORD from environment for legacy accounts
         passwordValid = adminPassword ? password === adminPassword : false;
         needsRehash = passwordValid; // Rehash on next successful login
-        console.log(`Using env-based password verification for: ${normalizedEmail}`);
+        console.log("Using env-based password verification");
       } else if (isPBKDF2Hash(dbStaff.password_hash)) {
         // PBKDF2 hash - use our verify function
         passwordValid = await verifyPBKDF2Password(password, dbStaff.password_hash);
@@ -147,17 +147,17 @@ serve(async (req) => {
         const legacyHash = await legacyHashPassword(password);
         passwordValid = legacyHash === dbStaff.password_hash;
         needsRehash = passwordValid;
-        console.log(`Legacy bcrypt detected, trying fallback for: ${normalizedEmail}`);
+        console.log("Legacy bcrypt detected, trying fallback");
       } else {
         // Legacy SHA-256 hash - verify and mark for rehash
         const legacyHash = await legacyHashPassword(password);
         passwordValid = legacyHash === dbStaff.password_hash;
         needsRehash = passwordValid; // Rehash on next successful login
-        console.log(`Using legacy SHA-256 verification for: ${normalizedEmail}`);
+        console.log("Using legacy SHA-256 verification");
       }
       
       if (!passwordValid) {
-        console.log(`Invalid password attempt for DB staff: ${normalizedEmail}`);
+        console.log("Invalid password attempt for DB staff");
         return new Response(
           JSON.stringify({ error: "Invalid credentials" }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -172,7 +172,7 @@ serve(async (req) => {
             .from("staff_members")
             .update({ password_hash: pbkdf2Hash })
             .eq("id", dbStaff.id);
-          console.log(`Password upgraded to PBKDF2 for: ${normalizedEmail}`);
+          console.log("Password upgraded to PBKDF2");
         } catch (rehashError) {
           console.error("Failed to rehash password:", rehashError);
         }
@@ -204,7 +204,7 @@ serve(async (req) => {
         console.error("Failed to store session:", sessionError);
       }
 
-      console.log(`${dbStaff.role.toUpperCase()} login successful for DB staff: ${normalizedEmail}`);
+      console.log(`${dbStaff.role.toUpperCase()} login successful for DB staff`);
 
       // Log the login activity
       try {
@@ -255,7 +255,7 @@ serve(async (req) => {
 
     // Check if email is in either list
     if (!role) {
-      console.log(`Login denied for: ${normalizedEmail} - not in any access list`);
+      console.log("Login denied: not in any access list");
       return new Response(
         JSON.stringify({ error: "Invalid credentials" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -264,7 +264,7 @@ serve(async (req) => {
 
     // Verify password (same password for both roles from env)
     if (password !== adminPassword) {
-      console.log(`Invalid password attempt for: ${normalizedEmail}`);
+      console.log("Invalid password attempt (env-based)");
       return new Response(
         JSON.stringify({ error: "Invalid credentials" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -297,7 +297,7 @@ serve(async (req) => {
       console.error("Failed to store session:", sessionError);
     }
 
-    console.log(`${role.toUpperCase()} login successful for: ${normalizedEmail}`);
+    console.log(`${role.toUpperCase()} login successful (env-based)`);
 
     // Log the login activity
     try {
@@ -311,7 +311,7 @@ serve(async (req) => {
           source: "environment",
         },
       });
-      console.log(`Activity logged: ${role} login for ${normalizedEmail}`);
+      console.log(`Activity logged: ${role} login`);
     } catch (logError) {
       console.error("Failed to log activity:", logError);
     }

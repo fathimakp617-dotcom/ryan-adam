@@ -1279,10 +1279,19 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // This is an internal-only endpoint - verify it's called with service role key
+    const authHeader = req.headers.get("authorization");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!authHeader || !supabaseServiceKey || authHeader !== `Bearer ${supabaseServiceKey}`) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const orderData: OrderConfirmationRequest = await req.json();
     
-    console.log("Sending order confirmation email to:", orderData.customer_email);
-    console.log("Order number:", orderData.order_number);
+    console.log("Sending order confirmation for order:", orderData.order_number);
 
     const emailHTML = generateOrderEmailHTML(orderData);
     
@@ -1353,9 +1362,7 @@ Thank you for shopping with Rayn Adam!
     // Combine and deduplicate all recipients
     const allRecipients = [...new Set([...adminEmails, ...shippingEmails])];
 
-    console.log("Admin emails configured:", adminEmails.length > 0 ? adminEmails.join(", ") : "NONE");
-    console.log("Shipping emails configured:", shippingEmails.length > 0 ? shippingEmails.join(", ") : "NONE");
-    console.log("Total unique recipients:", allRecipients.length);
+    console.log("Admin notification recipients configured:", allRecipients.length);
 
     if (allRecipients.length > 0) {
       try {

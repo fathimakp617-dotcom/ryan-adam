@@ -129,12 +129,12 @@ serve(async (req) => {
       payment_method: order.payment_method,
     };
 
-    // Call send-order-confirmation function
+    // Call send-order-confirmation function with service role key (internal call)
     const response = await fetch(`${supabaseUrl}/functions/v1/send-order-confirmation`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${supabaseAnonKey}`,
+        'Authorization': `Bearer ${supabaseServiceKey}`,
       },
       body: JSON.stringify(emailPayload),
     });
