@@ -17,7 +17,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Package, LayoutDashboard, LogOut, ArrowLeft, Mail, Lock, Loader2, Shield, Users, UserCheck, Activity, UserCog, User, Ticket, RotateCcw, Receipt, Star, ShoppingBag, IndianRupee } from "lucide-react";
+import { Package, LayoutDashboard, LogOut, ArrowLeft, Mail, Lock, Loader2, Shield, Users, UserCheck, Activity, UserCog, User, Ticket, RotateCcw, Receipt, Star, ShoppingBag, IndianRupee, FilePlus } from "lucide-react";
 import { motion } from "framer-motion";
 
 const ADMIN_SESSION_KEY = "rayn_admin_session";
@@ -290,6 +290,7 @@ const AdminLayout = () => {
     { title: "Activity Logs", url: "/admin/activity-logs", icon: Activity },
     { title: "Staff", url: "/admin/staff", icon: UserCog },
     { title: "My Account", url: "/admin/account", icon: User },
+    { title: "Manual Order", url: "/admin/manual-order", icon: FilePlus },
   ];
 
   const isActive = (path: string) => {
