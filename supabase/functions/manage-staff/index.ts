@@ -279,6 +279,11 @@ serve(async (req) => {
           );
         }
 
+        // Sanitize staff name to prevent XSS
+        const sanitizedName = name
+          ? name.trim().replace(/[<>{}[\]\\`]/g, '').slice(0, 100)
+          : null;
+
         // Check if email already exists
         const { data: existing } = await supabase
           .from("staff_members")
@@ -300,7 +305,7 @@ serve(async (req) => {
           .from("staff_members")
           .insert({
             email: email.toLowerCase().trim(),
-            name: name || null,
+            name: sanitizedName,
             role,
             password_hash: passwordHash,
             created_by: admin_email,

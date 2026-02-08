@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
+import { validateSession } from "../_shared/session-validator.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -63,6 +64,17 @@ const handler = async (req: Request): Promise<Response> => {
     // Determine actor role
     const actorRole = adminEmails.includes(admin_email.toLowerCase()) ? "admin" : "shipping";
 
+    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Validate session token
+    if (!await validateSession(supabaseClient, admin_email, admin_token)) {
+      console.log(`Invalid or expired session for: ${admin_email}`);
+      return new Response(
+        JSON.stringify({ error: "Session expired. Please log in again." }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     console.log(`Access granted for: ${admin_email} (${actorRole})`);
 
     if (!order_id || !new_status) {
@@ -79,8 +91,6 @@ const handler = async (req: Request): Promise<Response> => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
 
     // Fetch the order
     const { data: order, error: fetchError } = await supabaseClient
