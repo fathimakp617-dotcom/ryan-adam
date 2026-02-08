@@ -207,6 +207,16 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // This is an internal-only endpoint - verify it's called with service role key
+    const authHeader = req.headers.get("authorization");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!authHeader || !supabaseServiceKey || authHeader !== `Bearer ${supabaseServiceKey}`) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     
     if (!resendApiKey) {
@@ -218,7 +228,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const request: StatusUpdateRequest = await req.json();
-    console.log(`Sending ${request.new_status} email to ${request.customer_email} for order ${request.order_number}`);
+    console.log(`Sending ${request.new_status} email for order ${request.order_number}`);
 
     const resend = new Resend(resendApiKey);
     const config = getStatusConfig(request.new_status);
