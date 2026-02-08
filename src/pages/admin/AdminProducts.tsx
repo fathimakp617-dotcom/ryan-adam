@@ -3,9 +3,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -23,14 +20,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Package, Loader2, AlertCircle, Upload, Image, X, Eye } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, AlertCircle, Upload, Image } from "lucide-react";
+import ProductForm, { emptyFormData, type ProductFormData } from "@/components/admin/ProductForm";
 
 interface Product {
   id: string;
@@ -68,29 +59,10 @@ const AdminProducts = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const formFileInputRef = useRef<HTMLInputElement>(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string>("");
-  const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
-  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [uploadingFor, setUploadingFor] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    id: "",
-    name: "",
-    description: "",
-    price: "",
-    original_price: "",
-    discount_percent: "50",
-    stock_quantity: "100",
-    category: "woody",
-    size: "100ml",
-    image_url: "",
-    is_active: true,
-    notes_top: "",
-    notes_middle: "",
-    notes_base: "",
-  });
+  const [formData, setFormData] = useState<ProductFormData>(emptyFormData);
 
   const { data: products, isLoading } = useQuery({
     queryKey: ["admin-products"],
@@ -113,7 +85,6 @@ const AdminProducts = () => {
       const session = getAdminSession();
       if (!session) throw new Error("Not authenticated");
 
-      // Convert file to base64
       const base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
@@ -148,33 +119,32 @@ const AdminProducts = () => {
     },
   });
 
+  const buildProductPayload = (fd: ProductFormData) => ({
+    id: fd.id.trim(),
+    name: fd.name.trim(),
+    description: fd.description.trim(),
+    price: parseFloat(fd.price) || 0,
+    original_price: parseFloat(fd.original_price) || 0,
+    discount_percent: parseInt(fd.discount_percent) || 0,
+    stock_quantity: parseInt(fd.stock_quantity) || 0,
+    category: fd.category,
+    size: fd.size,
+    image_url: fd.image_url.trim(),
+    is_active: fd.is_active,
+    notes: {
+      top: fd.notes_top.split(",").map((n) => n.trim()).filter(Boolean),
+      middle: fd.notes_middle.split(",").map((n) => n.trim()).filter(Boolean),
+      base: fd.notes_base.split(",").map((n) => n.trim()).filter(Boolean),
+    },
+  });
+
   const createMutation = useMutation({
-    mutationFn: async (product: typeof formData) => {
+    mutationFn: async (fd: ProductFormData) => {
       const session = getAdminSession();
       if (!session) throw new Error("Not authenticated");
 
       const { data, error } = await supabase.functions.invoke("manage-products", {
-        body: {
-          action: "create",
-          product: {
-            id: product.id,
-            name: product.name,
-            description: product.description,
-            price: parseFloat(product.price),
-            original_price: parseFloat(product.original_price),
-            discount_percent: parseInt(product.discount_percent),
-            stock_quantity: parseInt(product.stock_quantity),
-            category: product.category,
-            size: product.size,
-            image_url: product.image_url,
-            is_active: product.is_active,
-            notes: {
-              top: product.notes_top.split(",").map(n => n.trim()).filter(Boolean),
-              middle: product.notes_middle.split(",").map(n => n.trim()).filter(Boolean),
-              base: product.notes_base.split(",").map(n => n.trim()).filter(Boolean),
-            },
-          },
-        },
+        body: { action: "create", product: buildProductPayload(fd) },
         headers: { Authorization: `Bearer ${session.token}` },
       });
 
@@ -184,41 +154,21 @@ const AdminProducts = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       setIsAddDialogOpen(false);
-      resetForm();
+      setFormData(emptyFormData);
       toast({ title: "Product created successfully" });
     },
     onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Error creating product", description: error.message, variant: "destructive" });
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (product: typeof formData & { id: string }) => {
+    mutationFn: async (fd: ProductFormData) => {
       const session = getAdminSession();
       if (!session) throw new Error("Not authenticated");
 
       const { data, error } = await supabase.functions.invoke("manage-products", {
-        body: {
-          action: "update",
-          product: {
-            id: product.id,
-            name: product.name,
-            description: product.description,
-            price: parseFloat(product.price),
-            original_price: parseFloat(product.original_price),
-            discount_percent: parseInt(product.discount_percent),
-            stock_quantity: parseInt(product.stock_quantity),
-            category: product.category,
-            size: product.size,
-            image_url: product.image_url,
-            is_active: product.is_active,
-            notes: {
-              top: product.notes_top.split(",").map(n => n.trim()).filter(Boolean),
-              middle: product.notes_middle.split(",").map(n => n.trim()).filter(Boolean),
-              base: product.notes_base.split(",").map(n => n.trim()).filter(Boolean),
-            },
-          },
-        },
+        body: { action: "update", product: buildProductPayload(fd) },
         headers: { Authorization: `Bearer ${session.token}` },
       });
 
@@ -228,11 +178,11 @@ const AdminProducts = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       setEditingProduct(null);
-      resetForm();
+      setFormData(emptyFormData);
       toast({ title: "Product updated successfully" });
     },
     onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Error updating product", description: error.message, variant: "destructive" });
     },
   });
 
@@ -280,27 +230,6 @@ const AdminProducts = () => {
     },
   });
 
-  const resetForm = () => {
-    setFormData({
-      id: "",
-      name: "",
-      description: "",
-      price: "",
-      original_price: "",
-      discount_percent: "50",
-      stock_quantity: "100",
-      category: "woody",
-      size: "100ml",
-      image_url: "",
-      is_active: true,
-      notes_top: "",
-      notes_middle: "",
-      notes_base: "",
-    });
-    setImagePreviewUrl("");
-    setPendingImageFile(null);
-  };
-
   const openEditDialog = (product: Product) => {
     setEditingProduct(product);
     setFormData({
@@ -319,42 +248,28 @@ const AdminProducts = () => {
       notes_middle: product.notes?.middle?.join(", ") || "",
       notes_base: product.notes?.base?.join(", ") || "",
     });
-    setImagePreviewUrl("");
-    setPendingImageFile(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // If there's a pending image file, we need to upload it first after creating/updating the product
-    if (pendingImageFile) {
-      const productId = editingProduct ? editingProduct.id : formData.id;
-      
-      if (editingProduct) {
-        // Update product first, then upload image
-        updateMutation.mutate({ ...formData, id: editingProduct.id }, {
-          onSuccess: () => {
-            // Upload the image after product is updated
-            uploadImageMutation.mutate({ productId, file: pendingImageFile });
-          }
-        });
-      } else {
-        // Create product first, then upload image
-        createMutation.mutate(formData, {
-          onSuccess: () => {
-            // Upload the image after product is created
-            uploadImageMutation.mutate({ productId, file: pendingImageFile });
-          }
-        });
+  const handleFormSubmit = (fd: ProductFormData, pendingImageFile: File | null) => {
+    const productId = editingProduct ? editingProduct.id : fd.id;
+
+    const afterSuccess = () => {
+      if (pendingImageFile && productId) {
+        uploadImageMutation.mutate({ productId, file: pendingImageFile });
       }
+    };
+
+    if (editingProduct) {
+      updateMutation.mutate(fd, { onSuccess: afterSuccess });
     } else {
-      // No pending image, just create/update normally
-      if (editingProduct) {
-        updateMutation.mutate({ ...formData, id: editingProduct.id });
-      } else {
-        createMutation.mutate(formData);
-      }
+      createMutation.mutate(fd, { onSuccess: afterSuccess });
     }
+  };
+
+  const handleCancel = () => {
+    setIsAddDialogOpen(false);
+    setEditingProduct(null);
+    setFormData(emptyFormData);
   };
 
   const handleImageUpload = (productId: string, file: File) => {
@@ -370,10 +285,6 @@ const AdminProducts = () => {
     uploadImageMutation.mutate({ productId, file });
   };
 
-  const generateSlug = (name: string) => {
-    return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -382,300 +293,9 @@ const AdminProducts = () => {
     );
   }
 
-  const ProductForm = () => (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="name">Product Name</Label>
-          <Input
-            id="name"
-            value={formData.name}
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                name: e.target.value,
-                id: editingProduct ? formData.id : generateSlug(e.target.value),
-              });
-            }}
-            placeholder="Noir Intense"
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="id">Product ID (slug)</Label>
-          <Input
-            id="id"
-            value={formData.id}
-            onChange={(e) => setFormData({ ...formData, id: e.target.value })}
-            placeholder="noir-intense"
-            required
-            disabled={!!editingProduct}
-          />
-        </div>
-      </div>
-
-      <div>
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          placeholder="A bold, mysterious fragrance..."
-          rows={3}
-        />
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        <div>
-          <Label htmlFor="original_price">Original Price (₹)</Label>
-          <Input
-            id="original_price"
-            type="number"
-            value={formData.original_price}
-            onChange={(e) => setFormData({ ...formData, original_price: e.target.value })}
-            placeholder="888"
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="discount_percent">Discount %</Label>
-          <Input
-            id="discount_percent"
-            type="number"
-            value={formData.discount_percent}
-            onChange={(e) => setFormData({ ...formData, discount_percent: e.target.value })}
-            placeholder="50"
-          />
-        </div>
-        <div>
-          <Label htmlFor="price">Final Price (₹)</Label>
-          <Input
-            id="price"
-            type="number"
-            value={formData.price}
-            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-            placeholder="444"
-            required
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        <div>
-          <Label htmlFor="stock_quantity">Stock Quantity</Label>
-          <Input
-            id="stock_quantity"
-            type="number"
-            value={formData.stock_quantity}
-            onChange={(e) => setFormData({ ...formData, stock_quantity: e.target.value })}
-            placeholder="100"
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="category">Category</Label>
-          <Select
-            value={formData.category}
-            onValueChange={(value) => setFormData({ ...formData, category: value })}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="woody">Woody</SelectItem>
-              <SelectItem value="floral">Floral</SelectItem>
-              <SelectItem value="oriental">Oriental</SelectItem>
-              <SelectItem value="fresh">Fresh</SelectItem>
-              <SelectItem value="combo">Combo</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label htmlFor="size">Size</Label>
-          <Select
-            value={formData.size}
-            onValueChange={(value) => setFormData({ ...formData, size: value })}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="3ml">3ml</SelectItem>
-              <SelectItem value="12ml">12ml</SelectItem>
-              <SelectItem value="50ml">50ml</SelectItem>
-              <SelectItem value="100ml">100ml</SelectItem>
-              <SelectItem value="3ml PER BOTTLE">3ml PER BOTTLE</SelectItem>
-              <SelectItem value="Set of 2">Set of 2</SelectItem>
-              <SelectItem value="Set of 3">Set of 3</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Fragrance Notes */}
-      <div className="space-y-3">
-        <Label className="text-base font-medium">Fragrance Notes (comma-separated)</Label>
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <Label htmlFor="notes_top" className="text-sm text-muted-foreground">Top Notes</Label>
-            <Input
-              id="notes_top"
-              value={formData.notes_top}
-              onChange={(e) => setFormData({ ...formData, notes_top: e.target.value })}
-              placeholder="Bergamot, Lemon"
-            />
-          </div>
-          <div>
-            <Label htmlFor="notes_middle" className="text-sm text-muted-foreground">Middle Notes</Label>
-            <Input
-              id="notes_middle"
-              value={formData.notes_middle}
-              onChange={(e) => setFormData({ ...formData, notes_middle: e.target.value })}
-              placeholder="Jasmine, Rose"
-            />
-          </div>
-          <div>
-            <Label htmlFor="notes_base" className="text-sm text-muted-foreground">Base Notes</Label>
-            <Input
-              id="notes_base"
-              value={formData.notes_base}
-              onChange={(e) => setFormData({ ...formData, notes_base: e.target.value })}
-              placeholder="Vanilla, Musk"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        <Label>Product Image</Label>
-        
-        {/* Image Preview */}
-        {(formData.image_url || imagePreviewUrl) && (
-          <div className="relative w-32 h-32 rounded-lg overflow-hidden border bg-muted group">
-            <img
-              src={imagePreviewUrl || formData.image_url}
-              alt="Product preview"
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
-            />
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-              <button
-                type="button"
-                onClick={() => setIsImagePreviewOpen(true)}
-                className="p-2 bg-white/20 rounded-full hover:bg-white/30"
-              >
-                <Eye className="h-4 w-4 text-white" />
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setFormData({ ...formData, image_url: "" });
-                  setImagePreviewUrl("");
-                  setPendingImageFile(null);
-                }}
-                className="p-2 bg-white/20 rounded-full hover:bg-white/30"
-              >
-                <X className="h-4 w-4 text-white" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Upload or URL options */}
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => formFileInputRef.current?.click()}
-            className="flex-1"
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Upload Image
-          </Button>
-          <input
-            type="file"
-            ref={formFileInputRef}
-            className="hidden"
-            accept="image/*"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) {
-                if (!file.type.startsWith("image/")) {
-                  toast({ title: "Error", description: "Please select an image file", variant: "destructive" });
-                  return;
-                }
-                if (file.size > 5 * 1024 * 1024) {
-                  toast({ title: "Error", description: "Image must be less than 5MB", variant: "destructive" });
-                  return;
-                }
-                // Create preview URL
-                const previewUrl = URL.createObjectURL(file);
-                setImagePreviewUrl(previewUrl);
-                setPendingImageFile(file);
-              }
-              e.target.value = "";
-            }}
-          />
-        </div>
-
-        {/* URL input as alternative */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>or enter URL:</span>
-        </div>
-        <Input
-          id="image_url"
-          value={formData.image_url}
-          onChange={(e) => {
-            setFormData({ ...formData, image_url: e.target.value });
-            setImagePreviewUrl("");
-            setPendingImageFile(null);
-          }}
-          placeholder="https://example.com/image.jpg"
-        />
-        
-        {pendingImageFile && (
-          <p className="text-sm text-muted-foreground">
-            📎 {pendingImageFile.name} will be uploaded when you save the product
-          </p>
-        )}
-      </div>
-
-      <div className="flex items-center gap-2">
-        <Switch
-          checked={formData.is_active}
-          onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-        />
-        <Label>Product Active</Label>
-      </div>
-
-      <div className="flex justify-end gap-2 pt-4">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => {
-            setIsAddDialogOpen(false);
-            setEditingProduct(null);
-            resetForm();
-          }}
-        >
-          Cancel
-        </Button>
-        <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-          {(createMutation.isPending || updateMutation.isPending) && (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          )}
-          {editingProduct ? "Update Product" : "Add Product"}
-        </Button>
-      </div>
-    </form>
-  );
-
   return (
     <div className="space-y-6">
-      {/* Hidden file input */}
+      {/* Hidden file input for table image uploads */}
       <input
         type="file"
         ref={fileInputRef}
@@ -693,11 +313,19 @@ const AdminProducts = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-heading font-bold">Products</h1>
-          <p className="text-muted-foreground">Manage your product inventory and stock ({products?.length || 0} products)</p>
+          <p className="text-muted-foreground">
+            Manage your product inventory and stock ({products?.length || 0} products)
+          </p>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <Dialog
+          open={isAddDialogOpen}
+          onOpenChange={(open) => {
+            setIsAddDialogOpen(open);
+            if (!open) setFormData(emptyFormData);
+          }}
+        >
           <DialogTrigger asChild>
-            <Button onClick={() => resetForm()}>
+            <Button onClick={() => setFormData(emptyFormData)}>
               <Plus className="mr-2 h-4 w-4" />
               Add Product
             </Button>
@@ -706,34 +334,40 @@ const AdminProducts = () => {
             <DialogHeader>
               <DialogTitle>Add New Product</DialogTitle>
             </DialogHeader>
-            <ProductForm />
+            <ProductForm
+              formData={formData}
+              setFormData={setFormData}
+              isEditing={false}
+              isSubmitting={createMutation.isPending || uploadImageMutation.isPending}
+              onSubmit={handleFormSubmit}
+              onCancel={handleCancel}
+            />
           </DialogContent>
         </Dialog>
       </div>
 
       {/* Edit Dialog */}
-      <Dialog open={!!editingProduct} onOpenChange={(open) => !open && setEditingProduct(null)}>
+      <Dialog
+        open={!!editingProduct}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingProduct(null);
+            setFormData(emptyFormData);
+          }
+        }}
+      >
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Product</DialogTitle>
           </DialogHeader>
-          <ProductForm />
-        </DialogContent>
-      </Dialog>
-
-      {/* Image Preview Dialog */}
-      <Dialog open={isImagePreviewOpen} onOpenChange={setIsImagePreviewOpen}>
-        <DialogContent className="max-w-3xl p-2">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Image Preview</DialogTitle>
-          </DialogHeader>
-          <div className="relative">
-            <img
-              src={imagePreviewUrl || formData.image_url}
-              alt="Product preview"
-              className="w-full h-auto max-h-[80vh] object-contain rounded-lg"
-            />
-          </div>
+          <ProductForm
+            formData={formData}
+            setFormData={setFormData}
+            isEditing={true}
+            isSubmitting={updateMutation.isPending || uploadImageMutation.isPending}
+            onSubmit={handleFormSubmit}
+            onCancel={handleCancel}
+          />
         </DialogContent>
       </Dialog>
 
@@ -821,44 +455,57 @@ const AdminProducts = () => {
                     )}
                   </div>
                   {product.discount_percent > 0 && (
-                    <Badge variant="secondary" className="mt-1">
+                    <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold mt-1 bg-secondary text-secondary-foreground">
                       {product.discount_percent}% OFF
-                    </Badge>
+                    </span>
                   )}
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Input
                       type="number"
-                      value={product.stock_quantity}
-                      onChange={(e) => {
+                      defaultValue={product.stock_quantity}
+                      onBlur={(e) => {
                         const newValue = parseInt(e.target.value) || 0;
-                        updateStockMutation.mutate({ id: product.id, stock_quantity: newValue });
+                        if (newValue !== product.stock_quantity) {
+                          updateStockMutation.mutate({ id: product.id, stock_quantity: newValue });
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          (e.target as HTMLInputElement).blur();
+                        }
                       }}
                       className="w-20 h-8"
                     />
                     {product.stock_quantity === 0 && (
-                      <Badge variant="destructive" className="flex items-center gap-1">
+                      <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-destructive text-destructive-foreground gap-1">
                         <AlertCircle className="h-3 w-3" />
                         Sold Out
-                      </Badge>
+                      </span>
                     )}
                     {product.stock_quantity > 0 && product.stock_quantity <= 10 && (
-                      <Badge variant="outline" className="text-orange-600 border-orange-600">
+                      <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold text-orange-600 border-orange-600">
                         Low Stock
-                      </Badge>
+                      </span>
                     )}
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={product.is_active ? "default" : "secondary"}>
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                      product.is_active
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary text-secondary-foreground"
+                    }`}
+                  >
                     {product.is_active ? "Active" : "Inactive"}
-                  </Badge>
+                  </span>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline" className="capitalize">
+                  <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize">
                     {product.category}
-                  </Badge>
+                  </span>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
