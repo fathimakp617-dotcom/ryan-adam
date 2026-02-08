@@ -1,7 +1,7 @@
 import { useState, useMemo, memo } from "react";
 import { Helmet } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Grid3X3, List, Filter, X, ChevronDown, Heart, ShoppingBag } from "lucide-react";
+import { Search, Grid3X3, List, Filter, X, ChevronDown, Heart, ShoppingBag, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PageTransition from "@/components/PageTransition";
 import { CollectionPageSchema } from "@/components/seo/JsonLd";
-import { products, formatPrice } from "@/data/products";
+import { formatPrice } from "@/data/products";
+import { useDbProducts } from "@/hooks/useDbProducts";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useProductStock, isProductSoldOut } from "@/hooks/useProductStock";
@@ -47,11 +48,11 @@ const Shop = () => {
   const [sortBy, setSortBy] = useState("featured");
   const [showFilters, setShowFilters] = useState(false);
   const { data: stockMap } = useProductStock();
+  const { data: products = [], isLoading } = useDbProducts();
 
   const filteredProducts = useMemo(() => {
     let result = [...products];
 
-    // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
@@ -64,21 +65,18 @@ const Shop = () => {
       );
     }
 
-    // Category filter
     if (selectedCategory !== "All") {
       result = result.filter(
         (product) => product.category === selectedCategory
       );
     }
 
-    // Price filter
     const priceRange = priceRanges[selectedPriceRange];
     result = result.filter(
       (product) =>
         product.price >= priceRange.min && product.price <= priceRange.max
     );
 
-    // Sort
     switch (sortBy) {
       case "price-asc":
         result.sort((a, b) => a.price - b.price);
@@ -94,7 +92,7 @@ const Shop = () => {
     }
 
     return result;
-  }, [searchQuery, selectedCategory, selectedPriceRange, sortBy]);
+  }, [products, searchQuery, selectedCategory, selectedPriceRange, sortBy]);
 
   const clearFilters = () => {
     setSearchQuery("");
@@ -397,7 +395,15 @@ const Shop = () => {
               Showing {filteredProducts.length} of {products.length} fragrances
             </p>
 
+            {/* Loading State */}
+            {isLoading && (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            )}
+
             {/* Products Grid/List */}
+            {!isLoading && (
             <AnimatePresence mode="wait">
               {filteredProducts.length > 0 ? (
                 <motion.div
@@ -571,6 +577,7 @@ const Shop = () => {
                 </motion.div>
               )}
             </AnimatePresence>
+            )}
           </div>
         </section>
 

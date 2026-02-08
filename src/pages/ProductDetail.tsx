@@ -2,7 +2,7 @@ import { useState, useEffect, memo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Heart, Share2, Truck, Shield, RotateCcw, Star, ShoppingBag, PenLine, Zap, AlertCircle } from "lucide-react";
+import { ArrowLeft, Heart, Share2, Truck, Shield, RotateCcw, Star, ShoppingBag, PenLine, Zap, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,7 +11,8 @@ import Footer from "@/components/Footer";
 import ProductReviews from "@/components/ProductReviews";
 import RelatedProducts from "@/components/RelatedProducts";
 import PageTransition from "@/components/PageTransition";
-import { getProductById, formatPrice, products } from "@/data/products";
+import { formatPrice } from "@/data/products";
+import { useDbProduct } from "@/hooks/useDbProducts";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useProductStock, isProductSoldOut, getProductStock } from "@/hooks/useProductStock";
@@ -24,7 +25,7 @@ import { ProductSchema, BreadcrumbSchema } from "@/components/seo/JsonLd";
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const product = getProductById(id || "");
+  const { data: product, isLoading } = useDbProduct(id);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [averageRating, setAverageRating] = useState(0);
@@ -56,6 +57,14 @@ const ProductDetail = () => {
       console.error("Error fetching rating summary:", error);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -100,7 +109,6 @@ const ProductDetail = () => {
   };
 
   const handleShare = async () => {
-    // Get current URL (works with local IP, Lovable preview, or production domain)
     const shareUrl = window.location.href;
     const shareText = `✨ Check out ${product.name} from RAYN ADAM!\n\n${product.tagline}\n\n💰 Price: ${formatPrice(product.price)}\n📦 Size: ${product.size} • ${product.concentration}\n\n🔗 `;
     
@@ -112,23 +120,18 @@ const ProductDetail = () => {
           url: shareUrl,
         });
       } catch (error) {
-        // User cancelled or error occurred
         if ((error as Error).name !== 'AbortError') {
-          // Fallback to clipboard
           await navigator.clipboard.writeText(`${shareText}${shareUrl}`);
           toast.success("Link copied to clipboard");
         }
       }
     } else {
-      // Fallback for browsers that don't support Web Share API
       await navigator.clipboard.writeText(`${shareText}${shareUrl}`);
       toast.success("Link copied to clipboard", {
         description: "Share this with your friends!",
       });
     }
   };
-
-  
 
   return (
     <>
@@ -137,10 +140,8 @@ const ProductDetail = () => {
         <meta name="description" content={`${product.name}: ${product.tagline}. ${product.description.slice(0, 120)}... Buy online with free shipping in India.`} />
         <meta name="keywords" content={`${product.name}, ${product.concentration}, luxury perfume, buy online India, ${product.notes.top.join(', ')}, ${product.notes.base.join(', ')}`} />
         
-        {/* Canonical URL - uses current domain dynamically */}
         <link rel="canonical" href={`${window.location.origin}/product/${product.id}`} />
         
-        {/* Open Graph / Social Sharing - dynamic URL based on current domain */}
         <meta property="og:title" content={`${product.name} - ${product.tagline} | Rayn Adam`} />
         <meta property="og:description" content={`${product.description.slice(0, 150)}... Shop now!`} />
         <meta property="og:type" content="product" />
@@ -148,18 +149,15 @@ const ProductDetail = () => {
         <meta property="og:image" content={`${window.location.origin}${product.image}`} />
         <meta property="og:site_name" content="Rayn Adam Perfumes" />
         
-        {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={`${product.name} - ${product.tagline} | Rayn Adam`} />
         <meta name="twitter:description" content={`${product.description.slice(0, 150)}...`} />
         <meta name="twitter:image" content={`${window.location.origin}${product.image}`} />
         
-        {/* Product structured data */}
         <meta property="product:price:amount" content={product.price.toString()} />
         <meta property="product:price:currency" content="INR" />
       </Helmet>
       
-      {/* JSON-LD Structured Data */}
       <ProductSchema product={product} averageRating={averageRating} totalReviews={totalReviews} />
       <BreadcrumbSchema items={[
         { name: "Home", url: "/" },
@@ -204,7 +202,6 @@ const ProductDetail = () => {
                   <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-primary/60 z-10" />
                   <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-primary/60 z-10" />
                   
-                  {/* Sold Out Badge */}
                   {isSoldOut && (
                     <div className="absolute top-8 right-8 z-20">
                       <Badge variant="destructive" className="text-sm font-semibold px-4 py-2">
@@ -216,7 +213,7 @@ const ProductDetail = () => {
                   <AnimatePresence mode="wait">
                     <motion.img
                       key={selectedImage}
-                      src={product.gallery[selectedImage]}
+                      src={product.gallery[selectedImage] || product.image}
                       alt={product.name}
                       initial={{ opacity: 0, scale: 1.05 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -228,6 +225,7 @@ const ProductDetail = () => {
                 </div>
 
                 {/* Thumbnails */}
+                {product.gallery.length > 1 && (
                 <div className="flex gap-4">
                   {product.gallery.map((img, idx) => (
                     <button
@@ -241,6 +239,7 @@ const ProductDetail = () => {
                     </button>
                   ))}
                 </div>
+                )}
               </motion.div>
 
               {/* Product Info */}
@@ -313,6 +312,7 @@ const ProductDetail = () => {
                 </motion.p>
 
                 {/* Fragrance Notes Preview */}
+                {(product.notes.top.length > 0 || product.notes.heart.length > 0) && (
                 <motion.div variants={staggerItem} className="space-y-3">
                   <p className="text-sm tracking-wider text-foreground">FRAGRANCE NOTES</p>
                   <div className="flex flex-wrap gap-2">
@@ -326,10 +326,10 @@ const ProductDetail = () => {
                     ))}
                   </div>
                 </motion.div>
+                )}
 
                 {/* Add to Cart & Actions */}
                 <motion.div variants={staggerItem} className="space-y-4 pt-4">
-                  {/* Sold Out Notice */}
                   {isSoldOut && (
                     <div className="flex items-center gap-2 p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
                       <AlertCircle className="w-5 h-5 text-destructive" />
@@ -337,7 +337,6 @@ const ProductDetail = () => {
                     </div>
                   )}
                   
-                  {/* Low Stock Warning */}
                   {!isSoldOut && stockQuantity > 0 && stockQuantity <= 10 && (
                     <div className="flex items-center gap-2 p-3 bg-orange-500/10 border border-orange-500/30 rounded-lg">
                       <AlertCircle className="w-4 h-4 text-orange-500" />
@@ -473,6 +472,9 @@ const ProductDetail = () => {
                             {note}
                           </li>
                         ))}
+                        {product.notes.top.length === 0 && (
+                          <li className="text-muted-foreground/50 italic">Not specified</li>
+                        )}
                       </ul>
                     </div>
 
@@ -493,6 +495,9 @@ const ProductDetail = () => {
                             {note}
                           </li>
                         ))}
+                        {product.notes.heart.length === 0 && (
+                          <li className="text-muted-foreground/50 italic">Not specified</li>
+                        )}
                       </ul>
                     </div>
 
@@ -513,6 +518,9 @@ const ProductDetail = () => {
                             {note}
                           </li>
                         ))}
+                        {product.notes.base.length === 0 && (
+                          <li className="text-muted-foreground/50 italic">Not specified</li>
+                        )}
                       </ul>
                     </div>
                   </div>

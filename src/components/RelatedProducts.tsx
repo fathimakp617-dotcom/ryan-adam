@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ShoppingBag } from "lucide-react";
-import { products, formatPrice, Product } from "@/data/products";
+import { formatPrice, Product } from "@/data/products";
+import { useDbProducts } from "@/hooks/useDbProducts";
 import { staggerContainer, staggerItem, fadeInUp } from "@/lib/animations";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
@@ -14,6 +15,7 @@ interface RelatedProductsProps {
 
 const RelatedProducts = ({ currentProductId, currentCategory }: RelatedProductsProps) => {
   const { addToCart } = useCart();
+  const { data: products = [] } = useDbProducts();
   
   // Show all products except the current one
   const relatedProducts = products.filter((p) => p.id !== currentProductId);
