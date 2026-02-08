@@ -66,6 +66,16 @@ ChartContainer.displayName = "Chart";
  * Never pass user-provided input to config.theme or config.color properties
  * as this could enable CSS injection or XSS attacks.
  */
+// Validate CSS color values to prevent injection
+const isValidCssColor = (color: string): boolean => {
+  return /^(#[0-9A-Fa-f]{3,8}|rgb\([^)]*\)|rgba\([^)]*\)|hsl\([^)]*\)|hsla\([^)]*\)|[a-zA-Z]+)$/.test(color.trim());
+};
+
+// Sanitize CSS identifier to prevent injection
+const sanitizeCssIdentifier = (key: string): string => {
+  return key.replace(/[^a-zA-Z0-9_-]/g, '');
+};
+
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(([_, config]) => config.theme || config.color);
 
@@ -83,7 +93,8 @@ ${prefix} [data-chart=${id}] {
 ${colorConfig
   .map(([key, itemConfig]) => {
     const color = itemConfig.theme?.[theme as keyof typeof itemConfig.theme] || itemConfig.color;
-    return color ? `  --color-${key}: ${color};` : null;
+    const sanitizedKey = sanitizeCssIdentifier(key);
+    return color && isValidCssColor(color) ? `  --color-${sanitizedKey}: ${color};` : null;
   })
   .join("\n")}
 }

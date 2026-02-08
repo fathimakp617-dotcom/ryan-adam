@@ -118,11 +118,8 @@ const ReturnRequestDialog = ({
         
         if (error) throw error;
         
-        const { data: urlData } = supabase.storage
-          .from("return-images")
-          .getPublicUrl(data.path);
-        
-        urls.push(urlData.publicUrl);
+        // Store the file path (not public URL) for signed URL generation later
+        urls.push(data.path);
       }
       
       setUploadedUrls(urls);

@@ -1,4 +1,5 @@
 import { useEffect, useState, memo, useMemo } from "react";
+import ReturnImagesGrid from "@/components/ReturnImagesGrid";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Search, RefreshCw, Loader2, Phone, Mail, Package, Eye, Image as ImageIcon, Check, X, CheckCircle } from "lucide-react";
+import { Search, RefreshCw, Loader2, Phone, Mail, Package, Eye, Check, X, CheckCircle } from "lucide-react";
 import { useShippingOrders, useInvalidateAdminData, type Order } from "@/hooks/useAdminData";
 
 interface ReturnOrder extends Order {
@@ -293,27 +294,7 @@ const ShippingReturns = () => {
               )}
 
               {/* Return Images */}
-              {selectedReturn.return_images && selectedReturn.return_images.length > 0 && (
-                <div>
-                  <span className="text-muted-foreground text-sm flex items-center gap-1 mb-2">
-                    <ImageIcon className="w-4 h-4" />
-                    Attached Images ({selectedReturn.return_images.length})
-                  </span>
-                  <div className="grid grid-cols-3 gap-2">
-                    {selectedReturn.return_images.map((url, idx) => (
-                      <a 
-                        key={idx} 
-                        href={url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="aspect-square rounded-lg overflow-hidden border border-border hover:border-primary transition-colors"
-                      >
-                        <img src={url} alt={`Return image ${idx + 1}`} className="w-full h-full object-cover" />
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <ReturnImagesGrid images={selectedReturn.return_images} />
 
               {(selectedReturn.return_status === "requested") && (
                 <div className="flex gap-2 pt-4">
