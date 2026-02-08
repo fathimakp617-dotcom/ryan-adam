@@ -221,10 +221,47 @@ const AdminManualOrder = () => {
     };
   };
 
+  // Save order to database — returns true on success
+  const saveOrderToDb = async (): Promise<boolean> => {
+    if (savedOrderId) return true; // Already saved
+    try {
+      const sessionToken = localStorage.getItem("admin_session_token");
+      if (!sessionToken) {
+        toast({ title: "Error", description: "Admin session expired. Please re-login.", variant: "destructive" });
+        return false;
+      }
+
+      const orderData = getOrderData();
+      const { data, error } = await supabase.functions.invoke("create-manual-order", {
+        headers: { Authorization: `Bearer ${sessionToken}` },
+        body: {
+          ...orderData,
+          order_status: orderStatus,
+          discount,
+          shipping,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) {
+        toast({ title: "Error", description: data.error, variant: "destructive" });
+        return false;
+      }
+
+      setSavedOrderId(data.order?.id || "saved");
+      return true;
+    } catch (error: any) {
+      console.error("Save order error:", error);
+      toast({ title: "Save Failed", description: error.message || "Failed to save order to database", variant: "destructive" });
+      return false;
+    }
+  };
+
   const handleDownloadInvoice = async () => {
     if (!validate()) return;
     setIsGenerating("invoice");
     try {
+      const saved = await saveOrderToDb();
       const order = getOrderData();
       await downloadInvoicePDF({
         orderNumber: order.order_number,
@@ -239,7 +276,7 @@ const AdminManualOrder = () => {
         paymentMethod: order.payment_method,
         orderDate: order.created_at,
       });
-      toast({ title: "Invoice Downloaded", description: `Invoice ${order.order_number} saved` });
+      toast({ title: saved ? "Saved & Invoice Downloaded ✅" : "Invoice Downloaded", description: `Invoice ${order.order_number} saved` });
     } catch (error) {
       console.error("Invoice generation error:", error);
       toast({ title: "Error", description: "Failed to generate invoice", variant: "destructive" });
@@ -252,9 +289,10 @@ const AdminManualOrder = () => {
     if (!validate()) return;
     setIsGenerating("label");
     try {
+      const saved = await saveOrderToDb();
       const order = getOrderData();
       await generateShippingLabelPDF(order);
-      toast({ title: "Shipping Label Downloaded", description: `Label ${order.order_number} saved` });
+      toast({ title: saved ? "Saved & Label Downloaded ✅" : "Label Downloaded", description: `Label ${order.order_number} saved` });
     } catch (error) {
       console.error("Label generation error:", error);
       toast({ title: "Error", description: "Failed to generate shipping label", variant: "destructive" });
@@ -267,6 +305,7 @@ const AdminManualOrder = () => {
     if (!validate()) return;
     setIsGenerating("invoice");
     try {
+      const saved = await saveOrderToDb();
       const order = getOrderData();
       await downloadInvoicePDF({
         orderNumber: order.order_number,
@@ -282,13 +321,23 @@ const AdminManualOrder = () => {
         orderDate: order.created_at,
       });
       await generateShippingLabelPDF(order);
-      toast({ title: "Downloads Complete", description: "Invoice and shipping label saved" });
+      toast({ title: saved ? "Saved & Documents Downloaded ✅" : "Downloads Complete", description: "Invoice and shipping label saved" });
     } catch (error) {
       console.error("Generation error:", error);
       toast({ title: "Error", description: "Failed to generate documents", variant: "destructive" });
     } finally {
       setIsGenerating(null);
     }
+  };
+
+  const handleSaveOnly = async () => {
+    if (!validate()) return;
+    setIsSaving(true);
+    const saved = await saveOrderToDb();
+    if (saved) {
+      toast({ title: "Order Saved! ✅", description: `Order ${orderNumber} saved to database` });
+    }
+    setIsSaving(false);
   };
 
   const handleReset = () => {
@@ -310,46 +359,7 @@ const AdminManualOrder = () => {
     setDiscount(0);
     setShipping(0);
     setSavedOrderId(null);
-  };
-
-  const handleSaveOrder = async () => {
-    if (!validate()) return;
-    setIsSaving(true);
-    try {
-      const sessionToken = localStorage.getItem("admin_session_token");
-      if (!sessionToken) {
-        toast({ title: "Error", description: "Admin session expired. Please re-login.", variant: "destructive" });
-        return;
-      }
-
-      const orderData = getOrderData();
-      const { data, error } = await supabase.functions.invoke("create-manual-order", {
-        headers: { Authorization: `Bearer ${sessionToken}` },
-        body: {
-          ...orderData,
-          order_status: orderStatus,
-          discount,
-          shipping,
-        },
-      });
-
-      if (error) throw error;
-      if (data?.error) {
-        toast({ title: "Error", description: data.error, variant: "destructive" });
-        return;
-      }
-
-      setSavedOrderId(data.order?.id || null);
-      toast({
-        title: "Order Saved! ✅",
-        description: `Order ${orderData.order_number} has been saved to the database`,
-      });
-    } catch (error: any) {
-      console.error("Save order error:", error);
-      toast({ title: "Error", description: error.message || "Failed to save order", variant: "destructive" });
-    } finally {
-      setIsSaving(false);
-    }
+    setQuickFillText("");
   };
 
   // Quick fill parser
@@ -842,7 +852,7 @@ const AdminManualOrder = () => {
               <Button
                 className="w-full"
                 variant={savedOrderId ? "outline" : "default"}
-                onClick={handleSaveOrder}
+                onClick={handleSaveOnly}
                 disabled={isSaving || !!isGenerating}
               >
                 {isSaving ? (
