@@ -11,6 +11,7 @@ import { AffiliateProvider } from "@/contexts/AffiliateContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import CartDrawer from "@/components/CartDrawer";
 import ScrollToTop from "@/components/ScrollToTop";
+import WhatsAppFloatingButton from "@/components/WhatsAppFloatingButton";
 
 // Eagerly load critical pages
 import Index from "./pages/Index";
@@ -108,6 +109,7 @@ const App = () => (
                 <BrowserRouter>
                   <ScrollToTop />
                   <CartDrawer />
+                  <WhatsAppFloatingButton />
                   <RoutePrefetcher />
                   <Suspense fallback={<PageLoader />}>
                     <Routes>
