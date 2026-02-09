@@ -1,8 +1,15 @@
 import { memo } from "react";
+import { useLocation } from "react-router-dom";
 import { MessageCircle } from "lucide-react";
 import { generateWhatsAppLinkSimple } from "@/lib/whatsapp";
 
 const WhatsAppFloatingButton = memo(() => {
+  const { pathname } = useLocation();
+
+  if (pathname.startsWith("/admin") || pathname.startsWith("/shipping")) {
+    return null;
+  }
+
   return (
     <a
       href={generateWhatsAppLinkSimple()}
