@@ -377,7 +377,7 @@ const Checkout = () => {
 
     try {
       const orderData = {
-        user_id: user.id,
+        user_id: user?.id || null,
         customer_name: `${formData.firstName} ${formData.lastName}`,
         customer_email: formData.email,
         customer_phone: formData.phone,
@@ -733,7 +733,7 @@ const Checkout = () => {
           razorpay_payment_id: response.razorpay_payment_id,
           razorpay_signature: response.razorpay_signature,
           order_data: {
-            user_id: user?.id,
+            user_id: user?.id || null,
             customer_name: `${formData.firstName} ${formData.lastName}`,
             customer_email: formData.email,
             customer_phone: formData.phone,
@@ -795,38 +795,7 @@ const Checkout = () => {
     );
   }
 
-  // Require login to checkout
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="container mx-auto px-4 py-32">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-md mx-auto text-center"
-          >
-            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-              <LogIn className="w-10 h-10 text-primary" />
-            </div>
-            <h1 className="text-3xl font-heading text-foreground mb-4">Login Required</h1>
-            <p className="text-muted-foreground mb-8">
-              Please sign in to your account to complete your purchase. This helps us track your orders and provide better support.
-            </p>
-            <div className="space-y-3">
-              <Button asChild className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-                <Link to="/auth?redirect=/checkout">Sign In to Continue</Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full border-border hover:border-primary">
-                <Link to="/shop">Continue Shopping</Link>
-              </Button>
-            </div>
-          </motion.div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
+  // No login required - guest checkout is allowed
 
   if (items.length === 0) {
     return (
