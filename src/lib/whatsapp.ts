@@ -3,10 +3,11 @@ export const WHATSAPP_NUMBER = "919946647442";
 
 export const generateWhatsAppLink = (productName: string, productPrice: string) => {
   const message = encodeURIComponent(
-    `Hi! I'm interested in purchasing:\n\n` +
-    `🌸 *${productName}*\n` +
-    `💰 Price: ${productPrice}\n\n` +
-    `Please let me know how to proceed with the order.`
+    `Assalamu Alaikum! ✨\n\n` +
+    `I'd love to purchase this exquisite fragrance:\n\n` +
+    `🌹 *${productName}*\n` +
+    `💎 Price: ${productPrice}\n\n` +
+    `Kindly assist me with placing the order. JazakAllah Khair 🤍`
   );
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`;
 };
