@@ -2,7 +2,7 @@ import { useState, useEffect, memo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Heart, Share2, Truck, Shield, RotateCcw, Star, ShoppingBag, PenLine, Zap, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Heart, Share2, Truck, Shield, RotateCcw, Star, ShoppingBag, PenLine, Zap, AlertCircle, Loader2, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,6 +18,7 @@ import { useWishlist } from "@/contexts/WishlistContext";
 import { useProductStock, isProductSoldOut, getProductStock } from "@/hooks/useProductStock";
 import { fadeInUp, fadeInLeft, staggerContainer, staggerItem } from "@/lib/animations";
 import { toast } from "sonner";
+import { generateWhatsAppLink } from "@/lib/whatsapp";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductSchema, BreadcrumbSchema } from "@/components/seo/JsonLd";
 
@@ -365,6 +366,21 @@ const ProductDetail = () => {
                       BUY NOW
                     </Button>
                   </div>
+                  <Button
+                    size="lg"
+                    asChild
+                    disabled={isSoldOut}
+                    className="w-full py-6 text-sm tracking-widest font-medium bg-[#25D366] hover:bg-[#25D366]/90 text-white transition-all duration-300 hover:shadow-[0_0_30px_rgba(37,211,102,0.4)] flex items-center justify-center gap-2"
+                  >
+                    <a
+                      href={generateWhatsAppLink(product.name, formatPrice(product.price))}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <MessageCircle className="w-5 h-5" />
+                      BUY VIA WHATSAPP
+                    </a>
+                  </Button>
                   <div className="flex gap-4">
                     <Button
                       size="lg"
