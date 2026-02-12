@@ -200,13 +200,13 @@ export const products: Product[] = [
     id: "sporty-night-collection",
     name: "SPORTY NIGHT COLLECTION",
     tagline: "Complete Luxury Set",
-    description: "The ultimate Sporty Night experience — a luxurious trio featuring the concentrated Attar (3ml), elegant Eau de Parfum spray (8ml), and portable Solid Perfume cream (8ml). Bold, fresh, and long-lasting.",
+    description: "The ultimate Sporty Night experience — a luxurious trio featuring the concentrated Attar (3ml), elegant Eau de Parfum spray (8ml), and portable Solid Perfume Wax (8ml). Light, fresh, and invigorating.",
     story: "Designed for the modern athlete and adventurer, Sporty Night captures the energy of a champion. Three versatile formats let you stay fresh from the gym to the evening out.",
     price: 444,
     originalPrice: 888,
     discountPercent: 50,
     category: "Combo",
-    size: "Attar 3ml + EDP 8ml + Cream 8ml",
+    size: "Attar 3ml + EDP 8ml + Wax 8ml",
     image: sportyNightCollection,
     gallery: [sportyNightCollection, sportyNightAttar, sportyNightEdp, sportyNightSolid],
     notes: {
@@ -215,9 +215,9 @@ export const products: Product[] = [
       base: ["Cedarwood", "Musk", "Vetiver"]
     },
     ingredients: ["Alcohol Denat", "Parfum", "Natural Mint Extract", "Cedarwood Oil", "Beeswax", "Jojoba Oil"],
-    concentration: "Attar + EDP + Solid Cream",
-    longevity: "8-14 hours",
-    sillage: "Moderate to Strong",
+    concentration: "Attar + EDP + Solid Wax",
+    longevity: "6-10 hours",
+    sillage: "Light to Moderate",
     season: ["All Seasons"],
     occasion: ["Sports", "Daily Wear", "Evening", "Travel"]
   }
