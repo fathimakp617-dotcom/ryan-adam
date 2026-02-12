@@ -18,6 +18,10 @@ import sportyNightCollection from "@/assets/products/sporty-night-collection.png
 import sportyNightAttar from "@/assets/products/sporty-night-attar.png";
 import sportyNightEdp from "@/assets/products/sporty-night-edp.png";
 import sportyNightSolid from "@/assets/products/sporty-night-solid.png";
+import sportyNightCombo from "@/assets/products/sporty-night-combo.png";
+import sportyNightComboAttar from "@/assets/products/sporty-night-combo-attar.png";
+import sportyNightComboEdp from "@/assets/products/sporty-night-combo-edp.png";
+import sportyNightComboWax from "@/assets/products/sporty-night-combo-wax.png";
 
 export interface Product {
   id: string;
@@ -217,6 +221,31 @@ export const products: Product[] = [
     ingredients: ["Alcohol Denat", "Parfum", "Natural Mint Extract", "Cedarwood Oil", "Beeswax", "Jojoba Oil"],
     concentration: "Attar + EDP + Solid Wax",
     longevity: "6-10 hours",
+    sillage: "Light to Moderate",
+    season: ["All Seasons"],
+    occasion: ["Sports", "Daily Wear", "Evening", "Travel"]
+  },
+  {
+    id: "sporty-night-combo",
+    name: "SPORTY NIGHT COMBO",
+    tagline: "Premium Full-Size Set",
+    description: "The premium Sporty Night experience — featuring a full-size Attar (12ml), large Eau de Parfum spray (30ml), and Solid Perfume Wax (8ml). Light, fresh, and long-lasting.",
+    story: "For those who want the complete Sporty Night experience in generous sizes. The full-size Attar delivers intense concentration, the 30ml EDP provides all-day freshness, and the portable wax keeps you topped up on the go.",
+    price: 888,
+    originalPrice: 1776,
+    discountPercent: 50,
+    category: "Combo",
+    size: "Attar 12ml + EDP 30ml + Wax 8ml",
+    image: sportyNightCombo,
+    gallery: [sportyNightCombo, sportyNightComboAttar, sportyNightComboEdp, sportyNightComboWax],
+    notes: {
+      top: ["Bergamot", "Green Apple", "Mint"],
+      heart: ["Lavender", "Geranium", "Cardamom"],
+      base: ["Cedarwood", "Musk", "Vetiver"]
+    },
+    ingredients: ["Alcohol Denat", "Parfum", "Natural Mint Extract", "Cedarwood Oil", "Beeswax", "Jojoba Oil"],
+    concentration: "Attar + EDP + Solid Wax",
+    longevity: "8-14 hours",
     sillage: "Light to Moderate",
     season: ["All Seasons"],
     occasion: ["Sports", "Daily Wear", "Evening", "Travel"]
