@@ -14,6 +14,17 @@ interface ContactRequest {
   message: string;
 }
 
+function escapeHtml(text: string): string {
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  };
+  return text.replace(/[&<>"']/g, (m) => map[m]);
+}
+
 Deno.serve(async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -40,13 +51,19 @@ Deno.serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log(`Processing contact form from ${name} (${email})`);
+    // Sanitize all user inputs for HTML embedding
+    const safeName = escapeHtml(name);
+    const safeEmail = escapeHtml(email);
+    const safeSubject = escapeHtml(subject);
+    const safeMessage = escapeHtml(message);
+
+    console.log("Processing contact form submission");
 
     // Send notification to admin
     const adminEmailResponse = await resend.emails.send({
       from: "Rayn Adam <notifications@raynadamperfume.com>",
       to: ["raynadamperfume@gmail.com"],
-      subject: `New Contact: ${subject}`,
+      subject: `New Contact: ${safeSubject}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -74,25 +91,25 @@ Deno.serve(async (req: Request): Promise<Response> => {
                         <tr>
                           <td style="padding-bottom: 20px;">
                             <p style="margin: 0; color: #888; font-size: 12px; letter-spacing: 1px;">FROM</p>
-                            <p style="margin: 5px 0 0; color: #fff; font-size: 16px;">${name}</p>
+                            <p style="margin: 5px 0 0; color: #fff; font-size: 16px;">${safeName}</p>
                           </td>
                         </tr>
                         <tr>
                           <td style="padding-bottom: 20px;">
                             <p style="margin: 0; color: #888; font-size: 12px; letter-spacing: 1px;">EMAIL</p>
-                            <p style="margin: 5px 0 0; color: #a87c39; font-size: 16px;">${email}</p>
+                            <p style="margin: 5px 0 0; color: #a87c39; font-size: 16px;">${safeEmail}</p>
                           </td>
                         </tr>
                         <tr>
                           <td style="padding-bottom: 20px;">
                             <p style="margin: 0; color: #888; font-size: 12px; letter-spacing: 1px;">SUBJECT</p>
-                            <p style="margin: 5px 0 0; color: #fff; font-size: 16px;">${subject}</p>
+                            <p style="margin: 5px 0 0; color: #fff; font-size: 16px;">${safeSubject}</p>
                           </td>
                         </tr>
                         <tr>
                           <td style="padding: 20px; background-color: #0a0a0a; border-left: 3px solid #a87c39;">
                             <p style="margin: 0; color: #888; font-size: 12px; letter-spacing: 1px; margin-bottom: 10px;">MESSAGE</p>
-                            <p style="margin: 0; color: #fff; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${message}</p>
+                            <p style="margin: 0; color: #fff; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${safeMessage}</p>
                           </td>
                         </tr>
                       </table>
@@ -145,14 +162,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
                   <!-- Content -->
                   <tr>
                     <td style="padding: 40px; text-align: center;">
-                      <h2 style="margin: 0 0 20px; color: #fff; font-size: 24px; font-weight: 300;">Thank You, ${name}!</h2>
+                      <h2 style="margin: 0 0 20px; color: #fff; font-size: 24px; font-weight: 300;">Thank You, ${safeName}!</h2>
                       <p style="margin: 0 0 30px; color: #ccc; font-size: 16px; line-height: 1.6;">
                         We have received your message and will get back to you as soon as possible.
                       </p>
                       
                       <div style="padding: 20px; background-color: #0a0a0a; border-left: 3px solid #a87c39; text-align: left; margin-bottom: 30px;">
                         <p style="margin: 0; color: #888; font-size: 12px; letter-spacing: 1px; margin-bottom: 10px;">YOUR MESSAGE</p>
-                        <p style="margin: 0; color: #fff; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${message}</p>
+                        <p style="margin: 0; color: #fff; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${safeMessage}</p>
                       </div>
                       
                       <p style="margin: 0; color: #888; font-size: 14px;">
