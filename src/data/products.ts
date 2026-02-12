@@ -18,6 +18,10 @@ import sportyNightCollection from "@/assets/products/sporty-night-collection.png
 import sportyNightAttar from "@/assets/products/sporty-night-attar.png";
 import sportyNightEdp from "@/assets/products/sporty-night-edp.png";
 import sportyNightSolid from "@/assets/products/sporty-night-solid.png";
+import sportyNightCombo from "@/assets/products/sporty-night-combo.png";
+import sportyNightComboAttar from "@/assets/products/sporty-night-combo-attar.png";
+import sportyNightComboEdp from "@/assets/products/sporty-night-combo-edp.png";
+import sportyNightComboWax from "@/assets/products/sporty-night-combo-wax.png";
 
 export interface Product {
   id: string;
