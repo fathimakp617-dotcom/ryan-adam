@@ -29,7 +29,7 @@ interface InvoiceData {
 
 const formatCurrency = (amount: number): string => {
   const rounded = Math.round(Number(amount) || 0);
-  return `₹${rounded.toLocaleString("en-IN")}`;
+  return `Rs. ${rounded.toLocaleString("en-IN")}`;
 };
 
 export const generateInvoicePDF = async (data: InvoiceData): Promise<jsPDF> => {
