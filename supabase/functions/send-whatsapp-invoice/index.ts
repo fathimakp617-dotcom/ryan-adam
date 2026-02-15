@@ -124,11 +124,11 @@ const generateInvoiceMessage = (data: InvoiceRequest): string => {
     { name: "RAYN ADAM Amber Crown Attar 6ml", quantity: 1, price: 199 }
   ];
 
-  const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const total = data.total || subtotal;
+  const subtotal = items.reduce((sum, item) => sum + (Number(item.price) * Number(item.quantity)), 0);
+  const total = Math.round(Number(data.total) || subtotal);
 
   let itemsText = items.map((item, i) => 
-    `${i + 1}. ${item.name}\n   Qty: ${item.quantity} × ₹${item.price.toFixed(2)} = ₹${(item.quantity * item.price).toFixed(2)}`
+    `${i + 1}. ${item.name}\n   Qty: ${item.quantity} × ₹${Math.round(Number(item.price))} = ₹${Math.round(Number(item.quantity) * Number(item.price))}`
   ).join("\n\n");
 
   const message = `
@@ -147,7 +147,7 @@ const generateInvoiceMessage = (data: InvoiceRequest): string => {
 ${itemsText}
 
 ━━━━━━━━━━━━━━━━━━━━━
-💰 *TOTAL: ₹${total.toFixed(2)}*
+💰 *TOTAL: ₹${total}*
 ━━━━━━━━━━━━━━━━━━━━━
 
 ✅ Thank you for shopping with RAYN ADAM!
