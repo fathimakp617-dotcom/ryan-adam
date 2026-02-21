@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { generateWhatsAppLink } from "@/lib/whatsapp";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductSchema, BreadcrumbSchema } from "@/components/seo/JsonLd";
+import { trackViewContent, trackAddToCart } from "@/lib/metaPixel";
 
 
 const ProductDetail = () => {
@@ -37,6 +38,13 @@ const ProductDetail = () => {
   
   const isSoldOut = isProductSoldOut(stockMap, id || "");
   const stockQuantity = getProductStock(stockMap, id || "");
+
+  // Meta Pixel: ViewContent (fire once per product page load)
+  useEffect(() => {
+    if (product) {
+      trackViewContent({ id: product.id, name: product.name, price: product.price });
+    }
+  }, [product?.id]);
 
   useEffect(() => {
     if (id) {
@@ -88,6 +96,7 @@ const ProductDetail = () => {
       return;
     }
     addToCart(product, quantity);
+    trackAddToCart({ id: product.id, name: product.name, price: product.price, quantity });
     toast.success(`${product.name} added to cart`, {
       description: `Quantity: ${quantity}`,
     });
