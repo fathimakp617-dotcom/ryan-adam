@@ -1,10 +1,11 @@
-import { useState, useEffect, forwardRef, memo } from "react";
+import { useState, useEffect, useRef, forwardRef, memo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle, X, Download, Mail, RefreshCw, Gift, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { trackPurchase } from "@/lib/metaPixel";
 
 import OrderReceipt from "./OrderReceipt";
 
@@ -46,6 +47,7 @@ const OrderSuccessModal = forwardRef<HTMLDivElement>((_, ref) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isResending, setIsResending] = useState(false);
   const [copied, setCopied] = useState(false);
+  const hasFiredPurchase = useRef(false);
 
   useEffect(() => {
     if (orderNumber) {
@@ -66,11 +68,12 @@ const OrderSuccessModal = forwardRef<HTMLDivElement>((_, ref) => {
       if (error) throw error;
 
       if (data) {
+        const items = data.items as OrderData["items"];
         setOrderData({
           order_number: data.order_number,
           customer_name: data.customer_name,
           customer_email: data.customer_email,
-          items: data.items as OrderData["items"],
+          items,
           subtotal: data.subtotal,
           discount: data.discount || 0,
           shipping: data.shipping || 0,
@@ -80,6 +83,16 @@ const OrderSuccessModal = forwardRef<HTMLDivElement>((_, ref) => {
           created_at: data.created_at,
           user_id: data.user_id,
         });
+
+        // Meta Pixel: Purchase (fire once)
+        if (!hasFiredPurchase.current) {
+          hasFiredPurchase.current = true;
+          trackPurchase({
+            orderId: data.order_number,
+            value: data.total,
+            items,
+          });
+        }
 
         // Loyalty coupons are generated async after order creation, so we retry briefly.
         if (data.user_id) {
