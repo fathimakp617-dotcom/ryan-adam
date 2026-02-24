@@ -9,7 +9,10 @@ declare global {
 
 const fbq = (...args: any[]) => {
   if (typeof window !== "undefined" && window.fbq) {
+    console.log("[MetaPixel] Firing event:", args[1], args[2]);
     window.fbq(...args);
+  } else {
+    console.warn("[MetaPixel] fbq not available – event skipped:", args[1]);
   }
 };
 
