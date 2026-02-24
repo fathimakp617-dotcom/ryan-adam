@@ -1,4 +1,5 @@
 import { useState, useEffect, memo, useCallback, useRef } from "react";
+import { trackPurchase } from "@/lib/metaPixel";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, CreditCard, Truck, Check, Lock, LogIn, AlertTriangle, Smartphone, Zap, MapPin, Loader2 } from "lucide-react";
@@ -759,6 +760,18 @@ const Checkout = () => {
       if (error || !data?.success) {
         throw new Error(data?.error || "Payment verification failed");
       }
+
+      // Fire Meta Pixel Purchase event inside Razorpay success callback
+      trackPurchase({
+        orderId: data.order.order_number,
+        value: data.order.total,
+        items: items.map(item => ({
+          productId: item.product.id,
+          name: item.product.name,
+          price: item.product.price,
+          quantity: item.quantity,
+        })),
+      });
 
       toast({
         title: "Payment Successful!",
