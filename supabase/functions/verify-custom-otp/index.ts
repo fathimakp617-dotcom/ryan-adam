@@ -195,9 +195,37 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Password reset: OTP only
+    // Password reset: also generate an action_link to create a session so updateUser works
+    const redirectTo = getSafeRedirectTo(req);
+    
+    // Look up user email
+    const { data: list } = await supabaseAdmin.auth.admin.listUsers();
+    const existingUser = list?.users?.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+    
+    if (!existingUser) {
+      return new Response(
+        JSON.stringify({ error: "No account found with this email" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+      type: "magiclink",
+      email: existingUser.email!,
+      options: { redirectTo: `${redirectTo}/auth?mode=reset` },
+    });
+
+    if (linkError || !linkData?.properties?.action_link) {
+      console.error("Error generating reset action link:", linkError);
+      // Fall back to just returning valid without session
+      return new Response(
+        JSON.stringify({ valid: true, message: "OTP verified successfully" }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     return new Response(
-      JSON.stringify({ valid: true, message: "OTP verified successfully" }),
+      JSON.stringify({ valid: true, action_link: linkData.properties.action_link }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error: any) {

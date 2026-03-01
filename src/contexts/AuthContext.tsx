@@ -39,6 +39,7 @@ interface AuthContextType {
   signInWithEmailOtp: (email: string) => Promise<{ error: Error | null }>;
   sendPasswordResetOtp: (email: string) => Promise<{ error: Error | null }>;
   verifyEmailOtp: (email: string, token: string) => Promise<{ error: Error | null }>;
+  verifyPasswordResetOtp: (email: string, token: string) => Promise<{ error: Error | null }>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -322,6 +323,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const verifyPasswordResetOtp = async (email: string, token: string) => {
+    try {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/verify-custom-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ email, otp: token, otp_type: "password_reset" }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.valid) {
+        await checkRateLimit(email, "password_reset", "record_failure");
+        return { error: new Error(data.error || "Invalid or expired OTP") };
+      }
+
+      await checkRateLimit(email, "password_reset", "reset");
+
+      // Follow the action link to create a session so updateUser works
+      if (data.action_link) {
+        window.location.assign(data.action_link as string);
+        return { error: null };
+      }
+
+      return { error: null };
+    } catch (err: any) {
+      console.error("Error verifying password reset OTP:", err);
+      await checkRateLimit(email, "password_reset", "record_failure");
+      return { error: new Error(err.message || "Failed to verify OTP") };
+    }
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
   };
@@ -378,6 +413,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         signInWithEmailOtp,
         sendPasswordResetOtp,
         verifyEmailOtp,
+        verifyPasswordResetOtp,
         resetPassword,
         updatePassword,
         signOut,
