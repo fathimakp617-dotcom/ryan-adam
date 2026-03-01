@@ -94,7 +94,7 @@ const Auth = () => {
 
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user, signIn, signUp, signInWithEmailOtp, sendPasswordResetOtp, verifyEmailOtp, resetPassword, updatePassword, isLoading } = useAuth();
+  const { user, signIn, signUp, signInWithEmailOtp, sendPasswordResetOtp, verifyEmailOtp, verifyPasswordResetOtp, resetPassword, updatePassword, isLoading } = useAuth();
 
   const hasProcessedPendingSeed = useState(false);
 
@@ -597,8 +597,8 @@ const Auth = () => {
 
     setIsSubmitting(true);
     try {
-      // Verify OTP - this logs the user in
-      const { error } = await verifyEmailOtp(formData.email, formData.forgotOtp);
+      // Verify OTP with password_reset type
+      const { error } = await verifyPasswordResetOtp(formData.email, formData.forgotOtp);
       if (error) {
         toast({
           title: "Verification Failed",
