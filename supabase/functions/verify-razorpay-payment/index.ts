@@ -12,6 +12,7 @@ const PRODUCT_PRICES: Record<string, number> = {
   "amber-crown": 444,
   "legacy": 444,
   "combo": 444,
+  "elite-amber-combo": 888,
 };
 
 const VALID_PRODUCT_IDS = Object.keys(PRODUCT_PRICES);

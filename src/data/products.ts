@@ -22,6 +22,8 @@ import sportyNightCombo from "@/assets/products/sporty-night-combo.png";
 import sportyNightComboAttar from "@/assets/products/sporty-night-combo-attar.png";
 import sportyNightComboEdp from "@/assets/products/sporty-night-combo-edp.png";
 import sportyNightComboWax from "@/assets/products/sporty-night-combo-wax.png";
+import eliteAmberCombo1 from "@/assets/products/elite-amber-combo-1.jpg";
+import eliteAmberCombo2 from "@/assets/products/elite-amber-combo-2.jpg";
 
 export interface Product {
   id: string;
@@ -249,6 +251,31 @@ export const products: Product[] = [
     sillage: "Light to Moderate",
     season: ["All Seasons"],
     occasion: ["Sports", "Daily Wear", "Evening", "Travel"]
+  },
+  {
+    id: "elite-amber-combo",
+    name: "ELITE + AMBER CROWN COMBO",
+    tagline: "Premium Dual Collection",
+    description: "The ultimate duo — get both the Elite and Amber Crown collections in premium full-size formats. Two signature scents, six luxurious products for the ultimate fragrance wardrobe.",
+    story: "For those who can't choose between the seductive allure of Elite and the romantic charm of Amber Crown, this combo delivers both worlds. Full-size Attars, EDPs, and Solid Perfumes — everything you need to own every moment.",
+    price: 888,
+    originalPrice: 1111,
+    discountPercent: 20,
+    category: "Combo",
+    size: "Elite + Amber Crown Full Sets",
+    image: eliteAmberCombo1,
+    gallery: [eliteAmberCombo1, eliteAmberCombo2, eliteAmberCombo1],
+    notes: {
+      top: ["Bergamot", "Black Currant", "Saffron"],
+      heart: ["Jasmine Sambac", "Damask Rose", "Amber"],
+      base: ["Patchouli", "Sandalwood", "Vanilla"]
+    },
+    ingredients: ["Alcohol Denat", "Parfum", "Natural Jasmine Extract", "Amber Extract", "Sandalwood Oil", "Beeswax", "Jojoba Oil"],
+    concentration: "Attar + EDP + Solid (x2 Sets)",
+    longevity: "8-16 hours",
+    sillage: "Moderate to Strong",
+    season: ["All Seasons"],
+    occasion: ["Daily Wear", "Special Occasions", "Gifting", "Date Night"]
   }
 ];
 
