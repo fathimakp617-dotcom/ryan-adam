@@ -40,14 +40,47 @@ const sendLowStockAlert = async (params: {
     const resend = new Resend(resendApiKey);
     const subject = `⚠️ Low stock: ${productName ?? productId} (${newStock} left)`;
     const html = `
-      <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; line-height: 1.5;">
-        <h2 style="margin: 0 0 12px;">Low stock alert</h2>
-        <p style="margin: 0 0 8px;"><strong>Product:</strong> ${productName ?? productId}</p>
-        <p style="margin: 0 0 8px;"><strong>Product ID:</strong> ${productId}</p>
-        <p style="margin: 0 0 8px;"><strong>Remaining stock:</strong> ${newStock}</p>
-        ${orderNumber ? `<p style="margin: 0 0 8px;"><strong>Triggered by order:</strong> ${orderNumber}</p>` : ''}
-        <p style="margin: 16px 0 0; color: #555;">This is an automated alert.</p>
-      </div>
+      <!DOCTYPE html>
+      <html>
+      <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+      <body style="margin: 0; padding: 0; background-color: #0a0a0a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a; padding: 40px 20px;">
+          <tr><td align="center">
+            <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 8px; overflow: hidden;">
+              <tr>
+                <td style="background: linear-gradient(135deg, #1c1c1c 0%, #2d2d2d 100%); padding: 40px 30px; text-align: center; border-bottom: 2px solid #a87c39;">
+                  <h1 style="margin: 0; font-size: 28px; letter-spacing: 4px; color: #c9a45c; font-weight: 300;">RAYN ADAM</h1>
+                  <p style="margin: 8px 0 0; font-size: 11px; letter-spacing: 3px; color: #888; text-transform: uppercase;">Stock Alert</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 25px; text-align: center;">
+                  <span style="font-size: 40px;">⚠️</span>
+                  <h2 style="color: #ffffff; margin: 10px 0 0; font-size: 22px; font-weight: 500;">Low Stock Alert</h2>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 35px 30px;">
+                  <div style="background: #1c1c1c; border: 1px solid #3d3d3d; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                    <p style="margin: 0 0 10px; color: #f5f5f0; font-size: 15px;"><strong style="color: #a87c39;">Product:</strong> ${productName ?? productId}</p>
+                    <p style="margin: 0 0 10px; color: #f5f5f0; font-size: 15px;"><strong style="color: #a87c39;">Product ID:</strong> ${productId}</p>
+                    <p style="margin: 0 0 10px; color: #ef4444; font-size: 18px; font-weight: 700;">Remaining stock: ${newStock}</p>
+                    ${orderNumber ? `<p style="margin: 0; color: #888; font-size: 14px;"><strong style="color: #a87c39;">Triggered by:</strong> ${orderNumber}</p>` : ''}
+                  </div>
+                  <p style="margin: 0; color: #888; font-size: 13px;">Please restock this product soon to avoid stockouts.</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="background: linear-gradient(135deg, #1c1c1c 0%, #0f0f0f 100%); padding: 25px; text-align: center; border-top: 1px solid #3d3d3d;">
+                  <p style="margin: 0; color: #666; font-size: 12px;">This is an automated alert from RAYN ADAM</p>
+                  <p style="margin: 8px 0 0; color: #555; font-size: 11px;">© 2026 Rayn Adam Private Limited.</p>
+                </td>
+              </tr>
+            </table>
+          </td></tr>
+        </table>
+      </body>
+      </html>
     `;
 
     const emailRes = await resend.emails.send({
@@ -59,7 +92,6 @@ const sendLowStockAlert = async (params: {
 
     console.log('Low stock email sent:', { productId, newStock, emailRes });
 
-    // Log in staff_notifications for audit/debugging
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     await supabase.from('staff_notifications').insert({
       staff_email: 'system',
@@ -448,41 +480,69 @@ serve(async (req) => {
               await resendForAffiliate.emails.send({
                 from: 'Rayn Adam <notifications@raynadamperfume.com>',
                 to: [affiliate.email],
-                subject: `🎉 New sale! You earned ₹${commission} commission`,
+                subject: `🎉 New sale! You earned Rs.${commission} commission`,
                 html: `
-                  <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 520px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
-                    <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 28px 24px; text-align: center;">
-                      <h1 style="margin: 0; color: #c9a96e; font-size: 22px; letter-spacing: 1px;">RAYN ADAM</h1>
-                      <p style="margin: 8px 0 0; color: #d4d4d8; font-size: 13px;">Affiliate Commission Notification</p>
-                    </div>
-                    <div style="padding: 28px 24px;">
-                      <p style="margin: 0 0 16px; color: #374151; font-size: 15px;">Hi <strong>${affiliateName}</strong>,</p>
-                      <p style="margin: 0 0 20px; color: #374151; font-size: 15px;">Great news! Someone just made a purchase using your affiliate code <strong>${affiliateCode}</strong>.</p>
-                      
-                      <div style="background: #f9fafb; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
-                        <p style="margin: 0 0 8px; font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Order Details</p>
-                        <p style="margin: 0 0 6px; color: #374151; font-size: 14px;"><strong>Items:</strong> ${itemsList}</p>
-                        <p style="margin: 0; color: #374151; font-size: 14px;"><strong>Order Value:</strong> ₹${subtotal}</p>
-                      </div>
+                  <!DOCTYPE html>
+                  <html>
+                  <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+                  <body style="margin: 0; padding: 0; background-color: #0a0a0a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a; padding: 40px 20px;">
+                      <tr><td align="center">
+                        <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 8px; overflow: hidden;">
+                          <!-- Header -->
+                          <tr>
+                            <td style="background: linear-gradient(135deg, #1c1c1c 0%, #2d2d2d 100%); padding: 40px 30px; text-align: center; border-bottom: 2px solid #a87c39;">
+                              <h1 style="margin: 0; font-size: 28px; letter-spacing: 4px; color: #c9a45c; font-weight: 300;">RAYN ADAM</h1>
+                              <p style="margin: 8px 0 0; font-size: 11px; letter-spacing: 3px; color: #888; text-transform: uppercase;">Affiliate Commission</p>
+                            </td>
+                          </tr>
+                          <!-- Banner -->
+                          <tr>
+                            <td style="background: linear-gradient(135deg, #a87c39 0%, #c7915e 100%); padding: 25px; text-align: center;">
+                              <span style="font-size: 40px;">🎉</span>
+                              <h2 style="color: #1c1c1c; margin: 10px 0 0; font-size: 22px; font-weight: 500;">New Sale Earned!</h2>
+                            </td>
+                          </tr>
+                          <!-- Content -->
+                          <tr>
+                            <td style="padding: 35px 30px;">
+                              <p style="margin: 0 0 16px; color: #e0e0e0; font-size: 15px;">Hi <strong style="color: #c9a45c;">${affiliateName}</strong>,</p>
+                              <p style="margin: 0 0 25px; color: #aaa; font-size: 15px; line-height: 1.7;">Someone just made a purchase using your affiliate code <strong style="color: #c9a45c;">${affiliateCode}</strong>.</p>
+                              
+                              <div style="background: #1c1c1c; border: 1px solid #3d3d3d; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                                <p style="margin: 0 0 8px; font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px;">Order Details</p>
+                                <p style="margin: 0 0 6px; color: #f5f5f0; font-size: 14px;"><strong style="color: #a87c39;">Items:</strong> ${itemsList}</p>
+                                <p style="margin: 0; color: #f5f5f0; font-size: 14px;"><strong style="color: #a87c39;">Order Value:</strong> Rs.${subtotal}</p>
+                              </div>
 
-                      <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
-                        <p style="margin: 0 0 8px; font-size: 13px; color: #166534; text-transform: uppercase; letter-spacing: 0.5px;">Your Earnings</p>
-                        <p style="margin: 0 0 6px; color: #166534; font-size: 20px; font-weight: 700;">+ ₹${commission}</p>
-                        <p style="margin: 0; color: #15803d; font-size: 13px;">Commission rate: ${affiliate.commission_percent || 10}%</p>
-                      </div>
+                              <div style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(22, 163, 74, 0.1) 100%); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                                <p style="margin: 0 0 8px; font-size: 12px; color: #22c55e; text-transform: uppercase; letter-spacing: 1px;">Your Earnings</p>
+                                <p style="margin: 0 0 6px; color: #22c55e; font-size: 24px; font-weight: 700;">+ Rs.${commission}</p>
+                                <p style="margin: 0; color: #4ade80; font-size: 13px;">Commission rate: ${affiliate.commission_percent || 10}%</p>
+                              </div>
 
-                      <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
-                        <p style="margin: 0 0 4px; font-size: 13px; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px;">Available Balance</p>
-                        <p style="margin: 0 0 4px; color: #92400e; font-size: 20px; font-weight: 700;">₹${newTotalEarnings}</p>
-                        <p style="margin: 0; color: #a16207; font-size: 12px;">Total referrals: ${newTotalReferrals}</p>
-                      </div>
+                              <div style="background: linear-gradient(135deg, rgba(168, 124, 57, 0.15) 0%, rgba(199, 145, 94, 0.15) 100%); border: 1px solid #a87c39; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                                <p style="margin: 0 0 4px; font-size: 12px; color: #c7915e; text-transform: uppercase; letter-spacing: 1px;">Available Balance</p>
+                                <p style="margin: 0 0 4px; color: #c9a45c; font-size: 24px; font-weight: 700;">Rs.${newTotalEarnings}</p>
+                                <p style="margin: 0; color: #a87c39; font-size: 12px;">Total referrals: ${newTotalReferrals}</p>
+                              </div>
 
-                      <p style="margin: 0; color: #6b7280; font-size: 13px;">You can request a withdrawal from your account dashboard once your balance reaches ₹500.</p>
-                    </div>
-                    <div style="background: #f9fafb; padding: 16px 24px; text-align: center; border-top: 1px solid #e5e7eb;">
-                      <p style="margin: 0; color: #9ca3af; font-size: 11px;">© Rayn Adam Perfume • This is an automated notification</p>
-                    </div>
-                  </div>
+                              <p style="margin: 0; color: #888; font-size: 13px;">You can request a withdrawal from your account dashboard once your balance reaches Rs.500.</p>
+                            </td>
+                          </tr>
+                          <!-- Footer -->
+                          <tr>
+                            <td style="background: linear-gradient(135deg, #1c1c1c 0%, #0f0f0f 100%); padding: 25px; text-align: center; border-top: 1px solid #3d3d3d;">
+                              <p style="margin: 0; color: #a87c39; font-size: 13px; letter-spacing: 2px;">RAYN ADAM</p>
+                              <p style="margin: 8px 0 0; color: #555; font-size: 11px;">© 2026 Rayn Adam Private Limited. All rights reserved.</p>
+                              <p style="margin: 5px 0 0; color: #444; font-size: 10px;">Malappuram – 673634, Kerala, India | +91 99466 47442</p>
+                            </td>
+                          </tr>
+                        </table>
+                      </td></tr>
+                    </table>
+                  </body>
+                  </html>
                 `,
               });
               console.log('Affiliate commission email sent to:', affiliate.email, 'commission:', commission);

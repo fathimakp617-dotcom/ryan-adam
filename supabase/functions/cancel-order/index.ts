@@ -141,53 +141,53 @@ const handler = async (req: Request): Promise<Response> => {
           to: [order.customer_email],
           subject: `❌ Order Cancelled - ${order.order_number}`,
           html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 0;">
-              <!-- Header -->
-              <div style="background: linear-gradient(135deg, #1c1c1c 0%, #2d2d2d 100%); padding: 30px; text-align: center;">
-                <h1 style="color: #c7915e; margin: 0; font-size: 28px; letter-spacing: 2px;">RAYN ADAM</h1>
-                <p style="color: #a87c39; margin: 5px 0 0 0; font-size: 12px; letter-spacing: 1px;">LUXURY PERFUMES</p>
-              </div>
-
-              <!-- Status Banner -->
-              <div style="background: #ef4444; padding: 25px; text-align: center;">
-                <span style="font-size: 40px;">❌</span>
-                <h2 style="color: white; margin: 10px 0 0 0; font-size: 24px;">Order Cancelled</h2>
-              </div>
-
-              <div style="padding: 30px;">
-                <p style="font-size: 16px; color: #374151;">Dear ${order.customer_name},</p>
-                <p style="font-size: 16px; color: #374151; line-height: 1.6;">
-                  Your order has been successfully cancelled as requested. If you did not request this cancellation, please contact us immediately.
-                </p>
-                ${reason ? `<p style="font-size: 14px; color: #6b7280;"><strong>Reason:</strong> ${reason}</p>` : ''}
-
-                <div style="background: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                  <h3 style="color: #dc2626; margin: 0 0 15px 0;">Order #${order.order_number}</h3>
-                  <ul style="margin: 0; padding-left: 20px; color: #374151;">
-                    ${itemsList}
-                  </ul>
-                  <p style="margin: 15px 0 0 0; font-weight: bold;">
-                    Total: ₹${order.total.toLocaleString()}
-                  </p>
-                </div>
-
-                <p style="color: #6b7280; font-size: 14px;">
-                  If you paid online, your refund will be processed within 5-7 business days.
-                </p>
-
-                <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-                  <p style="color: #6b7280; font-size: 14px;">
-                    Questions? Contact us at<br>
-                    <a href="mailto:support@raynadamperfume.com" style="color: #a87c39;">support@raynadamperfume.com</a>
-                  </p>
-                </div>
-              </div>
-
-              <!-- Footer -->
-              <div style="background: #1c1c1c; padding: 20px; text-align: center;">
-                <p style="color: #a87c39; margin: 0; font-size: 12px;">© 2026 Rayn Adam. All rights reserved.</p>
-              </div>
-            </div>
+            <!DOCTYPE html>
+            <html>
+            <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+            <body style="margin: 0; padding: 0; background-color: #0a0a0a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a; padding: 40px 20px;">
+                <tr><td align="center">
+                  <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 8px; overflow: hidden;">
+                    <tr>
+                      <td style="background: linear-gradient(135deg, #1c1c1c 0%, #2d2d2d 100%); padding: 40px 30px; text-align: center; border-bottom: 2px solid #a87c39;">
+                        <h1 style="margin: 0; font-size: 28px; letter-spacing: 4px; color: #c9a45c; font-weight: 300;">RAYN ADAM</h1>
+                        <p style="margin: 8px 0 0; font-size: 11px; letter-spacing: 3px; color: #888; text-transform: uppercase;">Luxury Perfumes</p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 25px; text-align: center;">
+                        <span style="font-size: 40px;">❌</span>
+                        <h2 style="color: #ffffff; margin: 10px 0 0; font-size: 22px; font-weight: 500;">Order Cancelled</h2>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 35px 30px;">
+                        <p style="font-size: 16px; color: #e0e0e0;">Dear ${order.customer_name},</p>
+                        <p style="font-size: 15px; color: #aaa; line-height: 1.7;">Your order has been successfully cancelled as requested. If you did not request this cancellation, please contact us immediately.</p>
+                        ${reason ? `<p style="font-size: 14px; color: #888;"><strong style="color: #a87c39;">Reason:</strong> ${reason}</p>` : ''}
+                        <div style="background: #1c1c1c; border: 1px solid #ef4444; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                          <h3 style="color: #ef4444; margin: 0 0 15px 0;">Order #${order.order_number}</h3>
+                          <ul style="margin: 0; padding-left: 20px; color: #f5f5f0;">${itemsList}</ul>
+                          <p style="margin: 15px 0 0 0; font-weight: bold; color: #c7915e;">Total: Rs.${order.total.toLocaleString()}</p>
+                        </div>
+                        <p style="color: #888; font-size: 14px;">If you paid online, your refund will be processed within 5-7 business days.</p>
+                        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #3d3d3d;">
+                          <p style="color: #888; font-size: 14px;">Questions? Contact us at<br><a href="mailto:support@raynadamperfume.com" style="color: #c7915e; text-decoration: none;">support@raynadamperfume.com</a></p>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="background: linear-gradient(135deg, #1c1c1c 0%, #0f0f0f 100%); padding: 25px; text-align: center; border-top: 1px solid #3d3d3d;">
+                        <p style="margin: 0; color: #a87c39; font-size: 13px; letter-spacing: 2px;">RAYN ADAM</p>
+                        <p style="margin: 8px 0 0; color: #555; font-size: 11px;">© 2026 Rayn Adam Private Limited. All rights reserved.</p>
+                        <p style="margin: 5px 0 0; color: #444; font-size: 10px;">Malappuram – 673634, Kerala, India | +91 99466 47442</p>
+                      </td>
+                    </tr>
+                  </table>
+                </td></tr>
+              </table>
+            </body>
+            </html>
           `,
         });
         console.log("Customer cancellation email sent successfully");
@@ -203,46 +203,57 @@ const handler = async (req: Request): Promise<Response> => {
             to: [adminEmail],
             subject: `⚠️ Order Cancelled - ${order.order_number}`,
             html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <h1 style="color: #dc2626; border-bottom: 2px solid #dc2626; padding-bottom: 10px;">Order Cancelled</h1>
-                
-                <div style="background: #fef2f2; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                  <p style="margin: 0; font-size: 18px;"><strong>Order Number:</strong> ${order.order_number}</p>
-                  <p style="margin: 10px 0 0 0;"><strong>Cancelled At:</strong> ${new Date().toLocaleString()}</p>
-                  ${reason ? `<p style="margin: 10px 0 0 0;"><strong>Reason:</strong> ${reason}</p>` : ''}
-                </div>
-
-                <h2 style="color: #374151;">Customer Details</h2>
-                <table style="width: 100%; border-collapse: collapse;">
-                  <tr>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Name:</strong></td>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${order.customer_name}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Email:</strong></td>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${order.customer_email}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>Phone:</strong></td>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">${order.customer_phone || 'N/A'}</td>
-                  </tr>
+              <!DOCTYPE html>
+              <html>
+              <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+              <body style="margin: 0; padding: 0; background-color: #0a0a0a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a; padding: 40px 20px;">
+                  <tr><td align="center">
+                    <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 8px; overflow: hidden;">
+                      <tr>
+                        <td style="background: linear-gradient(135deg, #1c1c1c 0%, #2d2d2d 100%); padding: 40px 30px; text-align: center; border-bottom: 2px solid #a87c39;">
+                          <h1 style="margin: 0; font-size: 28px; letter-spacing: 4px; color: #c9a45c; font-weight: 300;">RAYN ADAM</h1>
+                          <p style="margin: 8px 0 0; font-size: 11px; letter-spacing: 3px; color: #888; text-transform: uppercase;">Admin Notification</p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 25px; text-align: center;">
+                          <span style="font-size: 40px;">⚠️</span>
+                          <h2 style="color: #ffffff; margin: 10px 0 0; font-size: 22px; font-weight: 500;">Order Cancelled</h2>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 35px 30px;">
+                          <div style="background: #1c1c1c; border: 1px solid #ef4444; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                            <p style="margin: 0 0 10px; color: #f5f5f0; font-size: 18px;"><strong style="color: #a87c39;">Order:</strong> ${order.order_number}</p>
+                            <p style="margin: 0 0 10px; color: #888; font-size: 14px;"><strong style="color: #a87c39;">Cancelled at:</strong> ${new Date().toLocaleString()}</p>
+                            ${reason ? `<p style="margin: 0; color: #888; font-size: 14px;"><strong style="color: #ef4444;">Reason:</strong> ${reason}</p>` : ''}
+                          </div>
+                          <div style="background: #1c1c1c; border: 1px solid #3d3d3d; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                            <h3 style="color: #c7915e; margin: 0 0 12px; font-weight: 500;">Customer Details</h3>
+                            <p style="margin: 0 0 8px; color: #f5f5f0;"><strong style="color: #a87c39;">Name:</strong> ${order.customer_name}</p>
+                            <p style="margin: 0 0 8px; color: #f5f5f0;"><strong style="color: #a87c39;">Email:</strong> ${order.customer_email}</p>
+                            <p style="margin: 0; color: #f5f5f0;"><strong style="color: #a87c39;">Phone:</strong> ${order.customer_phone || 'N/A'}</p>
+                          </div>
+                          <div style="background: #1c1c1c; border: 1px solid #3d3d3d; border-radius: 8px; padding: 20px;">
+                            <h3 style="color: #c7915e; margin: 0 0 12px; font-weight: 500;">Cancelled Items</h3>
+                            <ul style="margin: 0; padding-left: 20px; color: #f5f5f0;">${itemsList}</ul>
+                            <p style="margin: 15px 0 0 0; font-weight: bold; color: #c7915e;">Total: Rs.${order.total.toLocaleString()}</p>
+                            <p style="margin: 10px 0 0; color: #888; font-size: 14px;">Payment: ${order.payment_method} (${order.payment_status})</p>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="background: linear-gradient(135deg, #1c1c1c 0%, #0f0f0f 100%); padding: 25px; text-align: center; border-top: 1px solid #3d3d3d;">
+                          <p style="margin: 0; color: #666; font-size: 12px;">This is an automated notification from RAYN ADAM</p>
+                          <p style="margin: 8px 0 0; color: #555; font-size: 11px;">© 2026 Rayn Adam Private Limited.</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td></tr>
                 </table>
-
-                <h2 style="color: #374151; margin-top: 20px;">Cancelled Items</h2>
-                <ul style="background: #f9fafb; padding: 15px 15px 15px 35px; border-radius: 8px;">
-                  ${itemsList}
-                </ul>
-
-                <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin-top: 20px;">
-                  <p style="margin: 0;"><strong>Order Total:</strong> ₹${order.total.toLocaleString()}</p>
-                  <p style="margin: 10px 0 0 0;"><strong>Payment Method:</strong> ${order.payment_method}</p>
-                  <p style="margin: 10px 0 0 0;"><strong>Payment Status:</strong> ${order.payment_status}</p>
-                </div>
-
-                <p style="color: #6b7280; font-size: 12px; margin-top: 30px; text-align: center;">
-                  This is an automated notification from Rayn Adam
-                </p>
-              </div>
+              </body>
+              </html>
             `,
           });
           console.log("Admin notification email sent successfully");
