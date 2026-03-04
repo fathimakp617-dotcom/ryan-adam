@@ -39,14 +39,46 @@ const sendLowStockAlert = async (params: {
     const resend = new Resend(resendApiKey);
     const subject = `⚠️ Low stock: ${productName ?? productId} (${newStock} left)`;
     const html = `
-      <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; line-height: 1.5;">
-        <h2 style="margin: 0 0 12px;">Low stock alert</h2>
-        <p style="margin: 0 0 8px;"><strong>Product:</strong> ${productName ?? productId}</p>
-        <p style="margin: 0 0 8px;"><strong>Product ID:</strong> ${productId}</p>
-        <p style="margin: 0 0 8px;"><strong>Remaining stock:</strong> ${newStock}</p>
-        <p style="margin: 0 0 8px;"><strong>Updated by:</strong> ${updatedBy}</p>
-        <p style="margin: 16px 0 0; color: #555;">This is an automated alert.</p>
-      </div>
+      <!DOCTYPE html>
+      <html>
+      <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+      <body style="margin: 0; padding: 0; background-color: #0a0a0a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a; padding: 40px 20px;">
+          <tr><td align="center">
+            <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 8px; overflow: hidden;">
+              <tr>
+                <td style="background: linear-gradient(135deg, #1c1c1c 0%, #2d2d2d 100%); padding: 40px 30px; text-align: center; border-bottom: 2px solid #a87c39;">
+                  <h1 style="margin: 0; font-size: 28px; letter-spacing: 4px; color: #c9a45c; font-weight: 300;">RAYN ADAM</h1>
+                  <p style="margin: 8px 0 0; font-size: 11px; letter-spacing: 3px; color: #888; text-transform: uppercase;">Stock Alert</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 25px; text-align: center;">
+                  <span style="font-size: 40px;">⚠️</span>
+                  <h2 style="color: #ffffff; margin: 10px 0 0; font-size: 22px; font-weight: 500;">Low Stock Alert</h2>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 35px 30px;">
+                  <div style="background: #1c1c1c; border: 1px solid #3d3d3d; border-radius: 8px; padding: 20px;">
+                    <p style="margin: 0 0 10px; color: #f5f5f0; font-size: 15px;"><strong style="color: #a87c39;">Product:</strong> ${productName ?? productId}</p>
+                    <p style="margin: 0 0 10px; color: #f5f5f0; font-size: 15px;"><strong style="color: #a87c39;">Product ID:</strong> ${productId}</p>
+                    <p style="margin: 0 0 10px; color: #ef4444; font-size: 18px; font-weight: 700;">Remaining stock: ${newStock}</p>
+                    <p style="margin: 0; color: #888; font-size: 14px;"><strong style="color: #a87c39;">Updated by:</strong> ${updatedBy}</p>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td style="background: linear-gradient(135deg, #1c1c1c 0%, #0f0f0f 100%); padding: 25px; text-align: center; border-top: 1px solid #3d3d3d;">
+                  <p style="margin: 0; color: #666; font-size: 12px;">This is an automated alert from RAYN ADAM</p>
+                  <p style="margin: 8px 0 0; color: #555; font-size: 11px;">© 2026 Rayn Adam Private Limited.</p>
+                </td>
+              </tr>
+            </table>
+          </td></tr>
+        </table>
+      </body>
+      </html>
     `;
 
     const emailRes = await resend.emails.send({

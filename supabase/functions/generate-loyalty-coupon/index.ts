@@ -153,7 +153,7 @@ serve(async (req) => {
           : "";
 
         await resend.emails.send({
-          from: "Rayn Adam <onboarding@resend.dev>",
+          from: "Rayn Adam <notifications@raynadamperfume.com>",
           to: [customer_email],
           subject: `🎁 ${couponDescription} - Thank you for your order!`,
           html: `
