@@ -22,8 +22,8 @@ import sportyNightCombo from "@/assets/products/sporty-night-combo.png";
 import sportyNightComboAttar from "@/assets/products/sporty-night-combo-attar.png";
 import sportyNightComboEdp from "@/assets/products/sporty-night-combo-edp.png";
 import sportyNightComboWax from "@/assets/products/sporty-night-combo-wax.png";
-import eliteAmberCombo1 from "@/assets/products/elite-amber-combo-1.jpg";
-import eliteAmberCombo2 from "@/assets/products/elite-amber-combo-2.jpg";
+import eliteComboImg from "@/assets/products/elite-amber-combo-1.jpg";
+import amberCrownComboImg from "@/assets/products/elite-amber-combo-2.jpg";
 
 export interface Product {
   id: string;
@@ -253,29 +253,54 @@ export const products: Product[] = [
     occasion: ["Sports", "Daily Wear", "Evening", "Travel"]
   },
   {
-    id: "elite-amber-combo",
-    name: "ELITE + AMBER CROWN COMBO",
-    tagline: "Premium Dual Collection",
-    description: "The ultimate duo — get both the Elite and Amber Crown collections in premium full-size formats. Two signature scents, six luxurious products for the ultimate fragrance wardrobe.",
-    story: "For those who can't choose between the seductive allure of Elite and the romantic charm of Amber Crown, this combo delivers both worlds. Full-size Attars, EDPs, and Solid Perfumes — everything you need to own every moment.",
+    id: "elite-combo",
+    name: "ELITE COMBO",
+    tagline: "Premium Full-Size Set",
+    description: "The premium Elite experience — featuring a full-size Attar (12ml), large Eau de Parfum spray (30ml), and Solid Perfume Cream (8ml). Smooth, seductive, and long-lasting.",
+    story: "For those who want the complete Elite experience in generous sizes. The full-size Attar delivers intense concentration, the 30ml EDP provides all-day elegance, and the portable cream keeps you topped up on the go.",
     price: 888,
     originalPrice: 1111,
     discountPercent: 20,
     category: "Combo",
-    size: "Elite + Amber Crown Full Sets",
-    image: eliteAmberCombo1,
-    gallery: [eliteAmberCombo1, eliteAmberCombo2, eliteAmberCombo1],
+    size: "Attar 12ml + EDP 30ml + Cream 8ml",
+    image: eliteComboImg,
+    gallery: [eliteComboImg, eliteComboImg, eliteComboImg],
     notes: {
-      top: ["Bergamot", "Black Currant", "Saffron"],
-      heart: ["Jasmine Sambac", "Damask Rose", "Amber"],
-      base: ["Patchouli", "Sandalwood", "Vanilla"]
+      top: ["Bergamot", "Black Currant", "Pink Pepper"],
+      heart: ["Jasmine Sambac", "Tuberose", "Iris"],
+      base: ["Patchouli", "Amber", "Vanilla"]
     },
-    ingredients: ["Alcohol Denat", "Parfum", "Natural Jasmine Extract", "Amber Extract", "Sandalwood Oil", "Beeswax", "Jojoba Oil"],
-    concentration: "Attar + EDP + Solid (x2 Sets)",
-    longevity: "8-16 hours",
+    ingredients: ["Alcohol Denat", "Parfum", "Natural Jasmine Extract", "Patchouli Oil", "Beeswax", "Jojoba Oil"],
+    concentration: "Attar + EDP + Solid Cream",
+    longevity: "10-16 hours",
     sillage: "Moderate to Strong",
-    season: ["All Seasons"],
-    occasion: ["Daily Wear", "Special Occasions", "Gifting", "Date Night"]
+    season: ["Fall", "Winter", "Spring"],
+    occasion: ["Evening", "Cocktail Party", "Date Night", "Special Occasions"]
+  },
+  {
+    id: "amber-crown-combo",
+    name: "AMBER CROWN COMBO",
+    tagline: "Premium Full-Size Set",
+    description: "The premium Amber Crown experience — featuring a full-size Attar (12ml), large Eau de Parfum spray (30ml), and Solid Perfume Cream (8ml). Romantic, warm, and enchanting.",
+    story: "For those who want the complete Amber Crown experience in generous sizes. The full-size Attar delivers intense concentration, the 30ml EDP provides all-day warmth, and the portable cream keeps you topped up on the go.",
+    price: 888,
+    originalPrice: 1111,
+    discountPercent: 20,
+    category: "Combo",
+    size: "Attar 12ml + EDP 30ml + Cream 8ml",
+    image: amberCrownComboImg,
+    gallery: [amberCrownComboImg, amberCrownComboImg, amberCrownComboImg],
+    notes: {
+      top: ["Saffron", "Orange Blossom", "Cardamom"],
+      heart: ["Amber", "Damask Rose", "Labdanum"],
+      base: ["Sandalwood", "Vanilla", "White Musk"]
+    },
+    ingredients: ["Alcohol Denat", "Parfum", "Natural Amber Extract", "Sandalwood Oil", "Beeswax", "Jojoba Oil"],
+    concentration: "Attar + EDP + Solid Cream",
+    longevity: "8-14 hours",
+    sillage: "Moderate to Strong",
+    season: ["Fall", "Winter", "Spring"],
+    occasion: ["Daily Wear", "Special Occasions", "Gifting", "Romantic Dinner"]
   }
 ];
 
