@@ -321,6 +321,31 @@ const ProductDetail = () => {
                   {product.description}
                 </motion.p>
 
+                {/* Estimated Delivery */}
+                <motion.div variants={staggerItem} className="p-4 border border-primary/30 bg-primary/5 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-full">
+                      <Package className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Estimated Delivery</p>
+                      <p className="text-xs text-muted-foreground">
+                        <span className="text-primary font-semibold">
+                          {(() => {
+                            const today = new Date();
+                            const minDate = new Date(today);
+                            minDate.setDate(today.getDate() + 3);
+                            const maxDate = new Date(today);
+                            maxDate.setDate(today.getDate() + 6);
+                            const fmt = (d: Date) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+                            return `${fmt(minDate)} – ${fmt(maxDate)}`;
+                          })()}
+                        </span> • Free Delivery
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+
                 {/* Fragrance Notes Preview */}
                 {(product.notes.top.length > 0 || product.notes.heart.length > 0) && (
                 <motion.div variants={staggerItem} className="space-y-3">
@@ -412,20 +437,7 @@ const ProductDetail = () => {
                   </div>
                 </motion.div>
 
-                {/* Estimated Delivery */}
-                <motion.div variants={staggerItem} className="p-4 border border-primary/30 bg-primary/5 rounded-lg mt-2">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-full">
-                      <Package className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Estimated Delivery</p>
-                      <p className="text-xs text-muted-foreground">
-                        <span className="text-primary font-semibold">3–6 business days</span> • Free Delivery
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
+
 
                 {/* Features */}
                 <motion.div variants={staggerItem} className="grid grid-cols-3 gap-4 pt-6 border-t border-border/50">
