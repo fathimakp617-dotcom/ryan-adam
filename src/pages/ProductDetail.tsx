@@ -2,7 +2,7 @@ import { useState, useEffect, memo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Heart, Share2, Truck, Shield, RotateCcw, Star, ShoppingBag, PenLine, Zap, AlertCircle, Loader2, MessageCircle } from "lucide-react";
+import { ArrowLeft, Heart, Share2, Truck, Shield, RotateCcw, Star, ShoppingBag, PenLine, Zap, AlertCircle, Loader2, MessageCircle, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -409,6 +409,21 @@ const ProductDetail = () => {
                       <Share2 className="w-5 h-5 mr-2" />
                       SHARE
                     </Button>
+                  </div>
+                </motion.div>
+
+                {/* Estimated Delivery */}
+                <motion.div variants={staggerItem} className="p-4 border border-primary/30 bg-primary/5 rounded-lg mt-2">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-full">
+                      <Package className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Estimated Delivery</p>
+                      <p className="text-xs text-muted-foreground">
+                        <span className="text-primary font-semibold">3–6 business days</span> • Free Delivery
+                      </p>
+                    </div>
                   </div>
                 </motion.div>
 
