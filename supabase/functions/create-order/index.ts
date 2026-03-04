@@ -426,14 +426,70 @@ serve(async (req) => {
           console.log("Affiliate discount applied:", affiliateDiscount);
 
           // Update affiliate stats
-          const commission = (subtotal * (affiliate.commission_percent || 10)) / 100;
+          const commission = Math.round((subtotal * (affiliate.commission_percent || 10)) / 100);
+          const newTotalEarnings = (affiliate.total_earnings || 0) + commission;
+          const newTotalReferrals = (affiliate.total_referrals || 0) + 1;
           await supabase
             .from('affiliates')
             .update({
-              total_referrals: (affiliate.total_referrals || 0) + 1,
-              total_earnings: (affiliate.total_earnings || 0) + commission,
+              total_referrals: newTotalReferrals,
+              total_earnings: newTotalEarnings,
             })
             .eq('id', affiliate.id);
+
+          // Send commission notification email to affiliate owner (fire and forget)
+          try {
+            const resendApiKey = Deno.env.get('RESEND_API_KEY');
+            if (resendApiKey && affiliate.email) {
+              const resendForAffiliate = new Resend(resendApiKey);
+              const affiliateName = affiliate.name || 'Partner';
+              const itemsList = validatedItems.map(i => `${i.name} × ${i.quantity}`).join(', ');
+
+              await resendForAffiliate.emails.send({
+                from: 'Rayn Adam <notifications@raynadamperfume.com>',
+                to: [affiliate.email],
+                subject: `🎉 New sale! You earned ₹${commission} commission`,
+                html: `
+                  <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 520px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+                    <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 28px 24px; text-align: center;">
+                      <h1 style="margin: 0; color: #c9a96e; font-size: 22px; letter-spacing: 1px;">RAYN ADAM</h1>
+                      <p style="margin: 8px 0 0; color: #d4d4d8; font-size: 13px;">Affiliate Commission Notification</p>
+                    </div>
+                    <div style="padding: 28px 24px;">
+                      <p style="margin: 0 0 16px; color: #374151; font-size: 15px;">Hi <strong>${affiliateName}</strong>,</p>
+                      <p style="margin: 0 0 20px; color: #374151; font-size: 15px;">Great news! Someone just made a purchase using your affiliate code <strong>${affiliateCode}</strong>.</p>
+                      
+                      <div style="background: #f9fafb; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                        <p style="margin: 0 0 8px; font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Order Details</p>
+                        <p style="margin: 0 0 6px; color: #374151; font-size: 14px;"><strong>Items:</strong> ${itemsList}</p>
+                        <p style="margin: 0; color: #374151; font-size: 14px;"><strong>Order Value:</strong> ₹${subtotal}</p>
+                      </div>
+
+                      <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                        <p style="margin: 0 0 8px; font-size: 13px; color: #166534; text-transform: uppercase; letter-spacing: 0.5px;">Your Earnings</p>
+                        <p style="margin: 0 0 6px; color: #166534; font-size: 20px; font-weight: 700;">+ ₹${commission}</p>
+                        <p style="margin: 0; color: #15803d; font-size: 13px;">Commission rate: ${affiliate.commission_percent || 10}%</p>
+                      </div>
+
+                      <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                        <p style="margin: 0 0 4px; font-size: 13px; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px;">Available Balance</p>
+                        <p style="margin: 0 0 4px; color: #92400e; font-size: 20px; font-weight: 700;">₹${newTotalEarnings}</p>
+                        <p style="margin: 0; color: #a16207; font-size: 12px;">Total referrals: ${newTotalReferrals}</p>
+                      </div>
+
+                      <p style="margin: 0; color: #6b7280; font-size: 13px;">You can request a withdrawal from your account dashboard once your balance reaches ₹500.</p>
+                    </div>
+                    <div style="background: #f9fafb; padding: 16px 24px; text-align: center; border-top: 1px solid #e5e7eb;">
+                      <p style="margin: 0; color: #9ca3af; font-size: 11px;">© Rayn Adam Perfume • This is an automated notification</p>
+                    </div>
+                  </div>
+                `,
+              });
+              console.log('Affiliate commission email sent to:', affiliate.email, 'commission:', commission);
+            }
+          } catch (emailErr) {
+            console.error('Failed to send affiliate commission email:', emailErr);
+          }
         }
       }
     } else if (orderRequest.affiliate_code && bulkDiscountPercent > 0) {
